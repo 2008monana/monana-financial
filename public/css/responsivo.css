@@ -1,0 +1,309 @@
+/* ============================================
+   MonanaFinancial - Responsividade (dashboard)
+   Corrigido: as regras aqui visavam classes antigas
+   (.card, .card-head, .kpi-top, .kpi-delta, .icon-badge,
+   .side-nav .nav-item, .conteudo, .chip, .amt-pos/.amt-neg, .btn)
+   de views/CSS órfãos (views/dashboard/conteudo.php, index.php,
+   estilo.css) que já não são renderizados por nenhuma rota.
+   As páginas realmente ativas (adminempresa.php / superadmin.php +
+   dashboard.css) usam outras classes — agora alinhadas abaixo.
+   ============================================ */
+
+/* Extremamente pequeno (ex.: 320x568 em modo retrato apertado) */
+@media screen and (max-width: 360px) and (max-height: 700px) {
+    body {
+        font-size: 11px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        padding: 12px 8px;
+        width: 200px;
+    }
+
+    .side-brand {
+        padding: 0 4px 12px;
+        gap: 8px;
+    }
+
+    .side-logo {
+        width: 28px;
+        height: 28px;
+    }
+
+    .side-brand-text .name {
+        font-size: 12px;
+    }
+
+    .side-brand-text .sub {
+        font-size: 8px;
+    }
+
+    .nav-item {
+        padding: 8px 8px;
+        font-size: 11px;
+        gap: 8px;
+    }
+
+    .nav-item i {
+        font-size: 13px;
+        width: 16px;
+    }
+
+    .side-foot {
+        font-size: 9px;
+        padding-top: 8px;
+    }
+
+    /* Topbar */
+    .topbar {
+        padding: 10px 12px;
+    }
+
+    .greeting {
+        font-size: 12px;
+    }
+
+    .select-pill {
+        font-size: 10px;
+        padding: 4px 8px;
+        gap: 6px;
+    }
+
+    .bell-wrap {
+        font-size: 15px;
+    }
+
+    .bell-dot {
+        width: 13px;
+        height: 13px;
+        font-size: 7px;
+        top: -4px;
+        right: -5px;
+    }
+
+    .avatar {
+        width: 26px;
+        height: 26px;
+        font-size: 10px;
+    }
+
+    .content {
+        padding: 12px;
+    }
+
+    /* KPI Cards */
+    .kpi-grid,
+    .kpi-grid-6 {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .kpi-card {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .kpi-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+
+    .kpi-label {
+        font-size: 10px;
+    }
+
+    .kpi-value {
+        font-size: 16px;
+    }
+
+    .kpi-change {
+        font-size: 10px;
+    }
+
+    /* Cartões de gráfico / tabela / listas */
+    .chart-card,
+    .table-card,
+    .card-category,
+    .card-movements,
+    .card-activities,
+    .card-alerts,
+    .card-performance {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .chart-header h3,
+    .table-header h3,
+    .card-category h4,
+    .card-movements h4,
+    .card-activities h4,
+    .card-alerts h4,
+    .card-performance h4 {
+        font-size: 12px;
+    }
+
+    .chart-body {
+        height: 160px;
+    }
+
+    .chart-period,
+    .badge,
+    .status-badge {
+        font-size: 9px;
+        padding: 2px 8px;
+    }
+
+    /* Tabelas */
+    .table-modern {
+        font-size: 10px;
+    }
+
+    .table-modern thead th {
+        font-size: 9px;
+        padding: 8px 10px;
+    }
+
+    .table-modern tbody td,
+    .table-modern tfoot td {
+        padding: 8px 10px;
+        font-size: 10px;
+    }
+
+    .positive,
+    .negative {
+        font-size: 10px;
+    }
+
+    /* Botões de ação rápida */
+    .quick-btn {
+        padding: 8px 14px;
+        font-size: 11px;
+        gap: 6px;
+    }
+
+    .btn-link {
+        font-size: 11px;
+    }
+
+    /* Alertas */
+    .alert-item {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .alert-icon {
+        width: 26px;
+        height: 26px;
+        font-size: 12px;
+    }
+
+    .alert-title {
+        font-size: 12px;
+    }
+
+    .alert-desc {
+        font-size: 11px;
+    }
+
+    /* Utilitários */
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mb-1 { margin-bottom: 4px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 12px; }
+
+    .gap-1 { gap: 4px; }
+    .gap-2 { gap: 8px; }
+}
+
+/* Telas muito baixas em modo paisagem (ex.: telemóvel deitado) */
+@media screen and (max-height: 420px) and (orientation: landscape) {
+    .sidebar {
+        padding: 10px 8px;
+        width: 190px;
+    }
+
+    .side-brand {
+        padding: 0 4px 10px;
+        margin-bottom: 10px;
+    }
+
+    .side-logo {
+        width: 26px;
+        height: 26px;
+    }
+
+    .side-brand-text .name {
+        font-size: 11px;
+    }
+
+    .side-brand-text .sub {
+        font-size: 7px;
+    }
+
+    .nav-item {
+        padding: 6px 8px;
+        font-size: 10px;
+        gap: 8px;
+    }
+
+    .nav-item i {
+        font-size: 11px;
+        width: 14px;
+    }
+
+    .topbar {
+        padding: 8px 12px;
+    }
+
+    .greeting {
+        font-size: 11px;
+    }
+
+    .kpi-grid,
+    .kpi-grid-6 {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .kpi-card {
+        padding: 10px;
+    }
+
+    .kpi-value {
+        font-size: 14px;
+    }
+
+    .content {
+        padding: 10px;
+    }
+
+    .chart-card,
+    .table-card,
+    .card-category,
+    .card-movements,
+    .card-activities,
+    .card-alerts,
+    .card-performance {
+        padding: 10px;
+    }
+
+    .table-modern {
+        font-size: 10px;
+    }
+
+    .table-modern thead th,
+    .table-modern tbody td,
+    .table-modern tfoot td {
+        padding: 6px 8px;
+    }
+
+    .quick-btn {
+        padding: 6px 12px;
+        font-size: 10px;
+    }
+}

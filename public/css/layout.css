@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --navy-deep:#0a1930;
+  --navy:#0e2748;
+  --navy-light:#173a67;
+  --green:#22c55e;
+  --green-deep:#16a34a;
+  --blue:#2563eb;
+  --orange:#f59e0b;
+  --red:#ef4444;
+  --purple:#8b5cf6;
+  --ink:#101828;
+  --muted:#64748b;
+  --border:#e6eaf0;
+  --bg:#f4f6fa;
+  --white:#ffffff;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  display:flex;
+  min-height:100vh;
+}
+
+/* ---------------- Sidebar ---------------- */
+.sidebar{
+  width:250px;
+  flex-shrink:0;
+  background:linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  padding:24px 16px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow-y:auto;
+}
+
+.side-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:0 8px 24px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  margin-bottom:20px;
+}
+
+.side-logo{
+  width:38px;height:38px;
+  border-radius:11px;
+  background:#fff;
+  object-fit:contain;
+  padding:3px;
+  flex-shrink:0;
+}
+
+.side-brand-text{line-height:1.2;}
+.side-brand-text .name{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;}
+.side-brand-text .name span{color:var(--green);}
+.side-brand-text .sub{font-size:9.5px;letter-spacing:0.4px;color:rgba(255,255,255,0.45);margin-top:1px;}
+
+nav{flex:1;display:flex;flex-direction:column;gap:2px;}
+
+.nav-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 12px;
+  border-radius:10px;
+  color:rgba(255,255,255,0.65);
+  text-decoration:none;
+  font-size:13.5px;
+  font-weight:500;
+  transition:background 0.15s ease, color 0.15s ease;
+}
+
+.nav-item i{width:18px;text-align:center;flex-shrink:0;}
+
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
+
+.nav-item.active{
+  background:rgba(34,197,94,0.14);
+  color:#fff;
+  box-shadow:inset 3px 0 0 var(--green);
+}
+
+.side-foot{
+  padding-top:16px;
+  margin-top:8px;
+  border-top:1px solid rgba(255,255,255,0.08);
+  font-size:11px;
+  color:rgba(255,255,255,0.35);
+}
+
+/* ---------------- Main ---------------- */
+.main{flex:1;min-width:0;}
+
+.topbar{
+  background:var(--white);
+  border-bottom:1px solid var(--border);
+  padding:16px 28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  position:sticky;
+  top:0;
+  z-index:5;
+  flex-wrap:wrap;
+}
+
+.topbar-left{display:flex;align-items:center;gap:16px;}
+.burger{font-size:18px;color:var(--muted);cursor:pointer;display:none;}
+.greeting{font-size:15px;font-weight:600;}
+.greeting .wave{margin-left:4px;}
+
+.topbar-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+
+.select-pill{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  font-size:12.5px;
+  color:var(--ink);
+  background:var(--white);
+  cursor:pointer;
+  text-decoration:none;
+}
+.select-pill i{font-size:11px;color:var(--muted);}
+
+.bell-wrap{position:relative;cursor:pointer;color:var(--muted);text-decoration:none;font-size:18px;display:flex;align-items:center;}
+.bell-dot{
+  position:absolute;top:-6px;right:-8px;
+  background:var(--red);color:#fff;
+  font-size:9.5px;font-weight:700;
+  width:16px;height:16px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.profile{
+  display:flex;align-items:center;gap:9px;cursor:pointer;text-decoration:none;color:inherit;
+}
+.avatar{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,var(--navy-light),var(--navy));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:12px;font-weight:700;
+  flex-shrink:0;
+}
+.profile-name{font-size:13px;font-weight:600;}
+
+.content{padding:26px 28px 48px;}
+
+@media (max-width:768px){
+  .sidebar{display:none;}
+  .burger{display:block;}
+  .content{padding:18px 16px 40px;}
+  .topbar{padding:14px 16px;}
+}
+
+@media (max-width:480px){
+  .profile-name{display:none;}
+  .select-pill{font-size:10px;padding:4px 8px;}
+  .greeting{font-size:13px;}
+}

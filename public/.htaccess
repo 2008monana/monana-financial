@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# Se o ficheiro ou pasta pedido não existir fisicamente,
+# encaminha tudo para index.php como parâmetro "url"
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
