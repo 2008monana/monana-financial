@@ -1,4 +1,5 @@
 <?php
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Usuario.php';
 require_once CAMINHO_RAIZ . '/models/UsuarioPermissao.php';
@@ -139,6 +140,7 @@ class UsuariosController extends Controller
             'ativo'           => 1,
         ]));
 
+        AuditoriaHelper::registar('criar', 'usuarios', (int) $usuarioId, null, $dados['campos']);
         $this->permissaoModel->salvar($usuarioId, $_POST['permissoes'] ?? []);
         $this->usuarioFilialModel->substituir($usuarioId, array_map('intval', $_POST['filiais'] ?? []));
 
@@ -210,7 +212,9 @@ class UsuariosController extends Controller
             return;
         }
 
+        $antes = $this->usuarioModel->encontrarPorId((int) $id);
         $this->usuarioModel->atualizar((int) $id, $dados['campos']);
+        AuditoriaHelper::registar('editar', 'usuarios', (int) $id, $antes ?: null, $dados['campos']);
         $this->permissaoModel->salvar((int) $id, $_POST['permissoes'] ?? []);
         $this->usuarioFilialModel->substituir((int) $id, array_map('intval', $_POST['filiais'] ?? []));
 

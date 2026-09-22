@@ -1,4 +1,5 @@
 <?php
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
 require_once CAMINHO_RAIZ . '/models/Filial.php';
@@ -63,7 +64,8 @@ class EmpresasController extends Controller
             return;
         }
 
-        $this->empresaModel->inserir($dados['campos']);
+        $id = $this->empresaModel->inserir($dados['campos']);
+        AuditoriaHelper::registar('criar', 'empresas', $id, null, $dados['campos']);
         definirFlash('sucesso', 'Empresa criada com sucesso.');
         $this->redirecionar('empresas/index');
     }
@@ -99,7 +101,9 @@ class EmpresasController extends Controller
             return;
         }
 
+        $antes = $this->empresaModel->encontrarPorId((int) $id);
         $this->empresaModel->atualizar((int) $id, $dados['campos']);
+        AuditoriaHelper::registar('editar', 'empresas', (int) $id, $antes ?: null, $dados['campos']);
         definirFlash('sucesso', 'Empresa atualizada com sucesso.');
         $this->redirecionar('empresas/index');
     }

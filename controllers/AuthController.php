@@ -1,4 +1,5 @@
 <?php
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Usuario.php';
 
@@ -67,6 +68,7 @@ class AuthController extends Controller
         $_SESSION['empresa_id']      = $usuario['empresa_id'];
 
         $this->usuarioModel->atualizarUltimoLogin((int) $usuario['id']);
+        AuditoriaHelper::registar('login', 'usuarios', (int) $usuario['id']);
 
         $this->json([
             'sucesso'    => true,
@@ -78,6 +80,7 @@ class AuthController extends Controller
     /** Termina a sessão */
     public function logout(): void
     {
+        AuditoriaHelper::registar('logout', 'usuarios', (int) ($_SESSION['usuario_id'] ?? 0));
         $_SESSION = [];
         session_destroy();
         $this->redirecionar('auth/login');

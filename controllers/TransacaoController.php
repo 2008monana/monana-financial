@@ -1,4 +1,5 @@
 <?php
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 /**
  * TransacoesController - COMPLETO COM RESUMOS MENSAIS E FECHO DIÁRIO
  * Gerencia os lançamentos financeiros (vendas, compras, despesas, devoluções)
@@ -344,6 +345,7 @@ class TransacoesController extends Controller
         if ($id) {
             // Atualizar resumo mensal
             $this->atualizarResumoMensal((int) $dados['filial_id'], $dados['data_transacao']);
+            AuditoriaHelper::registar('criar', 'transacoes', (int) $id, null, $dados);
             $this->setFlash('sucesso', 'Lançamento criado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao criar lançamento. Tente novamente.');
@@ -469,6 +471,7 @@ class TransacoesController extends Controller
             // Atualizar resumo mensal (data antiga e nova)
             $this->atualizarResumoMensal($filialIdAntigo, $dataAntiga);
             $this->atualizarResumoMensal((int) $dados['filial_id'], $dados['data_transacao']);
+            AuditoriaHelper::registar('editar', 'transacoes', (int) $id, $transacao, $dados);
             $this->setFlash('sucesso', 'Lançamento atualizado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao atualizar lançamento.');
@@ -513,6 +516,7 @@ class TransacoesController extends Controller
         if ($excluido) {
             // Atualizar resumo mensal
             $this->atualizarResumoMensal($filialId, $dataTransacao);
+            AuditoriaHelper::registar('eliminar', 'transacoes', (int) $id, $transacao, null);
             $this->setFlash('sucesso', 'Lançamento eliminado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao eliminar lançamento.');
