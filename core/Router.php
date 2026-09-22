@@ -220,6 +220,9 @@ class Router
         // =============================================
         if ($nomeControlador === 'TransacaoController') {
             $nomeControlador = 'TransacoesController';
+        } elseif ($nomeControlador === 'NotificacoesController') {
+            // A rota é plural, mas o controlador existente é singular.
+            $nomeControlador = 'NotificacaoController';
         }
         
         $parametro = $partes[2] ?? null;
