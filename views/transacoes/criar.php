@@ -41,8 +41,9 @@ unset($_SESSION['dados_antigos'], $_SESSION['erros']);
     </label>
     <select id="tipo" name="tipo" required>
         <option value="">Selecione...</option>
-        <option value="entrada" <?php echo ($dadosAntigos['tipo'] ?? '') === 'entrada' ? 'selected' : ''; ?>>Entrada (Venda)</option>
-        <option value="saida" <?php echo ($dadosAntigos['tipo'] ?? '') === 'saida' ? 'selected' : ''; ?>>Saída (Compra/Despesa)</option>
+        <?php foreach ($tipos as $valor => $rotulo): ?>
+        <option value="<?php echo $valor; ?>" <?php echo ($dadosAntigos['tipo'] ?? '') === $valor ? 'selected' : ''; ?>><?php echo $rotulo; ?></option>
+        <?php endforeach; ?>
     </select>
     <?php if (!empty($erros['tipo'])): ?>
     <span class="error-text"><i class="fas fa-exclamation-circle"></i> <?php echo $erros['tipo']; ?></span>

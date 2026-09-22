@@ -84,7 +84,7 @@
         <span class="summary-detail">
             <?php 
             $countEntradas = 0;
-            foreach ($transacoes as $t) { if ($t['tipo'] === 'entrada') $countEntradas++; }
+            foreach ($transacoes as $t) { if ($t['tipo'] === 'venda') $countEntradas++; }
             echo $countEntradas; 
             ?> transações
         </span>
@@ -95,7 +95,7 @@
         <span class="summary-detail">
             <?php 
             $countSaidas = 0;
-            foreach ($transacoes as $t) { if ($t['tipo'] === 'saida') $countSaidas++; }
+            foreach ($transacoes as $t) { if ($t['tipo'] !== 'venda') $countSaidas++; }
             echo $countSaidas; 
             ?> transações
         </span>
@@ -229,13 +229,13 @@
                     <?php endif; ?>
                     <td><?php echo htmlspecialchars($t['filial_nome'] ?? '-'); ?></td>
                     <td>
-                        <span class="badge <?php echo $t['tipo'] === 'entrada' ? 'badge-success' : 'badge-danger'; ?>">
-                            <?php echo $t['tipo'] === 'entrada' ? 'Entrada' : 'Saída'; ?>
+                        <span class="badge <?php echo $t['tipo'] === 'venda' ? 'badge-success' : 'badge-danger'; ?>">
+                            <?php echo htmlspecialchars($tipos[$t['tipo']] ?? $t['tipo']); ?>
                         </span>
                     </td>
                     <td><?php echo htmlspecialchars($t['categoria_nome'] ?? '-'); ?></td>
                     <td><?php echo htmlspecialchars($t['descricao'] ?: '-'); ?></td>
-                    <td class="<?php echo $t['tipo'] === 'entrada' ? 'positive' : 'negative'; ?>">
+                    <td class="<?php echo $t['tipo'] === 'venda' ? 'positive' : 'negative'; ?>">
                         <?php echo number_format($t['valor'], 0, ',', '.'); ?> Kz
                     </td>
                     <td><?php echo htmlspecialchars($t['usuario_nome'] ?? '-'); ?></td>
