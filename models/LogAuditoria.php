@@ -3,11 +3,12 @@ require_once CAMINHO_RAIZ . '/core/Model.php';
 class LogAuditoria extends Model
 {
     protected string $tabela = 'logs_auditoria';
-    public function registar(?int $usuarioId, string $acao, ?string $tabelaAfetada = null, ?int $registoId = null, ?array $antigos = null, ?array $novos = null): int
+    public function registar(?int $usuarioId, string $acao, ?string $tabelaAfetada = null, ?int $registoId = null, ?array $antigos = null, ?array $novos = null, string $prioridade = 'media', ?string $motivo = null): int
     {
         return $this->inserir(['usuario_id'=>$usuarioId,'acao'=>$acao,'tabela_afetada'=>$tabelaAfetada,'registo_id'=>$registoId,
             'dados_antigos'=>$antigos ? json_encode($antigos, JSON_UNESCAPED_UNICODE) : null,
             'dados_novos'=>$novos ? json_encode($novos, JSON_UNESCAPED_UNICODE) : null,
+            'prioridade'=>$prioridade, 'motivo'=>$motivo,
             'ip_origem'=>$_SERVER['REMOTE_ADDR'] ?? null,'user_agent'=>substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)]);
     }
     public function paginar(array $filtros, ?int $empresaId, int $pagina, int $porPagina = 25): array

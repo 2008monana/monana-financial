@@ -100,7 +100,7 @@ class FiliaisController extends Controller
 
         $dados['campos']['empresa_id'] = $empresaId;
         $id = $this->filialModel->inserir($dados['campos']);
-        AuditoriaHelper::registar('criar', 'filiais', $id, null, $dados['campos']);
+        AuditoriaHelper::registar('filial_criada', 'filiais', $id, null, $dados['campos']);
         definirFlash('sucesso', 'Filial criada com sucesso.');
         $this->redirecionar('filiais/index' . ($_SESSION['empresa_id'] ? '' : '?empresa_id=' . $empresaId));
     }
@@ -140,7 +140,7 @@ class FiliaisController extends Controller
 
         $antes = $this->filialModel->encontrarPorId((int) $id);
         $this->filialModel->atualizar((int) $id, $dados['campos']);
-        AuditoriaHelper::registar('editar', 'filiais', (int) $id, $antes ?: null, $dados['campos']);
+        AuditoriaHelper::registar('filial_editada', 'filiais', (int) $id, $antes ?: null, $dados['campos']);
         definirFlash('sucesso', 'Filial atualizada com sucesso.');
         $this->redirecionar('filiais/index' . ($_SESSION['empresa_id'] ? '' : '?empresa_id=' . ($_POST['empresa_id'] ?? '')));
     }

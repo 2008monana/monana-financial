@@ -159,10 +159,15 @@ CREATE TABLE logs_auditoria (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT UNSIGNED DEFAULT NULL,
     acao VARCHAR(100) NOT NULL,
+    prioridade ENUM('baixa','media','alta') NOT NULL DEFAULT 'media',
     tabela_afetada VARCHAR(60) DEFAULT NULL,
     registo_id INT UNSIGNED DEFAULT NULL,
+    dados_antigos JSON DEFAULT NULL,
+    dados_novos JSON DEFAULT NULL,
     detalhes TEXT DEFAULT NULL,
     ip_origem VARCHAR(45) DEFAULT NULL,
+    user_agent VARCHAR(500) DEFAULT NULL,
+    motivo VARCHAR(500) DEFAULT NULL,
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_logs_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;

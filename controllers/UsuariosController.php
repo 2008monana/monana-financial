@@ -141,7 +141,7 @@ class UsuariosController extends Controller
             'ativo'           => 1,
         ]));
 
-        AuditoriaHelper::registar('criar', 'usuarios', (int) $usuarioId, null, $dados['campos']);
+        AuditoriaHelper::registar('usuario_criado', 'usuarios', (int) $usuarioId, null, $dados['campos']);
         NotificacaoHelper::paraAdministradoresEmpresa(
             $empresaId, 'sucesso', 'Novo utilizador',
             $dados['campos']['nome'] . ' foi adicionado como ' . ($this->perfisGeriveis[$dados['campos']['perfil']] ?? 'utilizador') . '.',
@@ -220,7 +220,7 @@ class UsuariosController extends Controller
 
         $antes = $this->usuarioModel->encontrarPorId((int) $id);
         $this->usuarioModel->atualizar((int) $id, $dados['campos']);
-        AuditoriaHelper::registar('editar', 'usuarios', (int) $id, $antes ?: null, $dados['campos']);
+        AuditoriaHelper::registar('usuario_editado', 'usuarios', (int) $id, $antes ?: null, $dados['campos']);
         $this->permissaoModel->salvar((int) $id, $_POST['permissoes'] ?? []);
         $this->usuarioFilialModel->substituir((int) $id, array_map('intval', $_POST['filiais'] ?? []));
 

@@ -8,6 +8,7 @@ require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Notificacao.php';
 require_once CAMINHO_RAIZ . '/middleware/AuthMiddleware.php';
 require_once CAMINHO_RAIZ . '/helpers/flash.php';
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 
 class NotificacaoController extends Controller
 {
@@ -46,6 +47,7 @@ class NotificacaoController extends Controller
         $resultado = $this->notificacaoModel->marcarComoLida((int) $id, $usuarioId);
 
         if ($resultado) {
+            AuditoriaHelper::registar('notificacao_lida', 'notificacoes', (int) $id, null, null, 'baixa');
             // Redirecionar para a página de notificações
             $this->redirecionar('notificacoes/index');
         } else {
@@ -72,6 +74,7 @@ class NotificacaoController extends Controller
             }
         }
 
+        if ($count > 0) AuditoriaHelper::registar('notificacao_lida', 'notificacoes', null, null, ['quantidade'=>$count], 'baixa');
         definirFlash('sucesso', $count . ' notificações marcadas como lidas.');
         $this->redirecionar('notificacoes/index');
     }

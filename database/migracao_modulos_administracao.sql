@@ -4,6 +4,8 @@ ALTER TABLE logs_auditoria
   ADD COLUMN dados_antigos JSON NULL AFTER registo_id,
   ADD COLUMN dados_novos JSON NULL AFTER dados_antigos,
   ADD COLUMN user_agent VARCHAR(500) NULL AFTER ip_origem,
+  ADD COLUMN prioridade ENUM('baixa','media','alta') NOT NULL DEFAULT 'media' AFTER acao,
+  ADD COLUMN motivo VARCHAR(500) NULL AFTER user_agent,
   ADD INDEX idx_logs_usuario_data (usuario_id, criado_em),
   ADD INDEX idx_logs_tabela_data (tabela_afetada, criado_em);
 
