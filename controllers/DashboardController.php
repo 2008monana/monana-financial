@@ -12,7 +12,13 @@ class DashboardController extends Controller
     public function index(): void
     {
         if (empty($_SESSION['usuario_id'])) { $this->redirecionar('auth/login'); }
-        $periodo = in_array($_GET['periodo'] ?? 'mes', ['hoje', 'semana', 'mes', 'ano'], true) ? $_GET['periodo'] : 'mes';
+        // Ler o parâmetro uma única vez: o operador ternário anterior validava
+        // o valor padrão, mas tentava acessar $_GET['periodo'] novamente no
+        // ramo verdadeiro quando o parâmetro não existia.
+        $periodoSolicitado = $_GET['periodo'] ?? 'mes';
+        $periodo = in_array($periodoSolicitado, ['hoje', 'semana', 'mes', 'ano'], true)
+            ? $periodoSolicitado
+            : 'mes';
         $datas = $this->datasPeriodo($periodo);
         if (($_SESSION['usuario_perfil'] ?? '') === 'super_admin') {
             $this->superAdmin($periodo, $datas);
