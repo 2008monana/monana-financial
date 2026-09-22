@@ -56,13 +56,24 @@ if (isset($_SESSION['usuario_id'])) {
             <?php echo date('d/m/Y'); ?>
         </div>
 
-        <!-- NOTIFICAÇÕES COM BADGE -->
-        <a class="bell-wrap" href="<?php echo URL_BASE; ?>/notificacoes/index" title="Notificações" id="bell-notificacoes">
-            <i class="fa-regular fa-bell"></i>
-            <div class="bell-dot" id="bell-dot" style="<?php echo $naoLidas > 0 ? '' : 'display:none;'; ?>">
-                <?php echo $naoLidas > 0 ? $naoLidas : '0'; ?>
+        <!-- NOTIFICAÇÕES COM BADGE E PAINEL RÁPIDO -->
+        <div class="notificacoes-topbar">
+            <button class="bell-wrap" type="button" title="Notificações" id="bell-notificacoes" aria-expanded="false" aria-controls="dropdown-notificacoes">
+                <i class="fa-regular fa-bell"></i>
+                <span class="bell-dot" id="bell-dot" style="<?php echo $naoLidas > 0 ? '' : 'display:none;'; ?>"><?php echo $naoLidas > 99 ? '99+' : $naoLidas; ?></span>
+            </button>
+            <div class="dropdown-notificacoes" id="dropdown-notificacoes" hidden>
+                <div class="dropdown-notificacoes-cabecalho">
+                    <strong><i class="fa-regular fa-bell"></i> Notificações</strong>
+                    <form method="post" action="<?php echo URL_BASE; ?>/notificacoes/marcarTodasComoLidas">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(SegurancaHelper::gerarTokenCSRF()); ?>">
+                        <button type="submit" class="marcar-todas">Marcar todas <i class="fa-solid fa-check"></i></button>
+                    </form>
+                </div>
+                <div id="dropdown-notificacoes-lista" class="dropdown-notificacoes-lista"><div class="dropdown-carregar">A carregar notificações…</div></div>
+                <a class="dropdown-ver-todas" href="<?php echo URL_BASE; ?>/notificacoes/index">Ver todas as notificações <i class="fa-solid fa-arrow-right"></i></a>
             </div>
-        </a>
+        </div>
 
         <!-- PERFIL -->
         <a class="profile" href="<?php echo URL_BASE; ?>/perfil/index">
@@ -340,3 +351,24 @@ if (isset($_SESSION['usuario_id'])) {
     }
 }
 </style>
+<style>
+.notificacoes-topbar { position: relative; }
+.dropdown-notificacoes { position:absolute; right:0; top:calc(100% + 10px); width:380px; max-width:calc(100vw - 32px); background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 16px 36px rgba(14,39,72,.18); overflow:hidden; z-index:120; }
+.dropdown-notificacoes-cabecalho { padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); color:var(--ink); }
+.marcar-todas { border:0; background:transparent; color:var(--green-dark); font-weight:600; cursor:pointer; font-size:12px; }
+.dropdown-notificacao { display:flex; gap:10px; padding:12px 16px; text-decoration:none; color:inherit; border-bottom:1px solid var(--border); }
+.dropdown-notificacao:hover { background:var(--bg); }.dropdown-notificacao.nao-lida { background:rgba(34,197,94,.05); }
+.dropdown-notificacao-icone { width:22px; padding-top:2px; }.tipo-sucesso { color:var(--green); }.tipo-alerta,.tipo-aviso { color:#f59e0b; }.tipo-erro { color:var(--red); }
+.dropdown-notificacao-corpo { flex:1; min-width:0; }.dropdown-notificacao-titulo { display:block; font-size:13px; font-weight:700; }.dropdown-notificacao-mensagem { display:block; color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px; }.dropdown-notificacao-tempo { display:block; color:var(--muted); font-size:11px; margin-top:4px; }
+.dropdown-ver-todas { display:block; padding:13px 16px; text-decoration:none; color:var(--green-dark); font-size:13px; font-weight:700; }.dropdown-ver-todas:hover { background:var(--bg); }.dropdown-carregar,.dropdown-vazia { padding:20px 16px; color:var(--muted); font-size:13px; text-align:center; }
+</style>
+<script>
+(function () {
+ const botao=document.getElementById('bell-notificacoes'), painel=document.getElementById('dropdown-notificacoes'), lista=document.getElementById('dropdown-notificacoes-lista'), badge=document.getElementById('bell-dot');
+ const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+ const tempo=data=>{const s=Math.max(0,Math.floor((Date.now()-new Date(data.replace(' ','T')).getTime())/1000));if(s<60)return 'agora mesmo';if(s<3600)return 'há '+Math.floor(s/60)+' min';if(s<86400)return 'há '+Math.floor(s/3600)+' hora(s)';return 'há '+Math.floor(s/86400)+' dia(s)';};
+ function atualizarBadge(n){badge.textContent=n>99?'99+':n;badge.style.display=n>0?'flex':'none';}
+ function carregar(){fetch('<?php echo URL_BASE; ?>/notificacoes/recentes',{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.json()).then(d=>{atualizarBadge(d.nao_lidas||0);if(!d.notificacoes||!d.notificacoes.length){lista.innerHTML='<div class="dropdown-vazia">Não tem notificações.</div>';return;}lista.innerHTML=d.notificacoes.map(n=>'<a class="dropdown-notificacao '+(n.lida?'':'nao-lida')+'" href="'+esc(n.link||'<?php echo URL_BASE; ?>/notificacoes/index')+'"><span class="dropdown-notificacao-icone tipo-'+esc(n.tipo)+'"><i class="fa-solid '+({sucesso:'fa-circle-check',alerta:'fa-bell',aviso:'fa-triangle-exclamation',erro:'fa-circle-xmark'}[n.tipo]||'fa-bell')+'"></i></span><span class="dropdown-notificacao-corpo"><span class="dropdown-notificacao-titulo">'+esc(n.titulo)+'</span><span class="dropdown-notificacao-mensagem">'+esc(n.mensagem)+'</span><span class="dropdown-notificacao-tempo">'+tempo(n.criado_em)+'</span></span></a>').join('');}).catch(()=>{lista.innerHTML='<div class="dropdown-vazia">Não foi possível carregar as notificações.</div>';});}
+ botao.addEventListener('click',()=>{const aberto=!painel.hidden;painel.hidden=aberto;botao.setAttribute('aria-expanded',String(!aberto));if(!aberto)carregar();});document.addEventListener('click',e=>{if(!e.target.closest('.notificacoes-topbar'))painel.hidden=true;});setInterval(()=>fetch('<?php echo URL_BASE; ?>/notificacoes/contagem').then(r=>r.json()).then(d=>atualizarBadge(d.nao_lidas||0)).catch(()=>{}),60000);
+}());
+</script>

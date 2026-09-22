@@ -18,6 +18,7 @@ if (file_exists(CAMINHO_RAIZ . '/vendor/autoload.php')) {
 // Construtores reutilizáveis de exportação
 require_once CAMINHO_RAIZ . '/exports/pdf/RelatorioPdfBuilder.php';
 require_once CAMINHO_RAIZ . '/exports/excel/RelatorioExcelBuilder.php';
+require_once CAMINHO_RAIZ . '/helpers/NotificacaoHelper.php';
 
 // =============================================
 // NOVO: Model ResumoMensal
@@ -346,6 +347,7 @@ class TransacoesController extends Controller
             // Atualizar resumo mensal
             $this->atualizarResumoMensal((int) $dados['filial_id'], $dados['data_transacao']);
             AuditoriaHelper::registar('criar', 'transacoes', (int) $id, null, $dados);
+            NotificacaoHelper::paraUsuario($usuarioId, 'sucesso', 'Lançamento registado', $this->rotuloTipo($dados['tipo']) . ' de ' . number_format((float) $dados['valor'], 0, ',', '.') . ' Kz foi registado.', URL_BASE . '/transacoes/editar/' . $id);
             $this->setFlash('sucesso', 'Lançamento criado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao criar lançamento. Tente novamente.');

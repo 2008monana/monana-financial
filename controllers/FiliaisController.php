@@ -1,5 +1,6 @@
 <?php
 require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
+require_once CAMINHO_RAIZ . '/helpers/NotificacaoHelper.php';
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Filial.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
@@ -151,6 +152,9 @@ class FiliaisController extends Controller
         if ($filial) {
             $this->filialModel->atualizar((int) $id, ['ativa' => $filial['ativa'] ? 0 : 1]);
             definirFlash('sucesso', $filial['ativa'] ? 'Filial desativada.' : 'Filial reativada.');
+            if ($filial['ativa']) {
+                NotificacaoHelper::paraAdministradoresEmpresa((int) $filial['empresa_id'], 'aviso', 'Filial desativada', 'Filial ' . $filial['nome'] . ' foi desativada por si.', URL_BASE . '/filiais/index');
+            }
         }
 
         $this->redirecionar('filiais/index' . ($_SESSION['empresa_id'] ? '' : '?empresa_id=' . ($filial['empresa_id'] ?? '')));

@@ -1,6 +1,7 @@
 <?php
 require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 require_once CAMINHO_RAIZ . '/core/Controller.php';
+require_once CAMINHO_RAIZ . '/helpers/NotificacaoHelper.php';
 require_once CAMINHO_RAIZ . '/models/Usuario.php';
 require_once CAMINHO_RAIZ . '/models/UsuarioPermissao.php';
 require_once CAMINHO_RAIZ . '/models/UsuarioFilial.php';
@@ -141,6 +142,11 @@ class UsuariosController extends Controller
         ]));
 
         AuditoriaHelper::registar('criar', 'usuarios', (int) $usuarioId, null, $dados['campos']);
+        NotificacaoHelper::paraAdministradoresEmpresa(
+            $empresaId, 'sucesso', 'Novo utilizador',
+            $dados['campos']['nome'] . ' foi adicionado como ' . ($this->perfisGeriveis[$dados['campos']['perfil']] ?? 'utilizador') . '.',
+            URL_BASE . '/usuarios/editar/' . $usuarioId
+        );
         $this->permissaoModel->salvar($usuarioId, $_POST['permissoes'] ?? []);
         $this->usuarioFilialModel->substituir($usuarioId, array_map('intval', $_POST['filiais'] ?? []));
 

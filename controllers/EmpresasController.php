@@ -1,5 +1,6 @@
 <?php
 require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
+require_once CAMINHO_RAIZ . '/helpers/NotificacaoHelper.php';
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
 require_once CAMINHO_RAIZ . '/models/Filial.php';
@@ -66,6 +67,10 @@ class EmpresasController extends Controller
 
         $id = $this->empresaModel->inserir($dados['campos']);
         AuditoriaHelper::registar('criar', 'empresas', $id, null, $dados['campos']);
+        NotificacaoHelper::paraSuperAdministradores(
+            'sucesso', 'Nova empresa registada', $dados['campos']['nome'] . ' foi adicionada ao sistema.',
+            URL_BASE . '/empresas/editar/' . $id
+        );
         definirFlash('sucesso', 'Empresa criada com sucesso.');
         $this->redirecionar('empresas/index');
     }
