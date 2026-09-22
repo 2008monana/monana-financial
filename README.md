@@ -17,6 +17,14 @@
 5. Aceda no navegador a:
    `http://localhost/monana-financial/public/auth/login`
 
+## Atualização dos módulos administrativos
+
+Se a base de dados já existia antes dos módulos de Configurações, Logs e
+Importação, importe também `database/migracao_modulos_administracao.sql`.
+A tabela `configuracoes` é criada automaticamente na primeira abertura dessa
+página como salvaguarda, mas a migração continua necessária para aplicar os
+campos e índices dos outros módulos.
+
 ## Se já tinha a base de dados criada (correção de bug)
 
 Se o login do Super Administrador der "Credenciais inválidas" mesmo com

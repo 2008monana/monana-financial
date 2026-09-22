@@ -186,6 +186,21 @@ CREATE TABLE importacoes (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------
+-- CONFIGURACOES (globais ou por empresa)
+-- ---------------------------------------------------------
+CREATE TABLE configuracoes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    empresa_id INT UNSIGNED NULL,
+    chave VARCHAR(100) NOT NULL,
+    valor TEXT DEFAULT NULL,
+    tipo ENUM('texto','numero','booleano','json','secreto') NOT NULL DEFAULT 'texto',
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_configuracoes_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_configuracao_escopo (empresa_id, chave)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------
 -- REDEFINICOES_SENHA
 -- ---------------------------------------------------------
 CREATE TABLE redefinicoes_senha (
