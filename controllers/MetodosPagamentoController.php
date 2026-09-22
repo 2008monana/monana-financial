@@ -46,7 +46,7 @@ class MetodosPagamentoController extends Controller
 
         $this->renderizar('metodos-pagamento/index', [
             'tituloPagina' => 'Métodos de Pagamento',
-            'paginaAtiva' => 'configuracoes',
+            'paginaAtiva' => 'metodos-pagamento',
             'entradas' => $entradas,
             'saidas' => $saidas,
             'categoriasSaida' => $categoriasSaida,
@@ -70,7 +70,7 @@ class MetodosPagamentoController extends Controller
 
         $this->renderizar('metodos-pagamento/form', [
             'tituloPagina' => 'Novo Método de Pagamento',
-            'paginaAtiva' => 'configuracoes',
+            'paginaAtiva' => 'metodos-pagamento',
             'metodo' => null,
             'empresaId' => $empresaId,
             'categorias' => $this->metodoModel->getCategorias(),
@@ -137,7 +137,7 @@ class MetodosPagamentoController extends Controller
 
         $this->renderizar('metodos-pagamento/form', [
             'tituloPagina' => 'Editar Método de Pagamento',
-            'paginaAtiva' => 'configuracoes',
+            'paginaAtiva' => 'metodos-pagamento',
             'metodo' => $metodo,
             'empresaId' => $metodo['empresa_id'],
             'categorias' => $this->metodoModel->getCategorias(),
@@ -235,7 +235,7 @@ class MetodosPagamentoController extends Controller
 
         $this->renderizar('metodos-pagamento/categoria-form', [
             'tituloPagina' => 'Nova Categoria de Saída',
-            'paginaAtiva' => 'configuracoes',
+            'paginaAtiva' => 'metodos-pagamento',
             'categoria' => null,
             'empresaId' => $empresaId,
             'cores' => $this->categoriaSaidaModel->getCoresDisponiveis(),

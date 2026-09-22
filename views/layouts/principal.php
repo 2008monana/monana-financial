@@ -28,6 +28,7 @@ $isViewer = $usuario_perfil === 'visualizador';
     <link rel="icon" href="<?php echo URL_BASE; ?>/images/favicon.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>/css/formularios.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     
     <style>
@@ -2345,7 +2346,7 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'dashboard' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/dashboard/index">
             <i class="fa-solid fa-house"></i> Dashboard
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'movimentos' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'transacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes/index">
             <i class="fa-solid fa-list-ul"></i> Movimentos
         </a>
 
@@ -2354,7 +2355,7 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'relatorios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/index">
             <i class="fa-solid fa-chart-column"></i> Relatórios
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'relatorios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/diario-planilha">
+        <a class="nav-item <?php echo $paginaAtiva === 'planilha' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/diario-planilha">
             <i class="fa-solid fa-table"></i> Planilha
         </a>
         <a class="nav-item <?php echo $paginaAtiva === 'categorias' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/categorias/index">
@@ -2384,7 +2385,7 @@ $isViewer = $usuario_perfil === 'visualizador';
         <!-- GRUPO 4: FERRAMENTAS -->
         <?php if ($isAdminEmpresa || $isSuperAdmin): ?>
         <div class="menu-grupo-label">FERRAMENTAS</div>
-        <a class="nav-item <?php echo $paginaAtiva === 'movimentos' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes/fechoDiario">
+        <a class="nav-item <?php echo $paginaAtiva === 'fecho-diario' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes/fechoDiario">
             <i class="fa-solid fa-file-invoice-day"></i> Fecho Diário
         </a>
         <a class="nav-item <?php echo $paginaAtiva === 'importacao' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/importacao/index">
@@ -2436,12 +2437,7 @@ $isViewer = $usuario_perfil === 'visualizador';
                 <i class="fa-solid fa-bars"></i>
             </div>
             <div class="greeting">
-                <?php if (!empty($empresa_nome)): ?>
-                    <i class="fa-solid fa-building" style="color:var(--muted);margin-right:4px;"></i>
-                    <?php echo htmlspecialchars($empresa_nome); ?>
-                <?php else: ?>
-                    Dashboard
-                <?php endif; ?>
+                <?php echo htmlspecialchars($tituloPagina ?? 'MonanaFinancial'); ?>
             </div>
         </div>
         <div class="topbar-right">

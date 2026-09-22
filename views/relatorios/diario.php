@@ -160,11 +160,11 @@
                     <td><?php echo htmlspecialchars($t['filial_nome'] ?? '-'); ?></td>
                     <td><?php echo htmlspecialchars($t['descricao'] ?? '-'); ?></td>
                     <td>
-                        <span class="badge <?php echo $t['tipo'] === 'entrada' ? 'badge-success' : 'badge-danger'; ?>">
-                            <?php echo $t['tipo'] === 'entrada' ? 'Entrada' : 'Saída'; ?>
+                        <span class="badge <?php echo $t['tipo'] === 'venda' ? 'badge-success' : 'badge-danger'; ?>">
+                            <?php echo htmlspecialchars(ucfirst($t['tipo'])); ?>
                         </span>
                     </td>
-                    <td class="text-right <?php echo $t['tipo'] === 'entrada' ? 'positive' : 'negative'; ?>">
+                    <td class="text-right <?php echo $t['tipo'] === 'venda' ? 'positive' : 'negative'; ?>">
                         <?php echo number_format($t['valor'], 0, ',', '.'); ?> Kz
                     </td>
                     <td><?php echo htmlspecialchars($t['usuario_nome'] ?? '-'); ?></td>
