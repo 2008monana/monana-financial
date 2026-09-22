@@ -1,45 +1,37 @@
-# Arquivos do sistema
+# ============================================
+# .gitignore para MonanaFinancial
+# ============================================
+
+# Dependências do Composer
+/vendor/
+
+# Configuração sensível
+/config/database.php
+
+# Logs
+/logs/*.log
+/logs/*.txt
+
+# Uploads de utilizadores
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Exportações temporárias
+/exports/pdf/*.pdf
+/exports/excel/*.xlsx
+
+# Sistema operativo
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Arquivos de log
-logs/*.log
-logs/*.txt
-*.log
-
-# Dependências
-vendor/
-node_modules/
-composer.lock
-
-# Arquivos de configuração local
-config/database.php
-.env
-.env.local
-.env.production
-
-# Arquivos de IDE
+# IDEs
 .vscode/
 .idea/
-*.sublime-*
+*.swp
+*.swo
 
-# Arquivos temporários do PHP
+# Ficheiros temporários
 *.tmp
-*.cache
-
-# Uploads (se tiver)
-public/uploads/
-public/assets/img/uploads/
-
-# Backup do banco de dados
-*.sql
-*.backup
-
-# Arquivos de sessão
-sess_*
-
-# Certificados
-*.pem
-*.crt
-*.key
+*.temp
+*.bak
