@@ -45,9 +45,16 @@
   background:var(--white);
   border:1px solid var(--border);
   border-radius:14px;
-  padding:26px;
-  max-width:640px;
+  box-sizing:border-box;
+  width:min(100%, 720px);
+  max-width:720px;
+  margin:0 auto 20px;
+  overflow:hidden;
+  box-shadow:var(--shadow-sm);
+  transition:var(--transition);
 }
+
+.form-card:hover{box-shadow:var(--shadow-md);}
 
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;}
 
@@ -95,5 +102,5 @@
 
 @media (max-width:600px){
   .grid-2{grid-template-columns:1fr;}
-  .form-card{padding:20px;}
+  .form-card{width:100%;}
 }
