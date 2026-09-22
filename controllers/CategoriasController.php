@@ -5,6 +5,7 @@
  */
 
 require_once CAMINHO_RAIZ . '/core/Controller.php';
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 require_once CAMINHO_RAIZ . '/models/Categoria.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
 require_once CAMINHO_RAIZ . '/middleware/AuthMiddleware.php';
@@ -144,6 +145,7 @@ class CategoriasController extends Controller
         $id = $this->categoriaModel->inserir($dados['campos']);
 
         if ($id) {
+            AuditoriaHelper::registar('categoria_criada', 'categorias', (int) $id, null, $dados['campos'], 'media');
             definirFlash('sucesso', 'Categoria criada com sucesso!');
         } else {
             definirFlash('erro', 'Erro ao criar categoria.');
@@ -200,9 +202,11 @@ class CategoriasController extends Controller
             return;
         }
 
+        $antes = $this->categoriaModel->encontrarPorId((int) $id);
         $atualizado = $this->categoriaModel->atualizar((int) $id, $dados['campos']);
 
         if ($atualizado) {
+            AuditoriaHelper::registar('categoria_editada', 'categorias', (int) $id, $antes ?: null, $dados['campos'], 'media');
             definirFlash('sucesso', 'Categoria atualizada com sucesso!');
         } else {
             definirFlash('erro', 'Erro ao atualizar categoria.');
@@ -221,6 +225,7 @@ class CategoriasController extends Controller
         if ($categoria) {
             $novoEstado = $categoria['ativa'] ? 0 : 1;
             $this->categoriaModel->atualizar((int) $id, ['ativa' => $novoEstado]);
+            AuditoriaHelper::registar($novoEstado ? 'categoria_ativada' : 'categoria_desativada', 'categorias', (int) $id, ['ativa'=>$categoria['ativa']], ['ativa'=>$novoEstado], $novoEstado ? 'baixa' : 'media');
             definirFlash('sucesso', $categoria['ativa'] ? 'Categoria desativada.' : 'Categoria reativada.');
         }
 
@@ -244,6 +249,7 @@ class CategoriasController extends Controller
 
         if ($categoria) {
             $this->categoriaModel->eliminar((int) $id);
+            AuditoriaHelper::registar('categoria_eliminada', 'categorias', (int) $id, $categoria, null, 'alta');
             definirFlash('sucesso', 'Categoria eliminada com sucesso.');
         }
 

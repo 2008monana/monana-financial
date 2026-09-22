@@ -1,5 +1,6 @@
 <?php
 require_once CAMINHO_RAIZ . '/models/Modulo.php';
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 
 class ModuloMiddleware
 {
@@ -77,6 +78,7 @@ class ModuloMiddleware
      */
     private function negarAcesso(): void
     {
+        AuditoriaHelper::registar('permissao_negada', null, null, null, ['rota'=>$_GET['url'] ?? '', 'perfil'=>$_SESSION['usuario_perfil'] ?? ''], 'alta', 'Utilizador sem permissão para o módulo solicitado');
         $_SESSION['flash'] = [
             'tipo' => 'erro',
             'mensagem' => 'Não tem permissão para aceder a esta página.'

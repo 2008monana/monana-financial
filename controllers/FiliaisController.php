@@ -1,4 +1,6 @@
 <?php
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
+require_once CAMINHO_RAIZ . '/helpers/NotificacaoHelper.php';
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Filial.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
@@ -97,7 +99,8 @@ class FiliaisController extends Controller
         }
 
         $dados['campos']['empresa_id'] = $empresaId;
-        $this->filialModel->inserir($dados['campos']);
+        $id = $this->filialModel->inserir($dados['campos']);
+        AuditoriaHelper::registar('filial_criada', 'filiais', $id, null, $dados['campos']);
         definirFlash('sucesso', 'Filial criada com sucesso.');
         $this->redirecionar('filiais/index' . ($_SESSION['empresa_id'] ? '' : '?empresa_id=' . $empresaId));
     }
@@ -135,7 +138,9 @@ class FiliaisController extends Controller
             return;
         }
 
+        $antes = $this->filialModel->encontrarPorId((int) $id);
         $this->filialModel->atualizar((int) $id, $dados['campos']);
+        AuditoriaHelper::registar('filial_editada', 'filiais', (int) $id, $antes ?: null, $dados['campos']);
         definirFlash('sucesso', 'Filial atualizada com sucesso.');
         $this->redirecionar('filiais/index' . ($_SESSION['empresa_id'] ? '' : '?empresa_id=' . ($_POST['empresa_id'] ?? '')));
     }
@@ -147,6 +152,9 @@ class FiliaisController extends Controller
         if ($filial) {
             $this->filialModel->atualizar((int) $id, ['ativa' => $filial['ativa'] ? 0 : 1]);
             definirFlash('sucesso', $filial['ativa'] ? 'Filial desativada.' : 'Filial reativada.');
+            if ($filial['ativa']) {
+                NotificacaoHelper::paraAdministradoresEmpresa((int) $filial['empresa_id'], 'aviso', 'Filial desativada', 'Filial ' . $filial['nome'] . ' foi desativada por si.', URL_BASE . '/filiais/index');
+            }
         }
 
         $this->redirecionar('filiais/index' . ($_SESSION['empresa_id'] ? '' : '?empresa_id=' . ($filial['empresa_id'] ?? '')));

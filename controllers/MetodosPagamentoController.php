@@ -5,6 +5,7 @@
  */
 
 require_once CAMINHO_RAIZ . '/core/Controller.php';
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 require_once CAMINHO_RAIZ . '/models/MetodoPagamento.php';
 require_once CAMINHO_RAIZ . '/models/CategoriaSaida.php';
 require_once CAMINHO_RAIZ . '/middleware/AuthMiddleware.php';
@@ -114,6 +115,7 @@ class MetodosPagamentoController extends Controller
         $id = $this->metodoModel->criar($dados);
 
         if ($id) {
+            AuditoriaHelper::registar('metodo_criado', 'metodos_pagamento', (int) $id, null, $dados, 'media');
             definirFlash('sucesso', 'Método de pagamento criado com sucesso!');
         } else {
             definirFlash('erro', 'Erro ao criar método de pagamento.');
@@ -174,9 +176,11 @@ class MetodosPagamentoController extends Controller
             return;
         }
 
+        $antes = $this->metodoModel->encontrarPorId((int) $id);
         $atualizado = $this->metodoModel->atualizar((int)$id, $dados);
 
         if ($atualizado) {
+            AuditoriaHelper::registar('metodo_editado', 'metodos_pagamento', (int) $id, $antes ?: null, $dados, 'media');
             definirFlash('sucesso', 'Método atualizado com sucesso!');
         } else {
             definirFlash('erro', 'Erro ao atualizar método.');
@@ -195,6 +199,7 @@ class MetodosPagamentoController extends Controller
         if ($metodo) {
             $novoEstado = $metodo['ativo'] ? 0 : 1;
             $this->metodoModel->atualizar((int)$id, ['ativo' => $novoEstado]);
+            AuditoriaHelper::registar('metodo_estado_alterado', 'metodos_pagamento', (int) $id, ['ativo'=>$metodo['ativo']], ['ativo'=>$novoEstado], 'media');
             definirFlash('sucesso', $metodo['ativo'] ? 'Método desativado.' : 'Método reativado.');
         }
 

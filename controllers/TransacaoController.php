@@ -1,4 +1,5 @@
 <?php
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 /**
  * TransacoesController - COMPLETO COM RESUMOS MENSAIS E FECHO DIÁRIO
  * Gerencia os lançamentos financeiros (vendas, compras, despesas, devoluções)
@@ -17,6 +18,7 @@ if (file_exists(CAMINHO_RAIZ . '/vendor/autoload.php')) {
 // Construtores reutilizáveis de exportação
 require_once CAMINHO_RAIZ . '/exports/pdf/RelatorioPdfBuilder.php';
 require_once CAMINHO_RAIZ . '/exports/excel/RelatorioExcelBuilder.php';
+require_once CAMINHO_RAIZ . '/helpers/NotificacaoHelper.php';
 
 // =============================================
 // NOVO: Model ResumoMensal
@@ -344,6 +346,8 @@ class TransacoesController extends Controller
         if ($id) {
             // Atualizar resumo mensal
             $this->atualizarResumoMensal((int) $dados['filial_id'], $dados['data_transacao']);
+            AuditoriaHelper::registar('transacao_criada', 'transacoes', (int) $id, null, $dados);
+            NotificacaoHelper::paraUsuario($usuarioId, 'sucesso', 'Lançamento registado', $this->rotuloTipo($dados['tipo']) . ' de ' . number_format((float) $dados['valor'], 0, ',', '.') . ' Kz foi registado.', URL_BASE . '/transacoes/editar/' . $id);
             $this->setFlash('sucesso', 'Lançamento criado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao criar lançamento. Tente novamente.');
@@ -469,6 +473,13 @@ class TransacoesController extends Controller
             // Atualizar resumo mensal (data antiga e nova)
             $this->atualizarResumoMensal($filialIdAntigo, $dataAntiga);
             $this->atualizarResumoMensal((int) $dados['filial_id'], $dados['data_transacao']);
+            AuditoriaHelper::registar('transacao_editada', 'transacoes', (int) $id, $transacao, $dados);
+            if ((float) $transacao['valor'] !== (float) $dados['valor']) {
+                AuditoriaHelper::registar('transacao_valor_alterado', 'transacoes', (int) $id, ['valor'=>$transacao['valor']], ['valor'=>$dados['valor']], 'alta');
+            }
+            if ($transacao['tipo'] !== $dados['tipo']) {
+                AuditoriaHelper::registar('transacao_tipo_alterado', 'transacoes', (int) $id, ['tipo'=>$transacao['tipo']], ['tipo'=>$dados['tipo']], 'alta');
+            }
             $this->setFlash('sucesso', 'Lançamento atualizado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao atualizar lançamento.');
@@ -513,6 +524,7 @@ class TransacoesController extends Controller
         if ($excluido) {
             // Atualizar resumo mensal
             $this->atualizarResumoMensal($filialId, $dataTransacao);
+            AuditoriaHelper::registar('transacao_eliminada', 'transacoes', (int) $id, $transacao, null);
             $this->setFlash('sucesso', 'Lançamento eliminado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao eliminar lançamento.');

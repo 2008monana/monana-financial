@@ -129,6 +129,9 @@ class Router
         'importacao/index' => 'importacao',
         'importacao/upload' => 'importacao',
         'importacao/processar' => 'importacao',
+        'importacao/mapear-colunas' => 'importacao',
+        'importacao/validar' => 'importacao',
+        'importacao/reverter' => 'importacao',
         'importacao/historico' => 'importacao',
 
         // =============================================
@@ -136,12 +139,17 @@ class Router
         // =============================================
         'logs' => 'logs',
         'logs/index' => 'logs',
+        'logs/detalhes' => 'logs',
+        'logs/exportar' => 'logs',
 
         // =============================================
         // CONFIGURAÇÕES (apenas Super Admin)
         // =============================================
         'configuracoes' => 'configuracoes',
         'configuracoes/index' => 'configuracoes',
+        'configuracoes/sistema' => 'configuracoes',
+        'configuracoes/empresa' => 'configuracoes',
+        'configuracoes/guardar' => 'configuracoes',
 
         // =============================================
         // MÉTODOS DE PAGAMENTO (NOVO)
@@ -212,6 +220,9 @@ class Router
         // =============================================
         if ($nomeControlador === 'TransacaoController') {
             $nomeControlador = 'TransacoesController';
+        } elseif ($nomeControlador === 'NotificacoesController') {
+            // A rota é plural, mas o controlador existente é singular.
+            $nomeControlador = 'NotificacaoController';
         }
         
         $parametro = $partes[2] ?? null;
