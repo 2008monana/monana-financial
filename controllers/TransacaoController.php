@@ -816,7 +816,7 @@ class TransacoesController extends Controller
 
         $this->renderizar('transacoes/fecho-diario', [
             'tituloPagina' => 'Fecho Diário',
-            'paginaAtiva' => 'transacoes',
+            'paginaAtiva' => 'fecho-diario',
             'filiais' => $filiais,
             'data' => $data,
             'filialId' => $filialId,

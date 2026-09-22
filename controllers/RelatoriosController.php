@@ -614,7 +614,7 @@ class RelatoriosController extends Controller
 
         $this->renderizar('relatorios/diario-planilha', [
             'tituloPagina' => 'Relatório Planilha',
-            'paginaAtiva' => 'relatorios',
+            'paginaAtiva' => 'planilha',
             'dias' => $dias,
             'consolidado' => $consolidado,
             'filialId' => $filialId,
