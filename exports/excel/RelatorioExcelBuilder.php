@@ -58,6 +58,16 @@ class RelatorioExcelBuilder
     /** Cabeçalho em dois níveis com mesclagem (estilo planilha) */
     private array $agrupamentosCabecalho = [];
 
+    /** Linha de totais da última tabela escrita (para fórmulas do resumo) */
+    private ?int $linhaTotaisTabela = null;
+    /** Primeira e última linha de dados da última tabela escrita */
+    private int $primeiraLinhaDadosTabela = 0;
+    private int $ultimaLinhaDadosTabela = 0;
+    /** Coluna extra usada pelo resumo para valores de referência (ex.: saldo inicial) */
+    private string $colunaResumo = 'B';
+    /** Célula onde o resumo grava um valor de referência (ex.: saldo inicial) */
+    private ?string $celulaReferenciaResumo = null;
+
     public function __construct(string $titulo, string $nomeFicheiro = 'relatorio')
     {
         $this->titulo = $titulo;
@@ -98,7 +108,9 @@ class RelatorioExcelBuilder
     /**
      * @param array $linhas Cada linha é um array de células. Cada célula pode ser:
      *   - um valor simples (string/número); ou
-     *   - ['valor' => ..., 'tipo' => 'moeda|texto', 'estilo' => 'positivo|negativo']
+     *   - ['valor' => ..., 'tipo' => 'moeda|numero|formula|texto', 'estilo' => 'positivo|negativo']
+     *     Em 'formula', o campo 'valor' deve começar por "=" e será gravado como
+     *     fórmula nativa do Excel (ex.: "=SUM(B5:B34)", "=B40-C40").
      */
     public function definirLinhas(array $linhas): static
     {
@@ -509,7 +521,13 @@ class RelatorioExcelBuilder
                     $estilo = null;
                 }
 
-                if ($tipo === 'moeda' && is_numeric($valor)) {
+                if ($tipo === 'formula') {
+                    // Fórmula nativa do Excel (ex.: "=SUM(B5:B34)") — o Excel
+                    // calcula o resultado e mostra a fórmula na barra de fórmulas.
+                    $sheet->setCellValue($ref, $valor);
+                    $sheet->getStyle($ref)->getNumberFormat()->setFormatCode('#,##0 "Kz"');
+                    $sheet->getStyle($ref)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                } elseif ($tipo === 'moeda' && is_numeric($valor)) {
                     $sheet->setCellValue($ref, (float) $valor);
                     $sheet->getStyle($ref)->getNumberFormat()->setFormatCode('#,##0 "Kz"');
                     $sheet->getStyle($ref)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -553,6 +571,19 @@ class RelatorioExcelBuilder
         $sheet->freezePane('A' . ($linhaCabecalho + 1));
         $sheet->setAutoFilter("A{$linhaCabecalho}:{$ultimaColuna}" . ($linha - 1));
 
+        // Guarda o intervalo de linhas de dados para fórmulas SUM() no resumo
+        // (exclui eventual linha "TOTAL" repetida no fim da tabela).
+        $this->primeiraLinhaDadosTabela = $primeiraLinhaDados;
+        $this->ultimaLinhaDadosTabela = $linha - 1;
+        if (!empty($this->linhas)) {
+            $ultimaLinhaCelulas = end($this->linhas);
+            $primeiraCelula = is_array($ultimaLinhaCelulas) ? reset($ultimaLinhaCelulas) : null;
+            $rotuloUltimo = is_array($primeiraCelula) ? ($primeiraCelula['valor'] ?? '') : $primeiraCelula;
+            if (is_string($rotuloUltimo) && mb_strtoupper(trim($rotuloUltimo)) === 'TOTAL') {
+                $this->ultimaLinhaDadosTabela = $linha - 2;
+            }
+        }
+
         return $linha + 1; // linha em branco antes do resumo
     }
 
@@ -562,21 +593,31 @@ class RelatorioExcelBuilder
             return;
         }
 
+        // Coluna extra à direita da tabela para guardar valores de referência
+        // (ex.: saldo inicial) que as fórmulas do resumo necessitam.
+        $indiceColunaResumo = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($ultimaColuna) + 1;
+        $this->colunaResumo = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($indiceColunaResumo);
+        $this->celulaReferenciaResumo = null;
+
         foreach ($this->resumo as $item) {
             $rotulo = $item['rotulo'] ?? '';
             $valor = $item['valor'] ?? 0;
             $estilo = $item['estilo'] ?? null;
+            $formula = $this->montarFormulaResumo($item, $linha);
 
             $sheet->setCellValue("A{$linha}", $rotulo);
             $sheet->getStyle("A{$linha}")->applyFromArray(['font' => ['bold' => true, 'size' => 10]]);
 
-            $letraValor = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2);
-            $refValor = "{$letraValor}{$linha}";
-            if (is_numeric($valor)) {
+            $refValor = "{$this->colunaResumo}{$linha}";
+            if ($formula !== null) {
+                $sheet->setCellValue($refValor, $formula);
+            } elseif (is_numeric($valor)) {
                 $sheet->setCellValue($refValor, (float) $valor);
-                $sheet->getStyle($refValor)->getNumberFormat()->setFormatCode('#,##0 "Kz"');
             } else {
                 $sheet->setCellValue($refValor, $valor);
+            }
+            if (is_numeric($valor) || $formula !== null) {
+                $sheet->getStyle($refValor)->getNumberFormat()->setFormatCode('#,##0 "Kz"');
             }
 
             $corFundo = match ($estilo) {
@@ -590,7 +631,7 @@ class RelatorioExcelBuilder
                 default => self::COR_NAVY,
             };
 
-            $sheet->getStyle("A{$linha}:{$letraValor}{$linha}")->applyFromArray([
+            $sheet->getStyle("A{$linha}:{$this->colunaResumo}{$linha}")->applyFromArray([
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $corFundo]],
                 'font' => ['bold' => true, 'color' => ['rgb' => $corFonte], 'size' => 10.5],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => self::COR_BORDER]]],
@@ -600,10 +641,99 @@ class RelatorioExcelBuilder
             $linha++;
         }
 
-        $linha++;
+        // Nota explicativa sobre as fórmulas usadas no resumo
+        if ($this->temFormulasResumo()) {
+            $sheet->setCellValue("A{$linha}", 'Nota: os valores acima são fórmulas nativas do Excel (SUM / referências a células) — clique numa célula para ver o cálculo na barra de fórmulas.');
+            $sheet->getStyle("A{$linha}")->applyFromArray([
+                'font' => ['italic' => true, 'size' => 8, 'color' => ['rgb' => self::COR_MUTED]],
+            ]);
+            $linha += 2;
+        } else {
+            $linha++;
+        }
+
         $sheet->setCellValue("A{$linha}", 'Gerado em ' . date('d/m/Y H:i') . ' • MonanaFinancial');
         $sheet->getStyle("A{$linha}")->applyFromArray([
             'font' => ['italic' => true, 'size' => 8, 'color' => ['rgb' => self::COR_MUTED]],
         ]);
+    }
+
+    /**
+     * Constrói uma fórmula nativa do Excel para um item de resumo quando o
+     * item declara 'formula' => 'soma_entradas|soma_saidas|saldo_final'.
+     * As somas usam SUM() sobre as colunas correspondentes da linha TOTAL da
+     * tabela; o saldo final é calculado como Saldo Inicial + Entradas − Saídas.
+     */
+    private function montarFormulaResumo(array $item, int $linhaResumo): ?string
+    {
+        $tipo = $item['formula'] ?? null;
+        if ($tipo === null || $this->linhaTotaisTabela === null || $this->ultimaLinhaDadosTabela < $this->primeiraLinhaDadosTabela) {
+            return null;
+        }
+
+        $qtdEntrada = 0;
+        $qtdSaida = 0;
+        $inicioSaida = 2;
+        foreach ($this->agrupamentosCabecalho as $grupo) {
+            $classe = $grupo['classe'] ?? '';
+            $span = max(1, (int) ($grupo['colspan'] ?? 1));
+            if ($classe === 'grupo-entrada') {
+                $qtdEntrada = $span;
+                $inicioSaida = $inicioSaida + $span;
+            } elseif ($classe === 'grupo-saida') {
+                $qtdSaida = $span;
+            }
+        }
+        if ($qtdEntrada === 0 && $qtdSaida === 0) {
+            return null;
+        }
+
+        $letraInicial = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2);
+        $letraFinalEntrada = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(1 + max(1, $qtdEntrada));
+        $letraInicioSaida = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($inicioSaida);
+        $letraFinalSaida = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($inicioSaida + max(1, $qtdSaida) - 1);
+        $linhasDados = "{$this->primeiraLinhaDadosTabela}:{$this->ultimaLinhaDadosTabela}";
+
+        $somaEntradas = $qtdEntrada > 0
+            ? "=SUM({$letraInicial}{$this->linhaTotaisTabela}:{$letraFinalEntrada}{$this->linhaTotaisTabela})"
+            : '=0';
+        $somaSaidas = $qtdSaida > 0
+            ? "=SUM({$letraInicioSaida}{$this->linhaTotaisTabela}:{$letraFinalSaida}{$this->linhaTotaisTabela})"
+            : '=0';
+
+        switch ($tipo) {
+            case 'soma_entradas':
+                return $somaEntradas;
+            case 'soma_saidas':
+                return $somaSaidas;
+            case 'saldo_final':
+                // Ex.: =C10+D10-E10  →  Saldo Inicial + Total Entradas − Total Saídas
+                if ($this->celulaReferenciaResumo === null) {
+                    return null;
+                }
+                $referencias = [];
+                if ($qtdEntrada > 0) {
+                    $referencias[] = "SUM({$letraInicial}{$this->linhaTotaisTabela}:{$letraFinalEntrada}{$this->linhaTotaisTabela})";
+                }
+                if ($qtdSaida > 0) {
+                    $referencias[] = '-SUM({$letraInicioSaida}' . $this->linhaTotaisTabela . ":{$letraFinalSaida}{$this->linhaTotaisTabela})";
+                }
+                if (!$referencias) {
+                    return null;
+                }
+                return '=' . $this->celulaReferenciaResumo . '+' . implode('+', $referencias);
+        }
+
+        return null;
+    }
+
+    private function temFormulasResumo(): bool
+    {
+        foreach ($this->resumo as $item) {
+            if (!empty($item['formula'])) {
+                return true;
+            }
+        }
+        return false;
     }
 }
