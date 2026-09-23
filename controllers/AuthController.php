@@ -70,6 +70,18 @@ class AuthController extends Controller
         $_SESSION['usuario_perfil']  = $usuario['perfil'];
         $_SESSION['empresa_id']      = $usuario['empresa_id'];
         $_SESSION['sessao_iniciada_em'] = time();
+        
+        // Carregar nome da empresa ou definir valor padrão para super_admin
+        if ($usuario['perfil'] === 'super_admin') {
+            $_SESSION['empresa_nome'] = 'Todas as empresas';
+        } elseif ($usuario['empresa_id']) {
+            require_once CAMINHO_RAIZ . '/models/Empresa.php';
+            $empresaModel = new Empresa();
+            $empresa = $empresaModel->encontrarPorId((int) $usuario['empresa_id']);
+            $_SESSION['empresa_nome'] = $empresa['nome'] ?? 'Empresa';
+        } else {
+            $_SESSION['empresa_nome'] = '';
+        }
 
         $this->usuarioModel->atualizarUltimoLogin((int) $usuario['id']);
         AuditoriaHelper::registar('login_sucesso', 'usuarios', (int) $usuario['id'], null, ['email' => $usuario['email']], 'alta');
