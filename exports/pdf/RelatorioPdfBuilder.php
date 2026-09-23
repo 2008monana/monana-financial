@@ -34,6 +34,10 @@ class RelatorioPdfBuilder
     private const COR_MUTED      = '#64748b';
     private const COR_BORDER     = '#e6eaf0';
     private const COR_BG         = '#f4f6fa';
+    private const COR_AZUL       = '#3b82f6'; // "Monana" na marca (visível sobre o fundo navy)
+
+    /** Extensões raster suportadas pelo Dompdf */
+    private const EXT_RASTER = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 
     private string $titulo = 'Relatório';
     private string $subtitulo = '';
@@ -73,27 +77,92 @@ class RelatorioPdfBuilder
      */
     private function resolverLogotipo(): ?string
     {
-        $logo = trim((string) ($this->empresa['logotipo'] ?? ''));
-        if ($logo === '') {
-            return null;
+        $candidatos = $this->candidatosLogotipo();
+        return $candidatos[0] ?? null;
+    }
+
+    /**
+     * @return array<int, string|null> Lista (no máximo um elemento útil) com o caminho resolvido.
+     */
+    private function candidatosLogotipo(): array
+    {
+        $valores = [];
+        $principal = trim((string) ($this->empresa['logotipo'] ?? ''));
+        if ($principal !== '') {
+            $valores[] = $principal;
+        }
+        // Chaves extras: logotipo_123, uploads/logos/logo_123_ab12cd.png etc.
+        foreach ($this->empresa as $chave => $valor) {
+            if (is_string($valor) && preg_match('/^logotipo(_\d+)?$/', (string) $chave) && trim($valor) !== '') {
+                $valores[] = trim($valor);
+            }
         }
 
         $raiz = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
-        $caminho = $raiz . '/public/' . ltrim($logo, '/');
 
-        if (!is_file($caminho)) {
-            // tolera caminhos gravados com "public/" na frente
-            $alternativo = $raiz . '/' . ltrim($logo, '/');
-            $caminho = is_file($alternativo) ? $alternativo : $caminho;
+        foreach ($valores as $logo) {
+            $caminho = $raiz . '/public/' . ltrim($logo, '/');
+            if (!is_file($caminho)) {
+                // tolera caminhos gravados com "public/" na frente
+                $alternativo = $raiz . '/' . ltrim($logo, '/');
+                $caminho = is_file($alternativo) ? $alternativo : $caminho;
+            }
+            if (!is_file($caminho)) {
+                continue;
+            }
+
+            $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
+            if (in_array($extensao, self::EXT_RASTER, true)) {
+                return [$caminho];
+            }
+            if ($extensao === 'svg') {
+                // Dompdf não suporta SVG directamente: converter para PNG temporário.
+                $png = $this->converterSvgParaPng($caminho);
+                if ($png !== null) {
+                    return [$png];
+                }
+            }
+        }
+        return [];
+    }
+
+    /**
+     * Converte um SVG para PNG (via Imagick/Gmagick se disponível). Devolve
+     * null quando não for possível — nesse caso o relatório usa a marca textual.
+     */
+    private function converterSvgParaPng(string $caminhoSvg): ?string
+    {
+        $destino = sys_get_temp_dir() . '/monana_logo_' . md5($caminhoSvg . filemtime($caminhoSvg)) . '.png';
+        if (is_file($destino)) {
+            return $destino;
         }
 
-        if (!is_file($caminho)) {
+        try {
+            if (extension_loaded('imagick')) {
+                $imagick = new \Imagick();
+                $imagick->setResolution(150, 150);
+                $imagick->readImage($caminhoSvg);
+                $imagick->setImageBackgroundColor('white');
+                if (method_exists($imagick, 'flattenImages')) {
+                    $imagick = $imagick->flattenImages();
+                }
+                $imagick->setImageFormat('png');
+                $imagick->writeImage($destino);
+                $imagick->destroy();
+                return is_file($destino) ? $destino : null;
+            }
+            if (extension_loaded('gmagick')) {
+                $gmagick = new \Gmagick($caminhoSvg);
+                $gmagick->setImageFormat('png');
+                $gmagick->writeImage($destino);
+                return is_file($destino) ? $destino : null;
+            }
+        } catch (\Throwable $e) {
+            // conversão falhou: seguir sem logotipo (marca textual assume o destaque)
             return null;
         }
 
-        $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
-        // SVG pode falhar no Dompdf; só aceitar raster
-        return in_array($extensao, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true) ? $caminho : null;
+        return null;
     }
 
     /**
@@ -238,7 +307,8 @@ class RelatorioPdfBuilder
             }
             .cabecalho .linha-topo { width: 100%; }
             .cabecalho .logotipo { max-height: 55px; max-width: 110px; background: #ffffff; border-radius: 8px; padding: 4px; }
-            .cabecalho .marca { font-family: "DejaVu Sans", sans-serif; font-weight: bold; font-size: 15pt; letter-spacing: 0.3px; }
+            .cabecalho .marca { font-family: "DejaVu Sans", sans-serif; font-weight: bold; font-size: 15pt; letter-spacing: 0.3px; color: #ffffff; }
+            .cabecalho .marca .monana { color: ' . self::COR_AZUL . '; }
             .cabecalho .marca .destaque { color: ' . self::COR_GREEN . '; }
             .cabecalho .empresa-nome { font-size: 11pt; font-weight: bold; margin-top: 6px; }
             .cabecalho .empresa-info { font-size: 8pt; color: #cbd5e1; margin-top: 2px; }
@@ -348,9 +418,9 @@ class RelatorioPdfBuilder
             <div class="cabecalho">
                 <table class="linha-topo" style="border-collapse:collapse;">
                     <tr>
-                        <td style="width:8%; vertical-align:middle;">' . $blocoLogo . '</td>
-                        <td style="width:52%; vertical-align:middle;">
-                            <div class="marca">Monana<span class="destaque">Financial</span></div>
+                        <td style="width:' . ($logoCaminho !== null ? '18' : '0') . '%; vertical-align:middle;">' . $blocoLogo . '</td>
+                        <td style="width:' . ($logoCaminho !== null ? '42' : '60') . '%; vertical-align:middle;">
+                            <div class="marca"><span class="monana">Monana</span><span class="destaque">Financial</span></div>
                             ' . $blocoEmpresa . '
                         </td>
                         <td style="width:40%; vertical-align:middle;">

@@ -1078,9 +1078,9 @@ class RelatoriosController extends Controller
             ->stream();
     }
 
-    private function buscarEmpresa(): array
+    private function buscarEmpresa(?int $empresaIdOverride = null): array
     {
-        $empresaId = $_SESSION['empresa_id'] ?? null;
+        $empresaId = $empresaIdOverride ?? ($_SESSION['empresa_id'] ?? null);
         $empresa = [];
         if ($empresaId) {
             $dados = $this->empresaModel->encontrarPorId((int) $empresaId);
@@ -1091,6 +1091,30 @@ class RelatoriosController extends Controller
                     'endereco' => $dados['endereco'] ?? '',
                     'logotipo' => $dados['logotipo'] ?? '',
                 ];
+            }
+
+            // O upload do logotipo em "Configurações da empresa" grava a chave
+            // `logotipo` na tabela `configuracoes` (e não necessariamente em
+            // empresas.logotipo). Ler também daí para o relatório ficar coerente
+            // com a sidebar.
+            try {
+                require_once CAMINHO_RAIZ . '/models/Configuracao.php';
+                $cfgModel = new Configuracao();
+                $cfg = $cfgModel->obterTodas((int) $empresaId);
+                if (!empty($cfg['logotipo'])) {
+                    $empresa['logotipo'] = trim((string) $cfg['logotipo']);
+                }
+                if (($empresa['nome'] ?? '') === '' && !empty($cfg['nome_empresa'])) {
+                    $empresa['nome'] = $cfg['nome_empresa'];
+                }
+                if (($empresa['nif'] ?? '') === '' && !empty($cfg['nif'])) {
+                    $empresa['nif'] = $cfg['nif'];
+                }
+                if (($empresa['endereco'] ?? '') === '' && !empty($cfg['endereco'])) {
+                    $empresa['endereco'] = $cfg['endereco'];
+                }
+            } catch (\Throwable $e) {
+                // silencioso: se não houver configurações, usa apenas dados da empresa
             }
         }
         return $empresa;
