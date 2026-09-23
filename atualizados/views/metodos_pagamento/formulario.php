@@ -44,15 +44,7 @@ $acao = $edicao ? URL_BASE . '/metodos-pagamento/atualizar' : URL_BASE . '/metod
                 <?php endif; ?>
             </div>
 
-            <div class="form-group">
-                <label for="icone">
-                    <i class="fas fa-image"></i> Ícone (FontAwesome)
-                </label>
-                <input type="text" id="icone" name="icone" 
-                       value="<?php echo htmlspecialchars($dadosForm['icone'] ?? ''); ?>" 
-                       placeholder="Ex: fas fa-money-bill-wave">
-                <small class="form-text">Use classes do FontAwesome para ícones.</small>
-            </div>
+            <!-- Campo Ícone (FontAwesome) removido: o sistema usa automaticamente o ícone "fa-wallet" -->
         </div>
 
         <div class="form-row">

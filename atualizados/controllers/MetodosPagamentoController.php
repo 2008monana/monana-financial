@@ -142,7 +142,7 @@ class MetodosPagamentoController extends Controller {
             'descricao' => trim($dados['descricao'] ?? ''),
             'ativo' => isset($dados['ativo']) ? 1 : 0,
             'ordem' => !empty($dados['ordem']) ? (int)$dados['ordem'] : 0,
-            'icone' => trim($dados['icone'] ?? '')
+            'icone' => 'fas fa-wallet'
         ];
         
         // Admin Empresa vincula à sua empresa, Super Admin cria padrão (null)
@@ -260,7 +260,7 @@ class MetodosPagamentoController extends Controller {
             'descricao' => trim($dados['descricao'] ?? ''),
             'ativo' => isset($dados['ativo']) ? 1 : 0,
             'ordem' => !empty($dados['ordem']) ? (int)$dados['ordem'] : 0,
-            'icone' => trim($dados['icone'] ?? '')
+            'icone' => 'fas fa-wallet'
         ];
         
         if ($this->model->atualizar($id, $dados_processados)) {
