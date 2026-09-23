@@ -28,10 +28,10 @@
     <div class="tabela-logs-cabecalho"><span><?=(int)($paginacao['total']??0)?> registo(s) encontrado(s)</span></div>
     <div class="tabela-scroll">
         <table>
-            <thead><tr><th>Data e hora</th><th>Utilizador</th><th>Módulo</th><th>Descrição</th><th>IP</th><th></th></tr></thead>
+            <thead><tr><th>Data e hora</th><th>Utilizador</th><th>Módulo</th><th>Descrição</th><th>IP</th></tr></thead>
             <tbody>
             <?php if(empty($logs)):?>
-                <tr><td colspan="6" class="sem-logs"><i class="fa-solid fa-inbox"></i><span>Não foram encontrados logs para estes filtros.</span></td></tr>
+                <tr><td colspan="5" class="sem-logs"><i class="fa-solid fa-inbox"></i><span>Não foram encontrados logs para estes filtros.</span></td></tr>
             <?php endif; foreach($logs as $log): $tipo = AuditoriaHelper::tipoAcao($log['acao']); ?>
                 <tr>
                     <td><?=htmlspecialchars(date('d/m/Y H:i',strtotime($log['criado_em'])))?></td>
@@ -39,7 +39,6 @@
                     <td><span class="selo selo-modulo"><i class="fa-solid fa-cube"></i> <?=htmlspecialchars(AuditoriaHelper::moduloDeAcao($log['acao'],$log['tabela_afetada']??null))?></span></td>
                     <td class="celula-descricao"><span class="selo selo-<?=$tipo?>"><?=htmlspecialchars(AuditoriaHelper::rotuloAcao($log['acao']))?></span><span class="descricao-extra"><?=htmlspecialchars(trim((string)preg_replace('/^'.preg_quote(AuditoriaHelper::rotuloAcao($log['acao']),'/').'( — )?/u','',AuditoriaHelper::descricaoEvento($log))))?></span></td>
                     <td class="celula-ip"><?=htmlspecialchars($log['ip_origem']??'—')?></td>
-                    <td><button class="btn btn-outline btn-sm" onclick="verDetalhes(<?= (int)$log['id']?>)"><i class="fa-solid fa-eye"></i> Detalhes</button></td>
                 </tr>
             <?php endforeach?>
             </tbody>
@@ -48,11 +47,6 @@
     <?php if(($paginacao['paginas']??1)>1):?>
         <nav class="paginacao"><?php for($p=1;$p<=$paginacao['paginas'];$p++):?><a class="<?=((int)($_GET['pagina']??1)===$p)?'ativo':''?>" href="<?=URL_BASE?>/logs/index?<?=htmlspecialchars(http_build_query(array_merge($filtros,['pagina'=>$p])))?>"><?=$p?></a><?php endfor?></nav>
     <?php endif?>
-</section>
-
-<section id="detalhes-log" class="detalhes-log" hidden>
-    <div><h2><i class="fa-solid fa-code-compare"></i> Alterações registadas</h2><button type="button" onclick="document.getElementById('detalhes-log').hidden=true">×</button></div>
-    <pre></pre>
 </section>
 
 <style>
@@ -86,24 +80,5 @@
 .paginacao{display:flex;gap:6px;padding-top:15px}
 .paginacao a{border:1px solid var(--border);padding:6px 10px;border-radius:6px;text-decoration:none;color:var(--ink);font-size:13px}
 .paginacao .ativo{background:var(--green);border-color:var(--green);color:#fff}
-.detalhes-log{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow-sm,0 1px 3px rgba(16,24,40,.04))}
-.detalhes-log>div{display:flex;justify-content:space-between;align-items:center}
-.detalhes-log h2{margin:0;font-size:16px;color:var(--navy-deep)}
-.detalhes-log h2 i{color:var(--green);margin-right:6px}
-.detalhes-log button{border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1}
-.detalhes-log pre{padding:14px;background:#10263f;color:#d7f3e0;border-radius:8px;overflow:auto;margin-top:14px;font-size:12px}
 @media(max-width:900px){.filtros-logs form{grid-template-columns:repeat(2,1fr)}.filtros-acoes{grid-column:span 2}.logs-cabecalho{flex-direction:column}}
 </style>
-<script>
-function verDetalhes(id){
-    fetch('<?=URL_BASE?>/logs/detalhes/'+id)
-        .then(r=>r.json())
-        .then(d=>{
-            const el=document.getElementById('detalhes-log');
-            el.hidden=false;
-            el.querySelector('pre').textContent=JSON.stringify({dados_antigos:d.dados_antigos,dados_novos:d.dados_novos},null,2);
-            el.scrollIntoView({behavior:'smooth',block:'nearest'});
-        })
-        .catch(()=>alert('Não foi possível carregar os detalhes do log.'));
-}
-</script>

@@ -2417,11 +2417,13 @@ $isViewer = $usuario_perfil === 'visualizador';
         <?php endif; ?>
 
         <!-- GRUPO 5: ADMINISTRAÇÃO -->
-        <?php if ($isSuperAdmin): ?>
+        <?php if ($isSuperAdmin || $isAdminEmpresa): ?>
         <div class="menu-grupo-label">ADMINISTRAÇÃO</div>
+        <?php if ($isSuperAdmin): ?>
         <a class="nav-item <?php echo $paginaAtiva === 'logs' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/logs/index">
             <i class="fa-solid fa-clipboard-list"></i> Logs Auditoria
         </a>
+        <?php endif; ?>
         <a class="nav-item <?php echo $paginaAtiva === 'configuracoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/configuracoes/index">
             <i class="fa-solid fa-gear"></i> Configurações
         </a>
