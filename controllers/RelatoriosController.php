@@ -1078,9 +1078,9 @@ class RelatoriosController extends Controller
             ->stream();
     }
 
-    private function buscarEmpresa(): array
+    private function buscarEmpresa(?int $empresaIdOverride = null): array
     {
-        $empresaId = $_SESSION['empresa_id'] ?? null;
+        $empresaId = $empresaIdOverride ?? ($_SESSION['empresa_id'] ?? null);
         $empresa = [];
         if ($empresaId) {
             $dados = $this->empresaModel->encontrarPorId((int) $empresaId);
@@ -1092,7 +1092,235 @@ class RelatoriosController extends Controller
                     'logotipo' => $dados['logotipo'] ?? '',
                 ];
             }
+
+            // O upload do logotipo em "Configurações da empresa" grava a chave
+            // `logotipo` na tabela `configuracoes` (e não necessariamente em
+            // empresas.logotipo). Ler também daí para o relatório ficar coerente
+            // com a sidebar.
+            try {
+                require_once CAMINHO_RAIZ . '/models/Configuracao.php';
+                $cfgModel = new Configuracao();
+                $cfg = $cfgModel->obterTodas((int) $empresaId);
+                if (!empty($cfg['logotipo'])) {
+                    $empresa['logotipo'] = trim((string) $cfg['logotipo']);
+                }
+                if (($empresa['nome'] ?? '') === '' && !empty($cfg['nome_empresa'])) {
+                    $empresa['nome'] = $cfg['nome_empresa'];
+                }
+                if (($empresa['nif'] ?? '') === '' && !empty($cfg['nif'])) {
+                    $empresa['nif'] = $cfg['nif'];
+                }
+                if (($empresa['endereco'] ?? '') === '' && !empty($cfg['endereco'])) {
+                    $empresa['endereco'] = $cfg['endereco'];
+                }
+            } catch (\Throwable $e) {
+                // silencioso: se não houver configurações, usa apenas dados da empresa
+            }
         }
         return $empresa;
+    }
+
+    /**
+     * Exportação em Excel do relatório "Planilha de Movimentos".
+     * Cabeçalho em dois níveis com mesclagem (Dia | Entradas... | Saídas... | Saldo).
+     */
+    private function exportarPlanilhaExcel(
+        array $linhasPlanilha,
+        array $colunasEntrada,
+        array $colunasSaida,
+        array $totaisEntrada,
+        array $totaisSaida,
+        float $saldoInicial,
+        float $saldoFinal,
+        string $filialNome,
+        int $mes,
+        int $ano
+    ): void {
+        $qtdEntrada = max(1, count($colunasEntrada));
+        $qtdSaida = max(1, count($colunasSaida));
+
+        // Sub-colunas individuais (linha 2 do cabeçalho): Dia + entradas + saídas + Saldo
+        $subColunas = ['Dia'];
+        foreach ($colunasEntrada as $coluna) {
+            $subColunas[] = $coluna['nome'];
+        }
+        if (!$colunasEntrada) {
+            $subColunas[] = 'Sem entradas';
+        }
+        foreach ($colunasSaida as $coluna) {
+            $subColunas[] = $coluna['nome'];
+        }
+        if (!$colunasSaida) {
+            $subColunas[] = 'Sem saídas';
+        }
+        $subColunas[] = 'Saldo';
+
+        // Agrupamentos (linha 1): colunas "Dia" e "Saldo" com rowspan=2
+        $agrupamentos = [
+            ['rotulo' => 'Dia', 'colspan' => 1, 'rowspan' => 2],
+            ['rotulo' => 'Entradas', 'colspan' => $qtdEntrada, 'rowspan' => 1, 'classe' => 'grupo-entrada'],
+            ['rotulo' => 'Saídas', 'colspan' => $qtdSaida, 'rowspan' => 1, 'classe' => 'grupo-saida'],
+            ['rotulo' => 'Saldo', 'colspan' => 1, 'rowspan' => 2],
+        ];
+
+        $linhas = [];
+        foreach ($linhasPlanilha as $linha) {
+            $registo = [['valor' => $linha['dia'], 'tipo' => 'numero']];
+            if ($colunasEntrada) {
+                foreach ($colunasEntrada as $coluna) {
+                    $registo[] = ['valor' => $linha['entradas'][$coluna['id']] ?? 0, 'tipo' => 'moeda', 'estilo' => 'positivo'];
+                }
+            } else {
+                $registo[] = '—';
+            }
+            if ($colunasSaida) {
+                foreach ($colunasSaida as $coluna) {
+                    $registo[] = ['valor' => $linha['saidas'][$coluna['id']] ?? 0, 'tipo' => 'moeda', 'estilo' => 'negativo'];
+                }
+            } else {
+                $registo[] = '—';
+            }
+            $registo[] = ['valor' => $linha['saldo'], 'tipo' => 'moeda', 'estilo' => $linha['saldo'] >= 0 ? 'positivo' : 'negativo'];
+            $linhas[] = $registo;
+        }
+
+        // Linha de totais
+        if ($linhasPlanilha) {
+            $totais = [['valor' => 'TOTAL']];
+            if ($colunasEntrada) {
+                foreach ($colunasEntrada as $coluna) {
+                    $totais[] = ['valor' => $totaisEntrada[$coluna['id']] ?? 0, 'tipo' => 'moeda', 'estilo' => 'positivo'];
+                }
+            } else {
+                $totais[] = '—';
+            }
+            if ($colunasSaida) {
+                foreach ($colunasSaida as $coluna) {
+                    $totais[] = ['valor' => $totaisSaida[$coluna['id']] ?? 0, 'tipo' => 'moeda', 'estilo' => 'negativo'];
+                }
+            } else {
+                $totais[] = '—';
+            }
+            $totais[] = ['valor' => $saldoFinal, 'tipo' => 'moeda', 'estilo' => $saldoFinal >= 0 ? 'positivo' : 'negativo'];
+            $linhas[] = $totais;
+        }
+
+        $empresa = $this->buscarEmpresa();
+
+        (new RelatorioExcelBuilder('Planilha de Movimentos - ' . $this->getNomeMes($mes) . '/' . $ano, 'planilha_movimentos_' . $ano . '_' . sprintf('%02d', $mes)))
+            ->definirEmpresa($empresa)
+            ->definirSubtitulo('Filial: ' . ($filialNome ?: '-') . '  •  Período: ' . $this->getNomeMes($mes) . '/' . $ano . '  •  ' . count($linhasPlanilha) . ' dia(s) com movimentos')
+            ->definirNomeFolha('Planilha')
+            ->definirCabecalhoAgrupado($agrupamentos, $subColunas)
+            ->definirLinhas($linhas)
+            ->definirResumo([
+                ['rotulo' => 'Saldo Inicial', 'valor' => $saldoInicial, 'referencia' => true],
+                ['rotulo' => 'Total Entradas', 'valor' => array_sum($totaisEntrada), 'estilo' => 'positivo', 'formula' => 'soma_entradas'],
+                ['rotulo' => 'Total Saídas', 'valor' => array_sum($totaisSaida), 'estilo' => 'negativo', 'formula' => 'soma_saidas'],
+                ['rotulo' => 'Saldo Final', 'valor' => $saldoFinal, 'estilo' => $saldoFinal >= 0 ? 'positivo' : 'negativo', 'formula' => 'saldo_final'],
+            ])
+            ->definirOrientacao('landscape')
+            ->stream();
+    }
+
+    /**
+     * Exportação em PDF do relatório "Planilha de Movimentos".
+     */
+    private function exportarPlanilhaPDF(
+        array $linhasPlanilha,
+        array $colunasEntrada,
+        array $colunasSaida,
+        array $totaisEntrada,
+        array $totaisSaida,
+        float $saldoInicial,
+        float $saldoFinal,
+        string $filialNome,
+        int $mes,
+        int $ano
+    ): void {
+        $qtdEntrada = max(1, count($colunasEntrada));
+        $qtdSaida = max(1, count($colunasSaida));
+
+        $subColunas = ['Dia'];
+        foreach ($colunasEntrada as $coluna) {
+            $subColunas[] = $coluna['nome'];
+        }
+        if (!$colunasEntrada) {
+            $subColunas[] = 'Sem entradas';
+        }
+        foreach ($colunasSaida as $coluna) {
+            $subColunas[] = $coluna['nome'];
+        }
+        if (!$colunasSaida) {
+            $subColunas[] = 'Sem saídas';
+        }
+        $subColunas[] = 'Saldo';
+
+        $agrupamentos = [
+            ['rotulo' => 'Dia', 'colspan' => 1, 'rowspan' => 2],
+            ['rotulo' => 'Entradas', 'colspan' => $qtdEntrada, 'rowspan' => 1, 'classe' => 'grupo-entrada'],
+            ['rotulo' => 'Saídas', 'colspan' => $qtdSaida, 'rowspan' => 1, 'classe' => 'grupo-saida'],
+            ['rotulo' => 'Saldo', 'colspan' => 1, 'rowspan' => 2],
+        ];
+
+        $fmt = fn (float $v): string => number_format($v, 2, ',', '.');
+
+        $linhas = [];
+        foreach ($linhasPlanilha as $linha) {
+            $registo = [['texto' => (string) $linha['dia'], 'alinhar' => 'centro']];
+            if ($colunasEntrada) {
+                foreach ($colunasEntrada as $coluna) {
+                    $registo[] = ['texto' => $fmt($linha['entradas'][$coluna['id']] ?? 0), 'classe' => 'positivo', 'alinhar' => 'direita'];
+                }
+            } else {
+                $registo[] = ['texto' => '—', 'alinhar' => 'direita'];
+            }
+            if ($colunasSaida) {
+                foreach ($colunasSaida as $coluna) {
+                    $registo[] = ['texto' => $fmt($linha['saidas'][$coluna['id']] ?? 0), 'classe' => 'negativo', 'alinhar' => 'direita'];
+                }
+            } else {
+                $registo[] = ['texto' => '—', 'alinhar' => 'direita'];
+            }
+            $registo[] = ['texto' => $fmt($linha['saldo']), 'classe' => $linha['saldo'] >= 0 ? 'positivo' : 'negativo', 'alinhar' => 'direita'];
+            $linhas[] = $registo;
+        }
+
+        if ($linhasPlanilha) {
+            $totais = [['texto' => 'TOTAL']];
+            if ($colunasEntrada) {
+                foreach ($colunasEntrada as $coluna) {
+                    $totais[] = ['texto' => $fmt($totaisEntrada[$coluna['id']] ?? 0), 'classe' => 'positivo', 'alinhar' => 'direita'];
+                }
+            } else {
+                $totais[] = ['texto' => '—', 'alinhar' => 'direita'];
+            }
+            if ($colunasSaida) {
+                foreach ($colunasSaida as $coluna) {
+                    $totais[] = ['texto' => $fmt($totaisSaida[$coluna['id']] ?? 0), 'classe' => 'negativo', 'alinhar' => 'direita'];
+                }
+            } else {
+                $totais[] = ['texto' => '—', 'alinhar' => 'direita'];
+            }
+            $totais[] = ['texto' => $fmt($saldoFinal), 'classe' => $saldoFinal >= 0 ? 'positivo' : 'negativo', 'alinhar' => 'direita'];
+            $linhas[] = $totais;
+        }
+
+        $empresa = $this->buscarEmpresa();
+
+        (new RelatorioPdfBuilder('Planilha de Movimentos - ' . $this->getNomeMes($mes) . '/' . $ano, 'planilha_movimentos_' . $ano . '_' . sprintf('%02d', $mes)))
+            ->definirEmpresa($empresa)
+            ->definirSubtitulo('Filial: ' . ($filialNome ?: '-') . '  •  Período: ' . $this->getNomeMes($mes) . '/' . $ano)
+            ->definirCabecalhoAgrupado($agrupamentos, $subColunas)
+            ->definirLinhas($linhas)
+            ->definirCartoesResumo([
+                ['rotulo' => 'Saldo Inicial', 'valor' => $fmt($saldoInicial) . ' Kz', 'cor' => 'navy'],
+                ['rotulo' => 'Total Entradas', 'valor' => $fmt(array_sum($totaisEntrada)) . ' Kz', 'cor' => 'verde'],
+                ['rotulo' => 'Total Saídas', 'valor' => $fmt(array_sum($totaisSaida)) . ' Kz', 'cor' => 'vermelho'],
+                ['rotulo' => 'Saldo Final', 'valor' => $fmt($saldoFinal) . ' Kz', 'cor' => $saldoFinal >= 0 ? 'verde' : 'vermelho'],
+            ])
+            ->definirRodapeExtra($filialNome ? 'Filial: ' . $filialNome : '')
+            ->definirOrientacao('landscape')
+            ->stream();
     }
 }

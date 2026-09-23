@@ -56,7 +56,7 @@ class DashboardController extends Controller
         }, $filiais);
         $vendasPorFilial = array_map(fn($f, $i) => ['nome' => $f['nome'], 'vendas' => (float) $f['vendas'], 'cor' => $cores[$i % count($cores)], 'percentual' => $totais['vendas'] ? round($f['vendas'] * 100 / $totais['vendas'], 1) : 0], $filiais, array_keys($filiais));
         $this->renderizar('dashboard/adminempresa', array_merge($this->baseDados($periodo, $datas), [
-            'nome_empresa' => $empresa['nome'] ?? 'Empresa', 'total_filiais' => count($filiais), 'novas_filiais' => 0, 'total_usuarios' => $this->contar('usuarios', $empresaId), 'novos_usuarios' => 0,
+            'nome_empresa' => $empresa['nome'] ?? 'Empresa', 'total_filiais' => count($filiais), 'novas_filiais' => 0, 'total_usuarios' => $this->contarUsuariosEmpresa($empresaId), 'novos_usuarios' => 0,
             'vendas_totais' => $totais['vendas'], 'crescimento_vendas' => 0, 'despesas_totais' => $totais['compras'] + $totais['custos'], 'crescimento_despesas' => 0,
             'resultado_liquido' => $totais['saldo'], 'crescimento_resultado' => 0, 'ticket_medio' => $totais['total'] ? $totais['vendas'] / $totais['total'] : 0, 'crescimento_ticket' => 0, 'crescimento_geral' => 0,
             'resumo_filiais' => $resumo, 'vendas_por_filial' => $vendasPorFilial,
@@ -69,6 +69,22 @@ class DashboardController extends Controller
     private function baseDados(string $periodo, array $datas): array { return ['tituloPagina' => 'Dashboard', 'paginaAtiva' => 'dashboard', 'periodo' => $periodo, 'periodoLabel' => ['hoje'=>'Hoje','semana'=>'Esta Semana','mes'=>'Este Mês','ano'=>'Este Ano'][$periodo], 'periodoInicio' => $datas['inicio'], 'periodoFim' => $datas['fim']]; }
     private function datasPeriodo(string $p): array { $h = date('Y-m-d'); return match($p) {'hoje'=>['inicio'=>$h,'fim'=>$h], 'semana'=>['inicio'=>date('Y-m-d', strtotime('monday this week')),'fim'=>date('Y-m-d', strtotime('sunday this week'))], 'ano'=>['inicio'=>date('Y-01-01'),'fim'=>date('Y-12-31')], default=>['inicio'=>date('Y-m-01'),'fim'=>date('Y-m-t')]}; }
     private function contar(string $tabela, ?int $empresaId = null): int { $bd = Database::obterLigacao(); $sql = "SELECT COUNT(*) FROM $tabela" . ($empresaId ? ' WHERE empresa_id = :id' : ''); $s = $bd->prepare($sql); $s->execute($empresaId ? ['id'=>$empresaId] : []); return (int) $s->fetchColumn(); }
+
+    // Contagem de utilizadores visiveis na area da empresa: exclui o super_admin
+    // (que nao pertence a nenhuma empresa) e utilizadores desativados, para que o
+    // KPI do dashboard reflita a lista real de "Utilizadores".
+    private function contarUsuariosEmpresa(?int $empresaId): int
+    {
+        $bd = Database::obterLigacao();
+        if ($empresaId) {
+            $s = $bd->prepare("SELECT COUNT(*) FROM usuarios WHERE empresa_id = :id AND perfil != 'super_admin' AND ativo = 1");
+            $s->execute(['id' => $empresaId]);
+        } else {
+            $s = $bd->prepare("SELECT COUNT(*) FROM usuarios WHERE perfil != 'super_admin' AND ativo = 1");
+            $s->execute();
+        }
+        return (int) $s->fetchColumn();
+    }
     private function atividades(?int $empresaId): array { return array_map(fn($t) => ['nome'=>$t['usuario'] ?? 'Utilizador', 'empresa'=>$t['empresa'] ?? '', 'tempo'=>date('d/m H:i', strtotime($t['data_transacao'])), 'cor'=>'#3b82f6'], $this->financeiro->recentes($empresaId)); }
     private function categorias(int $empresaId, array $datas, array $tipos, string $cor): array { $dados=$this->financeiro->porCategoria($empresaId,$datas['inicio'],$datas['fim'],$tipos); $total=array_sum(array_column($dados,'valor')); return array_map(fn($d)=>['nome'=>$d['nome'],'percentual'=>$total ? round($d['valor']*100/$total,1):0,'cor'=>$cor],$dados); }
     private function datasetsEmpresas(array $empresas, array $cores): array { return array_map(fn($e,$i)=>['label'=>$e['nome'],'data'=>array_fill(0,12,(float)$e['vendas']),'backgroundColor'=>$cores[$i%count($cores)],'borderRadius'=>4],$empresas,array_keys($empresas)); }
