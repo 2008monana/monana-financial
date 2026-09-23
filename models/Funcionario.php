@@ -7,18 +7,22 @@ class Funcionario {
     private PDO $db;
 
     public function __construct() {
-        $this->db = Database::getInstancia();
+        $this->db = Database::obterLigacao();
     }
 
     /**
      * Buscar todos os funcionários com filtros
      */
-    public function listar(int $empresa_id, ?int $filial_id = null, string $busca = ''): array {
+    public function listar(?int $empresa_id = null, ?int $filial_id = null, string $busca = ''): array {
         $sql = "SELECT f.*, fi.nome as filial_nome, e.nome as empresa_nome 
                 FROM funcionarios f
                 INNER JOIN filiais fi ON f.filial_id = fi.id
                 INNER JOIN empresas e ON fi.empresa_id = e.id
-                WHERE fi.empresa_id = :empresa_id";
+                WHERE 1=1";
+        
+        if ($empresa_id) {
+            $sql .= " AND fi.empresa_id = :empresa_id";
+        }
         
         if ($filial_id) {
             $sql .= " AND f.filial_id = :filial_id";
@@ -31,7 +35,10 @@ class Funcionario {
         $sql .= " ORDER BY f.nome ASC";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+        
+        if ($empresa_id) {
+            $stmt->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+        }
         
         if ($filial_id) {
             $stmt->bindValue(':filial_id', $filial_id, PDO::PARAM_INT);
@@ -163,10 +170,12 @@ class Funcionario {
     /**
      * Buscar filiais de uma empresa
      */
-    public function buscarFiliais(int $empresa_id): array {
-        $sql = "SELECT id, nome FROM filiais WHERE empresa_id = :empresa_id ORDER BY nome ASC";
+    public function buscarFiliais(?int $empresa_id = null): array {
+        $sql = "SELECT id, nome FROM filiais" . ($empresa_id ? " WHERE empresa_id = :empresa_id" : "") . " ORDER BY nome ASC";
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+        if ($empresa_id) {
+            $stmt->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+        }
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -174,23 +183,30 @@ class Funcionario {
     /**
      * Contar total de funcionários
      */
-    public function contar(int $empresa_id, ?int $filial_id = null): int {
-        $sql = "SELECT COUNT(*) as total 
+    public function contar(?int $empresa_id = null, ?int $filial_id = null): int {
+        $sql = "SELECT COUNT(*) as total
                 FROM funcionarios f
                 INNER JOIN filiais fi ON f.filial_id = fi.id
-                WHERE fi.empresa_id = :empresa_id";
-        
+                WHERE 1=1";
+
+        if ($empresa_id) {
+            $sql .= " AND fi.empresa_id = :empresa_id";
+        }
+
         if ($filial_id) {
             $sql .= " AND f.filial_id = :filial_id";
         }
-        
+
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
-        
+
+        if ($empresa_id) {
+            $stmt->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+        }
+
         if ($filial_id) {
             $stmt->bindValue(':filial_id', $filial_id, PDO::PARAM_INT);
         }
-        
+
         $stmt->execute();
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
         return (int) ($resultado['total'] ?? 0);

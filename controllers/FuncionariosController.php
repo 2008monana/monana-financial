@@ -4,16 +4,20 @@
  * Gerencia as requisições relacionadas a funcionários
  */
 
-// Garantir que o Model seja carregado
+require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Funcionario.php';
+require_once CAMINHO_RAIZ . '/models/Empresa.php';
+require_once CAMINHO_RAIZ . '/helpers/Autenticacao.php';
+require_once CAMINHO_RAIZ . '/helpers/flash.php';
 
-class FuncionariosController {
+class FuncionariosController extends Controller {
     private Funcionario $model;
     private Autenticacao $auth;
 
     public function __construct() {
         $this->model = new Funcionario();
         $this->auth = new Autenticacao();
+        $this->auth->verificarLogin();
     }
 
     /**
@@ -23,20 +27,39 @@ class FuncionariosController {
         $this->auth->verificarLogin();
         
         $usuario = $this->auth->usuario();
-        $empresa_id = $usuario['empresa_id'];
+        // Super Admin sem empresa vinculada vê todas as empresas
+        $empresa_id = ($usuario['perfil'] === 'super_admin' && empty($usuario['empresa_id']))
+            ? null
+            : (int) ($usuario['empresa_id'] ?? 0);
         $filial_id = $_GET['filial_id'] ?? null;
         $busca = $_GET['busca'] ?? '';
-        
-        // Super Admin pode ver todas as empresas, outros apenas a sua
-        if ($usuario['perfil'] !== 'super_admin') {
-            $filial_id = $filial_id ?: null;
+
+        // Utilizadores não-super admin devem ter uma empresa vinculada
+        if ($empresa_id === 0 && $usuario['perfil'] !== 'super_admin') {
+            definirFlash('erro', 'Nenhuma empresa associada ao seu utilizador. Contacte o administrador.');
+            header('Location: ' . URL_BASE . '/dashboard');
+            exit;
         }
         
         $funcionarios = $this->model->listar($empresa_id, $filial_id ? (int)$filial_id : null, $busca);
         $filiais = $this->model->buscarFiliais($empresa_id);
         $total = $this->model->contar($empresa_id, $filial_id ? (int)$filial_id : null);
         
-        include __DIR__ . '/../views/funcionarios/index.php';
+        // Nome da empresa para a topbar
+        $empresa_nome = '';
+        if ($empresa_id) {
+            $empresa = (new Empresa())->encontrarPorId((int) $empresa_id);
+            $empresa_nome = $empresa['nome'] ?? '';
+        }
+
+        $this->renderizar('funcionarios/lista', [
+            'tituloPagina' => 'Funcionários',
+            'paginaAtiva'  => 'funcionarios',
+            'empresa_nome' => $empresa_nome,
+            'funcionarios' => $funcionarios,
+            'filiais'      => $filiais,
+            'total'        => $total,
+        ]);
     }
 
     /**
@@ -49,15 +72,20 @@ class FuncionariosController {
         
         // Apenas admin da empresa e super admin podem criar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
-            $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            definirFlash('erro', 'Permissão negada.');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
         $empresa_id = $usuario['empresa_id'];
         $filiais = $this->model->buscarFiliais($empresa_id);
         
-        include __DIR__ . '/../views/funcionarios/formulario.php';
+        $this->renderizar('funcionarios/formulario', [
+            'tituloPagina' => 'Novo Funcionário',
+            'paginaAtiva'  => 'funcionarios',
+            'funcionario'  => null,
+            'filiais'      => $filiais,
+        ]);
     }
 
     /**
@@ -70,8 +98,8 @@ class FuncionariosController {
         
         // Apenas admin da empresa e super admin podem criar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
-            $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            definirFlash('erro', 'Permissão negada.');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
@@ -103,7 +131,7 @@ class FuncionariosController {
         if (!empty($erros)) {
             $_SESSION['erros'] = $erros;
             $_SESSION['dados_form'] = $dados;
-            header('Location: /funcionarios/criar');
+            header('Location: ' . URL_BASE . '/funcionarios/criar');
             exit;
         }
         
@@ -111,12 +139,12 @@ class FuncionariosController {
         $dados['foto'] = $foto_path;
         
         if ($this->model->criar($dados)) {
-            $_SESSION['sucesso'] = 'Funcionário cadastrado com sucesso!';
+            definirFlash('sucesso', 'Funcionário cadastrado com sucesso!');
         } else {
-            $_SESSION['erro'] = 'Erro ao cadastrar funcionário.';
+            definirFlash('erro', 'Erro ao cadastrar funcionário.');
         }
         
-        header('Location: /funcionarios');
+        header('Location: ' . URL_BASE . '/funcionarios');
         exit;
     }
 
@@ -130,30 +158,35 @@ class FuncionariosController {
         
         // Apenas admin da empresa e super admin podem editar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
-            $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            definirFlash('erro', 'Permissão negada.');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
         $funcionario = $this->model->buscarPorId($id);
         
         if (!$funcionario) {
-            $_SESSION['erro'] = 'Funcionário não encontrado.';
-            header('Location: /funcionarios');
+            definirFlash('erro', 'Funcionário não encontrado.');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
         // Verificar permissão por empresa
         if ($usuario['perfil'] !== 'super_admin' && $funcionario['empresa_id'] !== $usuario['empresa_id']) {
-            $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            definirFlash('erro', 'Permissão negada.');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
         $empresa_id = $usuario['empresa_id'];
         $filiais = $this->model->buscarFiliais($empresa_id);
         
-        include __DIR__ . '/../views/funcionarios/formulario.php';
+        $this->renderizar('funcionarios/formulario', [
+            'tituloPagina' => 'Editar Funcionário',
+            'paginaAtiva'  => 'funcionarios',
+            'funcionario'  => $funcionario,
+            'filiais'      => $filiais,
+        ]);
     }
 
     /**
@@ -166,23 +199,23 @@ class FuncionariosController {
         
         // Apenas admin da empresa e super admin podem editar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
-            $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            definirFlash('erro', 'Permissão negada.');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
         $funcionario = $this->model->buscarPorId($id);
         
         if (!$funcionario) {
-            $_SESSION['erro'] = 'Funcionário não encontrado.';
-            header('Location: /funcionarios');
+            definirFlash('erro', 'Funcionário não encontrado.');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
         // Verificar permissão por empresa
         if ($usuario['perfil'] !== 'super_admin' && $funcionario['empresa_id'] !== $usuario['empresa_id']) {
-            $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            definirFlash('erro', 'Permissão negada.');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
@@ -219,19 +252,19 @@ class FuncionariosController {
         if (!empty($erros)) {
             $_SESSION['erros'] = $erros;
             $_SESSION['dados_form'] = $dados;
-            header("Location: /funcionarios/editar/$id");
+            header("Location: " . URL_BASE . "/funcionarios/editar/$id");
             exit;
         }
         
         $dados['foto'] = $foto_path;
         
         if ($this->model->atualizar($id, $dados)) {
-            $_SESSION['sucesso'] = 'Funcionário atualizado com sucesso!';
+            definirFlash('sucesso', 'Funcionário atualizado com sucesso!');
         } else {
-            $_SESSION['erro'] = 'Erro ao atualizar funcionário.';
+            definirFlash('erro', 'Erro ao atualizar funcionário.');
         }
         
-        header("Location: /funcionarios/editar/$id");
+        header("Location: " . URL_BASE . "/funcionarios/editar/$id");
         exit;
     }
 

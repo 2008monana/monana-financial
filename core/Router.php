@@ -142,7 +142,7 @@ class Router
         'logs/exportar' => 'logs',
 
         // =============================================
-        // CONFIGURAÇÕES (apenas Super Admin)
+        // CONFIGURAÇÕES (Super Admin e Admin de Empresa)
         // =============================================
         'configuracoes' => 'configuracoes',
         'configuracoes/index' => 'configuracoes',

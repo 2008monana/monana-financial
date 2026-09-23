@@ -49,7 +49,8 @@ class SessaoHelper {
     }
 
     public static function getUsuarioEmpresaId() {
-        return self::obter('usuario_empresa_id');
+        // Compatibilidade: o login (AuthController) grava a sessão na chave 'empresa_id'
+        return self::obter('usuario_empresa_id') ?? self::obter('empresa_id');
     }
 
     public static function getUsuarioFiliaisIds() {

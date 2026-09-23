@@ -5,7 +5,13 @@
 $titulo_pagina = 'Funcionários';
 include __DIR__ . '/../includes/cabecalho.php';
 
-$usuario = $_SESSION['usuario'];
+$usuario = $_SESSION['usuario'] ?? [
+    'id'         => $_SESSION['usuario_id']     ?? 0,
+    'nome'       => $_SESSION['usuario_nome']   ?? 'Utilizador',
+    'email'      => $_SESSION['usuario_email']  ?? '',
+    'perfil'     => $_SESSION['usuario_perfil'] ?? 'visualizador',
+    'empresa_id' => $_SESSION['empresa_id']     ?? null,
+];
 $mensagem_sucesso = $_SESSION['sucesso'] ?? null;
 $mensagem_erro = $_SESSION['erro'] ?? null;
 unset($_SESSION['sucesso'], $_SESSION['erro']);
@@ -21,7 +27,7 @@ unset($_SESSION['sucesso'], $_SESSION['erro']);
                             <i class="fas fa-users me-2"></i>Gestão de Funcionários
                         </h5>
                         <?php if (in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])): ?>
-                            <a href="/funcionarios/criar" class="btn btn-primary btn-sm">
+                            <a href="<?= URL_BASE ?>/funcionarios/criar" class="btn btn-primary btn-sm">
                                 <i class="fas fa-plus me-1"></i>Novo Funcionário
                             </a>
                         <?php endif; ?>
@@ -44,7 +50,7 @@ unset($_SESSION['sucesso'], $_SESSION['erro']);
                     <?php endif; ?>
                     
                     <!-- Filtros -->
-                    <form method="GET" action="/funcionarios" class="row g-3 mb-4">
+                    <form method="GET" action="<?= URL_BASE ?>/funcionarios" class="row g-3 mb-4">
                         <div class="col-md-4">
                             <label class="form-label">Buscar</label>
                             <input type="text" name="busca" class="form-control" 
@@ -69,7 +75,7 @@ unset($_SESSION['sucesso'], $_SESSION['erro']);
                             </button>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
-                            <a href="/funcionarios" class="btn btn-outline-secondary w-100">
+                            <a href="<?= URL_BASE ?>/funcionarios" class="btn btn-outline-secondary w-100">
                                 <i class="fas fa-times me-1"></i>Limpar
                             </a>
                         </div>
@@ -140,7 +146,7 @@ unset($_SESSION['sucesso'], $_SESSION['erro']);
                                             <td class="text-end">
                                                 <div class="btn-group btn-group-sm">
                                                     <?php if (in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])): ?>
-                                                        <a href="/funcionarios/editar/<?= $funcionario['id'] ?>" 
+                                                        <a href="<?= URL_BASE ?>/funcionarios/editar/<?= $funcionario['id'] ?>" 
                                                            class="btn btn-outline-primary" title="Editar">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
@@ -207,7 +213,7 @@ function confirmarExclusao(id, nome) {
 
 document.getElementById('btnConfirmarExclusao').addEventListener('click', function() {
     if (funcionarioIdParaExcluir) {
-        fetch(`/funcionarios/excluir/${funcionarioIdParaExcluir}`, {
+        fetch(`<?= URL_BASE ?>/funcionarios/excluir/${funcionarioIdParaExcluir}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
