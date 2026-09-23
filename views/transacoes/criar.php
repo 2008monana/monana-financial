@@ -111,6 +111,29 @@ unset($_SESSION['dados_antigos'], $_SESSION['erros']);
             </div>
         </div>
 
+        <div class="form-row">
+            <div class="form-group">
+                <label for="metodo_pagamento">
+                    <i class="fas fa-credit-card"></i> Método de Pagamento <span class="required">*</span>
+                </label>
+                <select id="metodo_pagamento" name="metodo_pagamento" required>
+                    <option value="">Selecione...</option>
+                    <?php foreach ($metodos_pagamento as $metodo): ?>
+                    <option value="<?php echo htmlspecialchars($metodo['nome']); ?>" 
+                            <?php echo ($dadosAntigos['metodo_pagamento'] ?? '') === $metodo['nome'] ? 'selected' : ''; ?>>
+                        <?php if (!empty($metodo['icone'])): ?>
+                            <i class="<?php echo htmlspecialchars($metodo['icone']); ?>"></i>
+                        <?php endif; ?>
+                        <?php echo htmlspecialchars($metodo['nome']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (!empty($erros['metodo_pagamento'])): ?>
+                <span class="error-text"><i class="fas fa-exclamation-circle"></i> <?php echo $erros['metodo_pagamento']; ?></span>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save"></i> Salvar Lançamento

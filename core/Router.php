@@ -160,6 +160,17 @@ class Router
         'funcionarios/editar' => 'funcionarios',
         'funcionarios/atualizar' => 'funcionarios',
         'funcionarios/excluir' => 'funcionarios',
+
+        // =============================================
+        // MÉTODOS DE PAGAMENTO
+        // =============================================
+        'metodos-pagamento' => 'metodos_pagamento',
+        'metodos-pagamento/index' => 'metodos_pagamento',
+        'metodos-pagamento/criar' => 'metodos_pagamento',
+        'metodos-pagamento/salvar' => 'metodos_pagamento',
+        'metodos-pagamento/editar' => 'metodos_pagamento',
+        'metodos-pagamento/atualizar' => 'metodos_pagamento',
+        'metodos-pagamento/excluir' => 'metodos_pagamento',
     ];
 
     /**

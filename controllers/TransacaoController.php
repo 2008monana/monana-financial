@@ -275,19 +275,19 @@ class TransacoesController extends Controller
         }
 
         $categorias = $this->categoriaModel->porEmpresa((int) $empresaId);
+        
+        // Buscar métodos de pagamento do banco de dados
+        require_once CAMINHO_RAIZ . '/models/MetodoPagamento.php';
+        $metodoPagamentoModel = new MetodoPagamento();
+        $metodos_pagamento = $metodoPagamentoModel->listar((int) $empresaId, true);
 
         $this->renderizar('transacoes/criar', [
             'tituloPagina' => 'Novo Lançamento',
             'paginaAtiva' => 'transacoes',
             'filiais' => $filiais,
             'categorias' => $categorias,
+            'metodos_pagamento' => $metodos_pagamento,
             'tipos' => $this->tiposTransacao(),
-            'metodos_pagamento' => [
-                'numerario' => 'Numerário',
-                'tpa' => 'TPA',
-                'transferencia' => 'Transferência',
-                'outro' => 'Outro',
-            ],
             'csrf_token' => SegurancaHelper::gerarTokenCSRF(),
         ]);
     }
@@ -384,6 +384,11 @@ class TransacoesController extends Controller
         $empresaId = $_SESSION['empresa_id'] ?? null;
         $categorias = $this->categoriaModel->porEmpresa((int) $empresaId);
         
+        // Buscar métodos de pagamento do banco de dados
+        require_once CAMINHO_RAIZ . '/models/MetodoPagamento.php';
+        $metodoPagamentoModel = new MetodoPagamento();
+        $metodos_pagamento = $metodoPagamentoModel->listar((int) $empresaId, true);
+        
         if ($perfil === 'super_admin') {
             $filiais = $this->filialModel->todas();
         } else {
@@ -396,13 +401,8 @@ class TransacoesController extends Controller
             'transacao' => $transacao,
             'filiais' => $filiais,
             'categorias' => $categorias,
+            'metodos_pagamento' => $metodos_pagamento,
             'tipos' => $this->tiposTransacao(),
-            'metodos_pagamento' => [
-                'numerario' => 'Numerário',
-                'tpa' => 'TPA',
-                'transferencia' => 'Transferência',
-                'outro' => 'Outro',
-            ],
             'csrf_token' => SegurancaHelper::gerarTokenCSRF(),
         ]);
     }
