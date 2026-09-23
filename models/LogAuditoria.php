@@ -1,64 +1,26 @@
 <?php
-/**
- * Modelo de Log de Auditoria
- */
-class LogAuditoria extends Model {
-    protected $tabela = 'logs_auditoria';
-    protected $chavePrimaria = 'id';
-    protected $preenchiveis = [
-        'usuario_id', 'acao', 'tabela', 'registro_id', 
-        'dados_antigos', 'dados_novos', 'ip', 'user_agent'
-    ];
-
-    /**
-     * Registrar ação
-     */
-    public function registrar($usuarioId, $acao, $tabela = null, $registroId = null, $dadosAntigos = null, $dadosNovos = null) {
-        return $this->criar([
-            'usuario_id' => $usuarioId,
-            'acao' => $acao,
-            'tabela' => $tabela,
-            'registro_id' => $registroId,
-            'dados_antigos' => $dadosAntigos ? json_encode($dadosAntigos) : null,
-            'dados_novos' => $dadosNovos ? json_encode($dadosNovos) : null,
-            'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
-            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null
-        ]);
+require_once CAMINHO_RAIZ . '/core/Model.php';
+class LogAuditoria extends Model
+{
+    protected string $tabela = 'logs_auditoria';
+    public function registar(?int $usuarioId, string $acao, ?string $tabelaAfetada = null, ?int $registoId = null, ?array $antigos = null, ?array $novos = null, string $prioridade = 'media', ?string $motivo = null): int
+    {
+        return $this->inserir(['usuario_id'=>$usuarioId,'acao'=>$acao,'tabela_afetada'=>$tabelaAfetada,'registo_id'=>$registoId,
+            'dados_antigos'=>$antigos ? json_encode($antigos, JSON_UNESCAPED_UNICODE) : null,
+            'dados_novos'=>$novos ? json_encode($novos, JSON_UNESCAPED_UNICODE) : null,
+            'prioridade'=>$prioridade, 'motivo'=>$motivo,
+            'ip_origem'=>$_SERVER['REMOTE_ADDR'] ?? null,'user_agent'=>substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)]);
     }
-
-    /**
-     * Buscar logs por usuário
-     */
-    public function buscarPorUsuario($usuarioId, $limite = 50) {
-        $sql = "SELECT * FROM {$this->tabela} 
-                WHERE usuario_id = ? 
-                ORDER BY created_at DESC 
-                LIMIT ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$usuarioId, $limite]);
-        return $stmt->fetchAll();
+    public function paginar(array $filtros, ?int $empresaId, int $pagina, int $porPagina = 25): array
+    {
+        $sql=' FROM logs_auditoria l LEFT JOIN usuarios u ON u.id=l.usuario_id WHERE 1=1'; $p=[];
+        if ($empresaId !== null) { $sql.=' AND u.empresa_id=:empresa_id'; $p['empresa_id']=$empresaId; }
+        foreach (['usuario_id'=>'usuario_id','acao'=>'acao','tabela_afetada'=>'tabela_afetada','prioridade'=>'prioridade'] as $entrada=>$coluna) if (!empty($filtros[$entrada])) { $sql.=" AND l.$coluna=:$entrada"; $p[$entrada]=$filtros[$entrada]; }
+        if (!empty($filtros['inicio'])) {$sql.=' AND l.criado_em >= :inicio';$p['inicio']=$filtros['inicio'].' 00:00:00';}
+        if (!empty($filtros['fim'])) {$sql.=' AND l.criado_em <= :fim';$p['fim']=$filtros['fim'].' 23:59:59';}
+        $st=$this->bd->prepare('SELECT COUNT(*)'.$sql);$st->execute($p);$total=(int)$st->fetchColumn();
+        $st=$this->bd->prepare('SELECT l.*,u.nome usuario_nome'.$sql.' ORDER BY l.criado_em DESC LIMIT :limite OFFSET :offset'); foreach($p as $k=>$v)$st->bindValue(':'.$k,$v); $st->bindValue(':limite',$porPagina,PDO::PARAM_INT);$st->bindValue(':offset',max(0,($pagina-1)*$porPagina),PDO::PARAM_INT);$st->execute();
+        return ['itens'=>$st->fetchAll(),'total'=>$total,'paginas'=>max(1,(int)ceil($total/$porPagina))];
     }
-
-    /**
-     * Buscar logs recentes
-     */
-    public function buscarRecentes($limite = 100) {
-        $sql = "SELECT la.*, u.nome as usuario_nome 
-                FROM {$this->tabela} la
-                LEFT JOIN usuarios u ON la.usuario_id = u.id
-                ORDER BY la.created_at DESC 
-                LIMIT ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$limite]);
-        return $stmt->fetchAll();
-    }
-
-    /**
-     * Limpar logs antigos
-     */
-    public function limparAntigos($dias = 90) {
-        $sql = "DELETE FROM {$this->tabela} WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$dias]);
-    }
+    public function encontrarVisivel(int $id, ?int $empresaId): array|false { $sql='SELECT l.*,u.nome usuario_nome FROM logs_auditoria l LEFT JOIN usuarios u ON u.id=l.usuario_id WHERE l.id=:id';$p=['id'=>$id];if($empresaId!==null){$sql.=' AND u.empresa_id=:empresa_id';$p['empresa_id']=$empresaId;}$s=$this->bd->prepare($sql);$s->execute($p);return $s->fetch(); }
 }

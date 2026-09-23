@@ -11,6 +11,7 @@ require_once CAMINHO_RAIZ . '/models/Modulo.php';
 require_once CAMINHO_RAIZ . '/middleware/AuthMiddleware.php';
 require_once CAMINHO_RAIZ . '/helpers/flash.php';
 require_once CAMINHO_RAIZ . '/helpers/SegurancaHelper.php';
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 
 class PerfilController extends Controller
 {
@@ -91,6 +92,7 @@ class PerfilController extends Controller
 
         if ($atualizado) {
             $_SESSION['usuario_nome'] = $nome;
+            AuditoriaHelper::registar('perfil_atualizado', 'usuarios', $usuarioId, null, ['nome' => $nome, 'telefone' => $telefone, 'cargo' => $cargo], 'baixa');
             definirFlash('sucesso', 'Perfil atualizado com sucesso!');
         } else {
             definirFlash('erro', 'Erro ao atualizar perfil.');
@@ -151,6 +153,7 @@ class PerfilController extends Controller
         ]);
 
         if ($atualizado) {
+            AuditoriaHelper::registar('senha_alterada', 'usuarios', $usuarioId, null, null, 'alta');
             definirFlash('sucesso', 'Senha alterada com sucesso!');
         } else {
             definirFlash('erro', 'Erro ao alterar senha.');

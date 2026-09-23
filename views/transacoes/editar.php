@@ -213,7 +213,6 @@ document.getElementById('valor')?.addEventListener('input', function(e) {
     border-radius: var(--radius);
     padding: 32px;
     border: 1px solid var(--border);
-    max-width: 820px;
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
 }

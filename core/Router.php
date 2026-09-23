@@ -123,25 +123,31 @@ class Router
         'notificacoes/recentes' => 'notificacoes',
 
         // =============================================
-        // IMPORTAÇÃO
+        // BACKUPS (Super Admin: global | Admin Empresa: apenas a sua empresa)
         // =============================================
-        'importacao' => 'importacao',
-        'importacao/index' => 'importacao',
-        'importacao/upload' => 'importacao',
-        'importacao/processar' => 'importacao',
-        'importacao/historico' => 'importacao',
+        'backups' => 'backups',
+        'backups/index' => 'backups',
+        'backups/gerar' => 'backups',
+        'backups/configurarAutomatico' => 'backups',
+        'backups/download' => 'backups',
+        'backups/eliminar' => 'backups',
 
         // =============================================
         // LOGS (apenas Super Admin)
         // =============================================
         'logs' => 'logs',
         'logs/index' => 'logs',
+        'logs/detalhes' => 'logs',
+        'logs/exportar' => 'logs',
 
         // =============================================
         // CONFIGURAÇÕES (apenas Super Admin)
         // =============================================
         'configuracoes' => 'configuracoes',
         'configuracoes/index' => 'configuracoes',
+        'configuracoes/sistema' => 'configuracoes',
+        'configuracoes/empresa' => 'configuracoes',
+        'configuracoes/guardar' => 'configuracoes',
 
         // =============================================
         // MÉTODOS DE PAGAMENTO (NOVO)
@@ -212,6 +218,9 @@ class Router
         // =============================================
         if ($nomeControlador === 'TransacaoController') {
             $nomeControlador = 'TransacoesController';
+        } elseif ($nomeControlador === 'NotificacoesController') {
+            // A rota é plural, mas o controlador existente é singular.
+            $nomeControlador = 'NotificacaoController';
         }
         
         $parametro = $partes[2] ?? null;

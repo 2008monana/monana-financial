@@ -246,16 +246,14 @@ class RelatoriosController extends Controller
                 ];
             }
             $resumoDiario[$dia]['total']++;
-            if ($t['tipo'] === 'entrada') {
+            if ($t['tipo'] === 'venda') {
                 $resumoDiario[$dia]['entradas'] += (float) $t['valor'];
-                if (stripos($t['descricao'] ?? '', 'venda') !== false || $t['tipo'] === 'entrada') {
-                    $resumoDiario[$dia]['vendas'] += (float) $t['valor'];
-                }
+                $resumoDiario[$dia]['vendas'] += (float) $t['valor'];
             } else {
                 $resumoDiario[$dia]['saidas'] += (float) $t['valor'];
-                if (stripos($t['descricao'] ?? '', 'devolucao') !== false || stripos($t['descricao'] ?? '', 'devolução') !== false) {
+                if ($t['tipo'] === 'devolucao') {
                     $resumoDiario[$dia]['devolucoes'] += (float) $t['valor'];
-                } elseif (stripos($t['descricao'] ?? '', 'compra') !== false) {
+                } elseif ($t['tipo'] === 'compra') {
                     $resumoDiario[$dia]['compras'] += (float) $t['valor'];
                 } else {
                     $resumoDiario[$dia]['despesas'] += (float) $t['valor'];
@@ -357,16 +355,14 @@ class RelatoriosController extends Controller
             $total = count($transacoes);
 
             foreach ($transacoes as $t) {
-                if ($t['tipo'] === 'entrada') {
+                if ($t['tipo'] === 'venda') {
                     $entradas += (float) $t['valor'];
-                    if (stripos($t['descricao'] ?? '', 'venda') !== false || $t['tipo'] === 'entrada') {
-                        $vendas += (float) $t['valor'];
-                    }
+                    $vendas += (float) $t['valor'];
                 } else {
                     $saidas += (float) $t['valor'];
-                    if (stripos($t['descricao'] ?? '', 'devolucao') !== false || stripos($t['descricao'] ?? '', 'devolução') !== false) {
+                    if ($t['tipo'] === 'devolucao') {
                         $devolucoes += (float) $t['valor'];
-                    } elseif (stripos($t['descricao'] ?? '', 'compra') !== false) {
+                    } elseif ($t['tipo'] === 'compra') {
                         $compras += (float) $t['valor'];
                     } else {
                         $despesas += (float) $t['valor'];
@@ -618,7 +614,7 @@ class RelatoriosController extends Controller
 
         $this->renderizar('relatorios/diario-planilha', [
             'tituloPagina' => 'Relatório Planilha',
-            'paginaAtiva' => 'relatorios',
+            'paginaAtiva' => 'planilha',
             'dias' => $dias,
             'consolidado' => $consolidado,
             'filialId' => $filialId,
@@ -653,16 +649,14 @@ class RelatoriosController extends Controller
         ];
 
         foreach ($transacoes as $t) {
-            if ($t['tipo'] === 'entrada') {
+            if ($t['tipo'] === 'venda') {
                 $totais['entradas'] += (float) $t['valor'];
-                if (stripos($t['descricao'] ?? '', 'venda') !== false || $t['tipo'] === 'entrada') {
-                    $totais['vendas'] += (float) $t['valor'];
-                }
+                $totais['vendas'] += (float) $t['valor'];
             } else {
                 $totais['saidas'] += (float) $t['valor'];
-                if (stripos($t['descricao'] ?? '', 'devolucao') !== false || stripos($t['descricao'] ?? '', 'devolução') !== false) {
+                if ($t['tipo'] === 'devolucao') {
                     $totais['devolucoes'] += (float) $t['valor'];
-                } elseif (stripos($t['descricao'] ?? '', 'compra') !== false) {
+                } elseif ($t['tipo'] === 'compra') {
                     $totais['compras'] += (float) $t['valor'];
                 } else {
                     $totais['despesas'] += (float) $t['valor'];
@@ -692,7 +686,7 @@ class RelatoriosController extends Controller
         $entradas = 0;
         $saidas = 0;
         foreach ($transacoes as $t) {
-            if ($t['tipo'] === 'entrada') {
+            if ($t['tipo'] === 'venda') {
                 $entradas += (float) $t['valor'];
             } else {
                 $saidas += (float) $t['valor'];
@@ -730,7 +724,7 @@ class RelatoriosController extends Controller
             $entradas = 0;
             $saidas = 0;
             foreach ($transacoes as $t) {
-                if ($t['tipo'] === 'entrada') {
+                if ($t['tipo'] === 'venda') {
                     $entradas += (float) $t['valor'];
                 } else {
                     $saidas += (float) $t['valor'];
@@ -772,7 +766,7 @@ class RelatoriosController extends Controller
             $entradas = 0;
             $saidas = 0;
             foreach ($transacoes as $t) {
-                if ($t['tipo'] === 'entrada') {
+                if ($t['tipo'] === 'venda') {
                     $entradas += (float) $t['valor'];
                 } else {
                     $saidas += (float) $t['valor'];
@@ -846,8 +840,8 @@ class RelatoriosController extends Controller
                 $linha[] = $t['empresa_nome'] ?? 'N/A';
             }
             $linha[] = $t['descricao'] ?? '-';
-            $linha[] = $t['tipo'] === 'entrada' ? 'Entrada' : 'Saída';
-            $linha[] = ['valor' => (float) $t['valor'], 'tipo' => 'moeda', 'estilo' => $t['tipo'] === 'entrada' ? 'positivo' : 'negativo'];
+            $linha[] = ucfirst($t['tipo']);
+            $linha[] = ['valor' => (float) $t['valor'], 'tipo' => 'moeda', 'estilo' => $t['tipo'] === 'venda' ? 'positivo' : 'negativo'];
             $linha[] = $t['filial_nome'] ?? '-';
             $linha[] = $t['usuario_nome'] ?? '-';
             $linhas[] = $linha;
@@ -886,8 +880,8 @@ class RelatoriosController extends Controller
                 $linha[] = ['texto' => $t['empresa_nome'] ?? 'N/A'];
             }
             $linha[] = ['texto' => $t['descricao'] ?? '-'];
-            $linha[] = ['texto' => $t['tipo'] === 'entrada' ? 'Entrada' : 'Saída', 'tipo' => 'badge', 'badge_classe' => $t['tipo'] === 'entrada' ? 'badge-sucesso' : 'badge-perigo'];
-            $linha[] = ['texto' => number_format((float) $t['valor'], 0, ',', '.'), 'classe' => $t['tipo'] === 'entrada' ? 'positivo' : 'negativo', 'alinhar' => 'direita'];
+            $linha[] = ['texto' => ucfirst($t['tipo']), 'tipo' => 'badge', 'badge_classe' => $t['tipo'] === 'venda' ? 'badge-sucesso' : 'badge-perigo'];
+            $linha[] = ['texto' => number_format((float) $t['valor'], 0, ',', '.'), 'classe' => $t['tipo'] === 'venda' ? 'positivo' : 'negativo', 'alinhar' => 'direita'];
             $linha[] = ['texto' => $t['filial_nome'] ?? '-'];
             $linha[] = ['texto' => $t['usuario_nome'] ?? '-'];
             $linhas[] = $linha;

@@ -1,4 +1,5 @@
 <?php
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Usuario.php';
 
@@ -36,7 +37,8 @@ class AuthController extends Controller
         $senha = trim($_POST['senha'] ?? '');
 
         if ($email === '' || $senha === '') {
-            $this->responderJson([
+            AuditoriaHelper::registar('login_falhado', 'usuarios', null, null, ['email_tentado' => $email], 'alta', 'Credenciais incompletas');
+            $this->json([
                 'sucesso' => false,
                 'mensagem' => 'Preencha o utilizador e a palavra-passe.',
             ], 422);
@@ -45,29 +47,34 @@ class AuthController extends Controller
         $usuario = $this->usuarioModel->encontrarPorEmail($email);
 
         if (!$usuario || !$usuario['ativo']) {
-            $this->responderJson([
+            AuditoriaHelper::registar('login_falhado', 'usuarios', null, null, ['email_tentado' => $email], 'alta', 'Utilizador inexistente ou inativo');
+            $this->json([
                 'sucesso' => false,
                 'mensagem' => 'Credenciais inválidas. Tente novamente.',
             ], 401);
         }
 
         if (!$this->usuarioModel->verificarSenha($senha, $usuario['senha_hash'])) {
-            $this->responderJson([
+            AuditoriaHelper::registar('login_falhado', 'usuarios', (int) $usuario['id'], null, ['email_tentado' => $email], 'alta', 'Palavra-passe inválida');
+            $this->json([
                 'sucesso' => false,
                 'mensagem' => 'Credenciais inválidas. Tente novamente.',
             ], 401);
         }
 
-        // Autenticação bem-sucedida — inicia a sessão
+        // Autenticação bem-sucedida — inicia uma sessão nova para evitar fixação.
+        session_regenerate_id(true);
         $_SESSION['usuario_id']      = $usuario['id'];
         $_SESSION['usuario_nome']    = $usuario['nome'];
         $_SESSION['usuario_email']   = $usuario['email'];
         $_SESSION['usuario_perfil']  = $usuario['perfil'];
         $_SESSION['empresa_id']      = $usuario['empresa_id'];
+        $_SESSION['sessao_iniciada_em'] = time();
 
         $this->usuarioModel->atualizarUltimoLogin((int) $usuario['id']);
+        AuditoriaHelper::registar('login_sucesso', 'usuarios', (int) $usuario['id'], null, ['email' => $usuario['email']], 'alta');
 
-        $this->responderJson([
+        $this->json([
             'sucesso'    => true,
             'mensagem'   => 'Bem-vindo, ' . $usuario['nome'] . '!',
             'redirecionar' => URL_BASE . '/dashboard/index',
@@ -77,6 +84,7 @@ class AuthController extends Controller
     /** Termina a sessão */
     public function logout(): void
     {
+        AuditoriaHelper::registar('logout', 'usuarios', (int) ($_SESSION['usuario_id'] ?? 0), null, ['duracao_segundos' => max(0, time() - (int) ($_SESSION['sessao_iniciada_em'] ?? time()))], 'media');
         $_SESSION = [];
         session_destroy();
         $this->redirecionar('auth/login');
@@ -96,9 +104,10 @@ class AuthController extends Controller
     {
         $email = trim($_POST['email'] ?? '');
         $usuario = $this->usuarioModel->encontrarPorEmail($email);
+        AuditoriaHelper::registar('senha_recuperacao_solicitada', 'usuarios', $usuario ? (int) $usuario['id'] : null, null, ['email' => $email], 'alta');
 
         // Por segurança, a resposta é sempre a mesma, exista ou não o e-mail.
-        $this->responderJson([
+        $this->json([
             'sucesso'  => true,
             'mensagem' => 'Se o e-mail existir na nossa base de dados, enviaremos as instruções de recuperação.',
         ]);
@@ -115,6 +124,6 @@ class AuthController extends Controller
     {
         // Implementação completa (validação de token/expiração) na fase de
         // Recuperação de Senha + Mailer.
-        $this->responderJson(['sucesso' => true, 'mensagem' => 'Senha redefinida com sucesso.']);
+        $this->json(['sucesso' => true, 'mensagem' => 'Senha redefinida com sucesso.']);
     }
 }

@@ -17,7 +17,6 @@ class UsuarioPermissao extends Model
         'ver_relatorios_consolidados',
         'ver_relatorios_filial',
         'exportar_relatorios',
-        'importar_excel',
     ];
 
     public function obterPorUsuario(int $usuarioId): array

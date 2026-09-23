@@ -5,6 +5,7 @@
  */
 
 require_once CAMINHO_RAIZ . '/core/Controller.php';
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 require_once CAMINHO_RAIZ . '/models/MetodoPagamento.php';
 require_once CAMINHO_RAIZ . '/models/CategoriaSaida.php';
 require_once CAMINHO_RAIZ . '/middleware/AuthMiddleware.php';
@@ -46,7 +47,7 @@ class MetodosPagamentoController extends Controller
 
         $this->renderizar('metodos-pagamento/index', [
             'tituloPagina' => 'Métodos de Pagamento',
-            'paginaAtiva' => 'configuracoes',
+            'paginaAtiva' => 'metodos-pagamento',
             'entradas' => $entradas,
             'saidas' => $saidas,
             'categoriasSaida' => $categoriasSaida,
@@ -70,7 +71,7 @@ class MetodosPagamentoController extends Controller
 
         $this->renderizar('metodos-pagamento/form', [
             'tituloPagina' => 'Novo Método de Pagamento',
-            'paginaAtiva' => 'configuracoes',
+            'paginaAtiva' => 'metodos-pagamento',
             'metodo' => null,
             'empresaId' => $empresaId,
             'categorias' => $this->metodoModel->getCategorias(),
@@ -114,6 +115,7 @@ class MetodosPagamentoController extends Controller
         $id = $this->metodoModel->criar($dados);
 
         if ($id) {
+            AuditoriaHelper::registar('metodo_criado', 'metodos_pagamento', (int) $id, null, $dados, 'media');
             definirFlash('sucesso', 'Método de pagamento criado com sucesso!');
         } else {
             definirFlash('erro', 'Erro ao criar método de pagamento.');
@@ -137,7 +139,7 @@ class MetodosPagamentoController extends Controller
 
         $this->renderizar('metodos-pagamento/form', [
             'tituloPagina' => 'Editar Método de Pagamento',
-            'paginaAtiva' => 'configuracoes',
+            'paginaAtiva' => 'metodos-pagamento',
             'metodo' => $metodo,
             'empresaId' => $metodo['empresa_id'],
             'categorias' => $this->metodoModel->getCategorias(),
@@ -174,9 +176,11 @@ class MetodosPagamentoController extends Controller
             return;
         }
 
+        $antes = $this->metodoModel->encontrarPorId((int) $id);
         $atualizado = $this->metodoModel->atualizar((int)$id, $dados);
 
         if ($atualizado) {
+            AuditoriaHelper::registar('metodo_editado', 'metodos_pagamento', (int) $id, $antes ?: null, $dados, 'media');
             definirFlash('sucesso', 'Método atualizado com sucesso!');
         } else {
             definirFlash('erro', 'Erro ao atualizar método.');
@@ -195,6 +199,7 @@ class MetodosPagamentoController extends Controller
         if ($metodo) {
             $novoEstado = $metodo['ativo'] ? 0 : 1;
             $this->metodoModel->atualizar((int)$id, ['ativo' => $novoEstado]);
+            AuditoriaHelper::registar('metodo_estado_alterado', 'metodos_pagamento', (int) $id, ['ativo'=>$metodo['ativo']], ['ativo'=>$novoEstado], 'media');
             definirFlash('sucesso', $metodo['ativo'] ? 'Método desativado.' : 'Método reativado.');
         }
 
@@ -210,6 +215,7 @@ class MetodosPagamentoController extends Controller
 
         if ($metodo) {
             $this->metodoModel->eliminar((int)$id);
+            AuditoriaHelper::registar('metodo_eliminado', 'metodos_pagamento', (int)$id, $metodo, null, 'alta');
             definirFlash('sucesso', 'Método de pagamento eliminado.');
         }
 
@@ -235,7 +241,7 @@ class MetodosPagamentoController extends Controller
 
         $this->renderizar('metodos-pagamento/categoria-form', [
             'tituloPagina' => 'Nova Categoria de Saída',
-            'paginaAtiva' => 'configuracoes',
+            'paginaAtiva' => 'metodos-pagamento',
             'categoria' => null,
             'empresaId' => $empresaId,
             'cores' => $this->categoriaSaidaModel->getCoresDisponiveis(),
@@ -275,6 +281,7 @@ class MetodosPagamentoController extends Controller
         $id = $this->categoriaSaidaModel->criar($dados);
 
         if ($id) {
+            AuditoriaHelper::registar('categoria_saida_criada', 'categorias_saida', (int)$id, null, $dados, 'media');
             definirFlash('sucesso', 'Categoria de saída criada com sucesso!');
         } else {
             definirFlash('erro', 'Erro ao criar categoria de saída.');
@@ -293,6 +300,7 @@ class MetodosPagamentoController extends Controller
         if ($categoria) {
             $novoEstado = $categoria['ativo'] ? 0 : 1;
             $this->categoriaSaidaModel->atualizar((int)$id, ['ativo' => $novoEstado]);
+            AuditoriaHelper::registar($novoEstado ? 'categoria_saida_ativada' : 'categoria_saida_desativada', 'categorias_saida', (int)$id, ['ativo' => $categoria['ativo']], ['ativo' => $novoEstado], 'media');
             definirFlash('sucesso', $categoria['ativo'] ? 'Categoria desativada.' : 'Categoria reativada.');
         }
 
@@ -308,6 +316,7 @@ class MetodosPagamentoController extends Controller
 
         if ($categoria) {
             $this->categoriaSaidaModel->eliminar((int)$id);
+            AuditoriaHelper::registar('categoria_saida_eliminada', 'categorias_saida', (int)$id, $categoria, null, 'alta');
             definirFlash('sucesso', 'Categoria de saída eliminada.');
         }
 

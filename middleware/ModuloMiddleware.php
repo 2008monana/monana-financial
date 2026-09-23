@@ -1,5 +1,6 @@
 <?php
 require_once CAMINHO_RAIZ . '/models/Modulo.php';
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 
 class ModuloMiddleware
 {
@@ -13,10 +14,11 @@ class ModuloMiddleware
         'categorias',
         'filiais',
         'usuarios',
-        'importacao',
+        'backups',
         'perfil',
         'notificacoes',
         'metodos_pagamento',  // NOVO
+        'logs',               // CORRIGIDO: LogsController já permite admin_empresa (âmbito por empresa)
     ];
 
     public function __construct()
@@ -51,7 +53,9 @@ class ModuloMiddleware
             }
             
             // Módulos que são exclusivos do Super Admin
-            $modulosExclusivos = ['configuracoes', 'logs', 'empresas'];
+            // ('logs' NÃO entra aqui: LogsController permite admin_empresa e já limita
+            // a consulta à própria empresa via LogsController::empresaId())
+            $modulosExclusivos = ['configuracoes', 'empresas'];
             if (in_array($moduloNome, $modulosExclusivos)) {
                 $this->negarAcesso();
             }
@@ -77,6 +81,7 @@ class ModuloMiddleware
      */
     private function negarAcesso(): void
     {
+        AuditoriaHelper::registar('permissao_negada', null, null, null, ['rota'=>$_GET['url'] ?? '', 'perfil'=>$_SESSION['usuario_perfil'] ?? ''], 'alta', 'Utilizador sem permissão para o módulo solicitado');
         $_SESSION['flash'] = [
             'tipo' => 'erro',
             'mensagem' => 'Não tem permissão para aceder a esta página.'

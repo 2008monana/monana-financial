@@ -1,4 +1,5 @@
 <?php
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 /**
  * TransacoesController - COMPLETO COM RESUMOS MENSAIS E FECHO DIÁRIO
  * Gerencia os lançamentos financeiros (vendas, compras, despesas, devoluções)
@@ -17,6 +18,7 @@ if (file_exists(CAMINHO_RAIZ . '/vendor/autoload.php')) {
 // Construtores reutilizáveis de exportação
 require_once CAMINHO_RAIZ . '/exports/pdf/RelatorioPdfBuilder.php';
 require_once CAMINHO_RAIZ . '/exports/excel/RelatorioExcelBuilder.php';
+require_once CAMINHO_RAIZ . '/helpers/NotificacaoHelper.php';
 
 // =============================================
 // NOVO: Model ResumoMensal
@@ -144,7 +146,7 @@ class TransacoesController extends Controller
         $totalEntradas = 0;
         $totalSaidas = 0;
         foreach ($transacoes as $t) {
-            if ($t['tipo'] === 'entrada') {
+            if ($t['tipo'] === 'venda') {
                 $totalEntradas += (float) $t['valor'];
             } else {
                 $totalSaidas += (float) $t['valor'];
@@ -165,7 +167,7 @@ class TransacoesController extends Controller
                 foreach ($transacoes as $t) {
                     if (isset($t['empresa_id']) && (int)$t['empresa_id'] === (int)$emp['id']) {
                         $total++;
-                        if ($t['tipo'] === 'entrada') {
+                        if ($t['tipo'] === 'venda') {
                             $entradas += (float) $t['valor'];
                         } else {
                             $saidas += (float) $t['valor'];
@@ -190,7 +192,7 @@ class TransacoesController extends Controller
                 foreach ($transacoes as $t) {
                     if ((int)$t['filial_id'] === (int)$filial['id']) {
                         $total++;
-                        if ($t['tipo'] === 'entrada') {
+                        if ($t['tipo'] === 'venda') {
                             $entradas += (float) $t['valor'];
                         } else {
                             $saidas += (float) $t['valor'];
@@ -237,10 +239,7 @@ class TransacoesController extends Controller
             'resumoPorFilial' => $resumoPorFilial,
             'resumoPorEmpresa' => $resumoPorEmpresa,
             'perfil' => $perfil,
-            'tipos' => [
-                'entrada' => 'Entrada',
-                'saida' => 'Saída',
-            ],
+            'tipos' => $this->tiposTransacao(),
             'metodos_pagamento' => [
                 'numerario' => 'Numerário',
                 'tpa' => 'TPA',
@@ -282,10 +281,7 @@ class TransacoesController extends Controller
             'paginaAtiva' => 'transacoes',
             'filiais' => $filiais,
             'categorias' => $categorias,
-            'tipos' => [
-                'entrada' => 'Entrada (Venda)',
-                'saida' => 'Saída (Compra/Despesa)',
-            ],
+            'tipos' => $this->tiposTransacao(),
             'metodos_pagamento' => [
                 'numerario' => 'Numerário',
                 'tpa' => 'TPA',
@@ -315,7 +311,7 @@ class TransacoesController extends Controller
         // CORREÇÃO: Validar tipo corretamente
         // =============================================
         $tipo = $_POST['tipo'] ?? '';
-        if (!in_array($tipo, ['entrada', 'saida'])) {
+        if (!array_key_exists($tipo, $this->tiposTransacao())) {
             $this->setFlash('erro', 'Tipo inválido selecionado.');
             $this->redirecionar('transacoes/criar');
             return;
@@ -337,7 +333,7 @@ class TransacoesController extends Controller
             'filial_id' => (int) $_POST['filial_id'],
             'usuario_id' => $usuarioId,
             'categoria_id' => (int) $_POST['categoria_id'],
-            'tipo' => $tipo,  // 'entrada' ou 'saida'
+            'tipo' => $tipo,
             'descricao' => trim($_POST['descricao'] ?? ''),
             'valor' => (float) str_replace(',', '.', str_replace('.', '', $_POST['valor'])),
             'metodo_pagamento' => $_POST['metodo_pagamento'],
@@ -350,6 +346,8 @@ class TransacoesController extends Controller
         if ($id) {
             // Atualizar resumo mensal
             $this->atualizarResumoMensal((int) $dados['filial_id'], $dados['data_transacao']);
+            AuditoriaHelper::registar('transacao_criada', 'transacoes', (int) $id, null, $dados);
+            NotificacaoHelper::paraUsuario($usuarioId, 'sucesso', 'Lançamento registado', $this->rotuloTipo($dados['tipo']) . ' de ' . number_format((float) $dados['valor'], 0, ',', '.') . ' Kz foi registado.', URL_BASE . '/transacoes/editar/' . $id);
             $this->setFlash('sucesso', 'Lançamento criado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao criar lançamento. Tente novamente.');
@@ -399,10 +397,7 @@ class TransacoesController extends Controller
             'transacao' => $transacao,
             'filiais' => $filiais,
             'categorias' => $categorias,
-            'tipos' => [
-                'entrada' => 'Entrada (Venda)',
-                'saida' => 'Saída (Compra/Despesa)',
-            ],
+            'tipos' => $this->tiposTransacao(),
             'metodos_pagamento' => [
                 'numerario' => 'Numerário',
                 'tpa' => 'TPA',
@@ -478,6 +473,13 @@ class TransacoesController extends Controller
             // Atualizar resumo mensal (data antiga e nova)
             $this->atualizarResumoMensal($filialIdAntigo, $dataAntiga);
             $this->atualizarResumoMensal((int) $dados['filial_id'], $dados['data_transacao']);
+            AuditoriaHelper::registar('transacao_editada', 'transacoes', (int) $id, $transacao, $dados);
+            if ((float) $transacao['valor'] !== (float) $dados['valor']) {
+                AuditoriaHelper::registar('transacao_valor_alterado', 'transacoes', (int) $id, ['valor'=>$transacao['valor']], ['valor'=>$dados['valor']], 'alta');
+            }
+            if ($transacao['tipo'] !== $dados['tipo']) {
+                AuditoriaHelper::registar('transacao_tipo_alterado', 'transacoes', (int) $id, ['tipo'=>$transacao['tipo']], ['tipo'=>$dados['tipo']], 'alta');
+            }
             $this->setFlash('sucesso', 'Lançamento atualizado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao atualizar lançamento.');
@@ -522,6 +524,7 @@ class TransacoesController extends Controller
         if ($excluido) {
             // Atualizar resumo mensal
             $this->atualizarResumoMensal($filialId, $dataTransacao);
+            AuditoriaHelper::registar('transacao_eliminada', 'transacoes', (int) $id, $transacao, null);
             $this->setFlash('sucesso', 'Lançamento eliminado com sucesso!');
         } else {
             $this->setFlash('erro', 'Erro ao eliminar lançamento.');
@@ -554,10 +557,10 @@ class TransacoesController extends Controller
                 $linha[] = $t['empresa_nome'] ?? 'N/A';
             }
             $linha[] = $t['filial_nome'] ?? 'N/A';
-            $linha[] = $t['tipo'] === 'entrada' ? 'Entrada' : 'Saída';
+            $linha[] = $this->rotuloTipo($t['tipo']);
             $linha[] = $t['categoria_nome'] ?? 'N/A';
             $linha[] = $t['descricao'] ?? '-';
-            $linha[] = ['valor' => (float) $t['valor'], 'tipo' => 'moeda', 'estilo' => $t['tipo'] === 'entrada' ? 'positivo' : 'negativo'];
+            $linha[] = ['valor' => (float) $t['valor'], 'tipo' => 'moeda', 'estilo' => $t['tipo'] === 'venda' ? 'positivo' : 'negativo'];
             $linha[] = $t['usuario_nome'] ?? 'N/A';
             $linhas[] = $linha;
         }
@@ -600,15 +603,15 @@ class TransacoesController extends Controller
             }
             $linha[] = $t['filial_nome'] ?? 'N/A';
             $linha[] = [
-                'texto' => $t['tipo'] === 'entrada' ? 'Entrada' : 'Saída',
+                'texto' => $this->rotuloTipo($t['tipo']),
                 'tipo' => 'badge',
-                'badge_classe' => $t['tipo'] === 'entrada' ? 'badge-sucesso' : 'badge-perigo',
+                'badge_classe' => $t['tipo'] === 'venda' ? 'badge-sucesso' : 'badge-perigo',
             ];
             $linha[] = $t['categoria_nome'] ?? 'N/A';
             $linha[] = $t['descricao'] ?? '-';
             $linha[] = [
                 'texto' => number_format((float) $t['valor'], 0, ',', '.'),
-                'classe' => $t['tipo'] === 'entrada' ? 'positivo' : 'negativo',
+                'classe' => $t['tipo'] === 'venda' ? 'positivo' : 'negativo',
                 'alinhar' => 'direita',
             ];
             $linha[] = $t['usuario_nome'] ?? 'N/A';
@@ -636,6 +639,22 @@ class TransacoesController extends Controller
     // MÉTODOS AUXILIARES
     // =============================================
 
+    /** Tipos persistidos pelo enum da tabela transacoes. */
+    private function tiposTransacao(): array
+    {
+        return [
+            'venda' => 'Venda',
+            'devolucao' => 'Devolução',
+            'compra' => 'Compra',
+            'custo' => 'Custo',
+        ];
+    }
+
+    private function rotuloTipo(string $tipo): string
+    {
+        return $this->tiposTransacao()[$tipo] ?? ucfirst($tipo);
+    }
+
     /**
      * Validar dados do formulário
      */
@@ -655,8 +674,8 @@ class TransacoesController extends Controller
         // CORREÇÃO: Validar tipo corretamente
         // =============================================
         $tipo = $dados['tipo'] ?? '';
-        if (empty($tipo) || !in_array($tipo, ['entrada', 'saida'])) {
-            $erros['tipo'] = 'Selecione um tipo válido (Entrada ou Saída).';
+        if (empty($tipo) || !array_key_exists($tipo, $this->tiposTransacao())) {
+            $erros['tipo'] = 'Selecione um tipo de lançamento válido.';
         }
 
         if (empty($dados['valor']) || $dados['valor'] <= 0) {
@@ -710,7 +729,7 @@ class TransacoesController extends Controller
         $totalEntradas = 0;
         $totalSaidas = 0;
         foreach ($transacoes as $t) {
-            if ($t['tipo'] === 'entrada') {
+            if ($t['tipo'] === 'venda') {
                 $totalEntradas += (float) $t['valor'];
             } else {
                 $totalSaidas += (float) $t['valor'];
@@ -809,7 +828,7 @@ class TransacoesController extends Controller
 
         $this->renderizar('transacoes/fecho-diario', [
             'tituloPagina' => 'Fecho Diário',
-            'paginaAtiva' => 'transacoes',
+            'paginaAtiva' => 'fecho-diario',
             'filiais' => $filiais,
             'data' => $data,
             'filialId' => $filialId,
@@ -850,7 +869,7 @@ class TransacoesController extends Controller
             'filial_id' => $filialId,
             'usuario_id' => $usuarioId,
             'categoria_id' => 1, // Categoria padrão
-            'tipo' => 'entrada',
+            'tipo' => 'venda',
             'descricao' => 'Fecho diário - ' . date('d/m/Y', strtotime($data)),
             'data_transacao' => $data,
             

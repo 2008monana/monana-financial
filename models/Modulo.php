@@ -5,6 +5,63 @@ class Modulo extends Model
 {
     protected string $tabela = 'modulos';
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->garantirTabelas();
+    }
+
+    /**
+     * Evita o erro fatal "tabela não existe" em instalações que ainda não
+     * executaram database/migracao_modulos_backup.sql.
+     */
+    private function garantirTabelas(): void
+    {
+        $this->bd->exec(
+            "CREATE TABLE IF NOT EXISTS modulos (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                nome VARCHAR(60) NOT NULL UNIQUE,
+                descricao VARCHAR(150) NULL,
+                icone VARCHAR(40) NULL,
+                ativo TINYINT(1) NOT NULL DEFAULT 1,
+                ordem INT UNSIGNED NOT NULL DEFAULT 0
+            ) ENGINE=InnoDB"
+        );
+        $this->bd->exec(
+            "CREATE TABLE IF NOT EXISTS usuario_modulo_permissoes (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                usuario_id INT UNSIGNED NOT NULL,
+                modulo_id INT UNSIGNED NOT NULL,
+                criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_ump_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+                CONSTRAINT fk_ump_modulo FOREIGN KEY (modulo_id) REFERENCES modulos(id) ON DELETE CASCADE,
+                UNIQUE KEY uk_usuario_modulo (usuario_id, modulo_id)
+            ) ENGINE=InnoDB"
+        );
+
+        $total = (int) $this->bd->query('SELECT COUNT(*) FROM modulos')->fetchColumn();
+        if ($total === 0) {
+            $stmt = $this->bd->prepare(
+                'INSERT IGNORE INTO modulos (nome, descricao, icone, ordem) VALUES (:nome, :descricao, :icone, :ordem)'
+            );
+            foreach ([
+                ['dashboard', 'Painel principal', 'fa-house', 1],
+                ['movimentos', 'Transações / Movimentos', 'fa-list-ul', 2],
+                ['relatorios', 'Relatórios', 'fa-chart-column', 3],
+                ['categorias', 'Categorias', 'fa-tags', 4],
+                ['filiais', 'Filiais', 'fa-code-branch', 5],
+                ['usuarios', 'Utilizadores', 'fa-users', 6],
+                ['metodos_pagamento', 'Métodos de pagamento', 'fa-credit-card', 7],
+                ['notificacoes', 'Notificações', 'fa-bell', 8],
+                ['backups', 'Cópias de segurança', 'fa-database', 9],
+                ['logs', 'Logs de auditoria', 'fa-clipboard-list', 10],
+                ['configuracoes', 'Configurações do sistema', 'fa-gear', 11],
+            ] as [$nome, $descricao, $icone, $ordem]) {
+                $stmt->execute(['nome' => $nome, 'descricao' => $descricao, 'icone' => $icone, 'ordem' => $ordem]);
+            }
+        }
+    }
+
     public function todosAtivos(): array
     {
         $stmt = $this->bd->query("SELECT * FROM modulos WHERE ativo = 1 ORDER BY id");

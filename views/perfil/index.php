@@ -13,7 +13,7 @@
 <!-- ============================================
 CARD 1: DADOS PESSOAIS
 ============================================ -->
-<div class="form-card" style="max-width: 820px;">
+<div class="form-card">
     <div class="form-card-header">
         <div class="form-card-icon" style="background:linear-gradient(135deg, var(--navy), var(--navy-light));">
             <i class="fas fa-user"></i>
@@ -74,7 +74,7 @@ CARD 1: DADOS PESSOAIS
 <!-- ============================================
 CARD 2: ALTERAR SENHA
 ============================================ -->
-<div class="form-card" style="max-width: 820px; margin-top:20px;">
+<div class="form-card" style="margin-top:20px;">
     <div class="form-card-header" style="background:#fef2f2; border-color:#fecaca;">
         <div class="form-card-icon" style="background:linear-gradient(135deg, var(--red), var(--red-dark));">
             <i class="fas fa-lock"></i>
@@ -124,7 +124,7 @@ CARD 2: ALTERAR SENHA
 <!-- ============================================
 CARD 3: PERMISSÕES
 ============================================ -->
-<div class="form-card" style="max-width: 820px; margin-top:20px; opacity:0.85;">
+<div class="form-card" style="margin-top:20px; opacity:0.85;">
     <div class="form-card-header" style="background:#f0fdf4; border-color:#bbf7d0;">
         <div class="form-card-icon" style="background:linear-gradient(135deg, var(--green), var(--green-dark));">
             <i class="fas fa-shield-alt"></i>

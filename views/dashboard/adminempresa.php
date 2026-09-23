@@ -252,7 +252,7 @@
     <a href="#" class="quick-btn primary"><i class="fas fa-plus-circle"></i> Novo Lançamento</a>
     <a href="#" class="quick-btn success"><i class="fas fa-store"></i> Nova Filial</a>
     <a href="#" class="quick-btn purple"><i class="fas fa-user-plus"></i> Novo Utilizador</a>
-    <a href="#" class="quick-btn orange"><i class="fas fa-file-import"></i> Importar Excel</a>
+    <a href="<?php echo URL_BASE; ?>/backups/index" class="quick-btn orange"><i class="fas fa-database"></i> Backups</a>
     <a href="#" class="quick-btn blue"><i class="fas fa-file-alt"></i> Gerar Relatório</a>
 </div>
 

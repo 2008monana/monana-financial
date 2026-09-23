@@ -42,7 +42,7 @@ if ($isAdminEmpresa || $isSuperAdmin) {
 // Grupo 4: FERRAMENTAS (Admin Empresa + Super Admin)
 $grupoFerramentas = [];
 if ($isAdminEmpresa || $isSuperAdmin) {
-    $grupoFerramentas[] = ['rota' => 'importacao/index', 'icone' => 'fa-file-import', 'texto' => 'Importar Excel', 'modulo' => 'importacao'];
+    $grupoFerramentas[] = ['rota' => 'backups/index', 'icone' => 'fa-database', 'texto' => 'Backups', 'modulo' => 'backups'];
 }
 
 // Grupo 5: ADMINISTRAÇÃO (apenas Super Admin)
