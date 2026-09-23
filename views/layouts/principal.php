@@ -2391,10 +2391,6 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'backups' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/backups/index">
             <i class="fa-solid fa-database"></i> Backups
         </a>
-        <!-- NOVO: Métodos de Pagamento -->
-        <a class="nav-item <?php echo $paginaAtiva === 'metodos-pagamento' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/metodos-pagamento/index">
-            <i class="fa-solid fa-credit-card"></i> Métodos de Pagamento
-        </a>
         <?php endif; ?>
 
         <!-- GRUPO 5: ADMINISTRAÇÃO -->

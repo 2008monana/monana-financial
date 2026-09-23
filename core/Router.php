@@ -149,22 +149,6 @@ class Router
         'configuracoes/sistema' => 'configuracoes',
         'configuracoes/empresa' => 'configuracoes',
         'configuracoes/guardar' => 'configuracoes',
-
-        // =============================================
-        // MÉTODOS DE PAGAMENTO (NOVO)
-        // =============================================
-        'metodos-pagamento' => 'metodos_pagamento',
-        'metodos-pagamento/index' => 'metodos_pagamento',
-        'metodos-pagamento/criar' => 'metodos_pagamento',
-        'metodos-pagamento/gravar' => 'metodos_pagamento',
-        'metodos-pagamento/editar' => 'metodos_pagamento',
-        'metodos-pagamento/atualizar' => 'metodos_pagamento',
-        'metodos-pagamento/alternarEstado' => 'metodos_pagamento',
-        'metodos-pagamento/eliminar' => 'metodos_pagamento',
-        'metodos-pagamento/criarCategoriaSaida' => 'metodos_pagamento',
-        'metodos-pagamento/gravarCategoriaSaida' => 'metodos_pagamento',
-        'metodos-pagamento/alternarEstadoCategoria' => 'metodos_pagamento',
-        'metodos-pagamento/eliminarCategoria' => 'metodos_pagamento',
     ];
 
     /**

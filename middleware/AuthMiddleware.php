@@ -51,7 +51,6 @@ class AuthMiddleware
         return [
             'empresas' => 'empresas', 'filiais' => 'filiais', 'usuarios' => 'usuarios',
             'backups' => 'backups', 'logs' => 'logs', 'configuracoes' => 'configuracoes',
-            'metodos-pagamento' => 'metodos_pagamento',
         ][$pagina] ?? null;
     }
 

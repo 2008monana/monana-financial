@@ -1,4 +1,42 @@
-```
-# Database migration files
-*.sql
-```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+
+# Dependencies
+vendor/
+composer.lock
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*~
+*.bak
+*.backup
+
+# PHP specific
+*.php~
+.php_cs.cache
+
+# Session files
+sess_*
+
+# Cache directories
+cache/
+tmp/
+temp/

@@ -104,29 +104,12 @@ unset($_SESSION['erros']);
                 <?php endif; ?>
             </div>
 
-            <div class="form-group">
-                <label for="metodo_pagamento">
-                    <i class="fas fa-credit-card"></i> Método de Pagamento <span class="required">*</span>
+            <div class="form-group full-width">
+                <label for="descricao">
+                    <i class="fas fa-align-left"></i> Descrição
                 </label>
-                <select id="metodo_pagamento" name="metodo_pagamento" required>
-                    <option value="">Selecione...</option>
-                    <?php foreach ($metodos_pagamento as $value => $label): ?>
-                    <option value="<?php echo $value; ?>" <?php echo $transacao['metodo_pagamento'] === $value ? 'selected' : ''; ?>>
-                        <?php echo $label; ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
-                <?php if (!empty($erros['metodo_pagamento'])): ?>
-                <span class="error-text"><i class="fas fa-exclamation-circle"></i> <?php echo $erros['metodo_pagamento']; ?></span>
-                <?php endif; ?>
+                <textarea id="descricao" name="descricao" rows="3" placeholder="Descrição do lançamento..."><?php echo htmlspecialchars($transacao['descricao'] ?? ''); ?></textarea>
             </div>
-        </div>
-
-        <div class="form-group full-width">
-            <label for="descricao">
-                <i class="fas fa-align-left"></i> Descrição
-            </label>
-            <textarea id="descricao" name="descricao" rows="3" placeholder="Descrição do lançamento..."><?php echo htmlspecialchars($transacao['descricao'] ?? ''); ?></textarea>
         </div>
 
         <div class="form-actions">

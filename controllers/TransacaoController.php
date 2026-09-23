@@ -336,7 +336,6 @@ class TransacoesController extends Controller
             'tipo' => $tipo,
             'descricao' => trim($_POST['descricao'] ?? ''),
             'valor' => (float) str_replace(',', '.', str_replace('.', '', $_POST['valor'])),
-            'metodo_pagamento' => $_POST['metodo_pagamento'],
             'data_transacao' => $_POST['data_transacao'],
         ];
 
@@ -462,7 +461,6 @@ class TransacoesController extends Controller
             'tipo' => $_POST['tipo'],
             'descricao' => trim($_POST['descricao'] ?? ''),
             'valor' => (float) str_replace(',', '.', str_replace('.', '', $_POST['valor'])),
-            'metodo_pagamento' => $_POST['metodo_pagamento'],
             'data_transacao' => $_POST['data_transacao'],
         ];
 
