@@ -9,7 +9,6 @@ $podeGerir = in_array($perfilAtual, ['super_admin', 'admin_empresa']);
 
 $totalMetodos   = count($metodos);
 $totalActivos   = count(array_filter($metodos, fn($m) => !empty($m['ativo'])));
-$totalPadrao    = count(array_filter($metodos, fn($m) => empty($m['empresa_id'])));
 ?>
 
 <div class="page-header">
@@ -40,13 +39,6 @@ $totalPadrao    = count(array_filter($metodos, fn($m) => empty($m['empresa_id'])
         <div class="stat-info">
             <span class="stat-value"><?php echo $totalActivos; ?></span>
             <span class="stat-label">Activos</span>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon orange"><i class="fas fa-globe"></i></div>
-        <div class="stat-info">
-            <span class="stat-value"><?php echo $totalPadrao; ?></span>
-            <span class="stat-label">Padrão do Sistema</span>
         </div>
     </div>
 </div>
@@ -126,14 +118,10 @@ $totalPadrao    = count(array_filter($metodos, fn($m) => empty($m['empresa_id'])
                                 <?php echo htmlspecialchars($metodo['descricao'] ?? '-') ?: '-'; ?>
                             </td>
                             <td>
-                                <?php if (empty($metodo['empresa_id'])): ?>
-                                    <span class="badge badge-info">Padrão do Sistema</span>
-                                <?php else: ?>
-                                    <?php $nome_emp = $empresas_mapa[(int) $metodo['empresa_id']] ?? null; ?>
-                                    <span class="badge badge-secondary" title="Empresa ID <?php echo (int) $metodo['empresa_id']; ?>">
-                                        <?php echo htmlspecialchars($nome_emp ?? ('Empresa #' . (int) $metodo['empresa_id'])); ?>
-                                    </span>
-                                <?php endif; ?>
+                                <?php $nome_emp = $empresas_mapa[(int)($metodo['empresa_id'] ?? 0)] ?? null; ?>
+                                <span class="badge badge-secondary" title="Empresa ID <?php echo (int) ($metodo['empresa_id'] ?? 0); ?>">
+                                    <?php echo htmlspecialchars($nome_emp ?? ('Empresa #' . (int) ($metodo['empresa_id'] ?? 0))); ?>
+                                </span>
                             </td>
                             <td>
                                 <span class="badge badge-<?php echo !empty($metodo['ativo']) ? 'success' : 'secondary'; ?>">

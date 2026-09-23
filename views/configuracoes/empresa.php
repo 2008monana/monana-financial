@@ -77,6 +77,7 @@
         </div>
     </section>
 
+    <?php if (($_SESSION['usuario_perfil'] ?? '') === 'super_admin'): ?>
     <section class="config-cartao">
         <div class="config-cartao-cabecalho"><div class="config-cartao-icone"><i class="fa-solid fa-palette"></i></div><h2>Aparência</h2></div>
         <div class="config-grid">
@@ -85,6 +86,7 @@
             <?php endforeach; ?>
         </div>
     </section>
+    <?php endif; ?>
 
     <button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Guardar configurações</button>
 </form>

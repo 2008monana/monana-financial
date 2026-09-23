@@ -2419,7 +2419,7 @@ $isViewer = $usuario_perfil === 'visualizador';
         <!-- GRUPO 5: ADMINISTRAÇÃO -->
         <?php if ($isSuperAdmin || $isAdminEmpresa): ?>
         <div class="menu-grupo-label">ADMINISTRAÇÃO</div>
-        <?php if ($isSuperAdmin): ?>
+        <?php if ($isSuperAdmin || $isAdminEmpresa): ?>
         <a class="nav-item <?php echo $paginaAtiva === 'logs' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/logs/index">
             <i class="fa-solid fa-clipboard-list"></i> Logs Auditoria
         </a>
