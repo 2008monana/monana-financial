@@ -177,16 +177,14 @@ class RelatorioExcelBuilder
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY_DEEP]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
-        // Aplica cor individual por letra (Excel não aceita cores mistas em texto simples):
-        // "Monana" em azul e "Financial" em verde, como no PDF.
+        // Aplica cores mistas na faixa de marca: "Monana" em azul e "Financial" em verde.
+        // Usa RichText com runs de fonte coloridas (o construtor de Color recebe apenas o valor ARGB).
         try {
             $richMonana = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
-            $richMonana->createTextRun('Monana')->getFont()->setColor(
-                new \PhpOffice\PhpSpreadsheet\Style\Color(new \PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RGB, self::COR_AZUL)
-            );
-            $richMonana->createTextRun('Financial')->getFont()->setColor(
-                new \PhpOffice\PhpSpreadsheet\Style\Color(new \PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RGB, self::COR_GREEN_DEEP)
-            );
+            $runMonana = $richMonana->createTextRun('Monana');
+            $runMonana->getFont()->setBold(true)->setSize(13)->getColor()->setARGB('FF' . self::COR_AZUL);
+            $runFinancial = $richMonana->createTextRun('Financial');
+            $runFinancial->getFont()->setBold(true)->setSize(13)->getColor()->setARGB('FF' . self::COR_GREEN_DEEP);
             $sheet->getCell("A{$linha}")->setValue($richMonana);
         } catch (\Throwable $e) {
             // se RichText falhar, mantém-se o texto branco simples já definido
