@@ -55,6 +55,9 @@ class RelatorioExcelBuilder
     private string $nomeFicheiro;
     private string $orientacao = 'landscape';
 
+    /** Cabeçalho em dois níveis com mesclagem (estilo planilha) */
+    private array $agrupamentosCabecalho = [];
+
     public function __construct(string $titulo, string $nomeFicheiro = 'relatorio')
     {
         $this->titulo = $titulo;
@@ -77,6 +80,18 @@ class RelatorioExcelBuilder
     public function definirColunas(array $colunas): static
     {
         $this->colunas = $colunas;
+        return $this;
+    }
+
+    /**
+     * Cabeçalho em dois níveis com mesclagem (estilo planilha).
+     * $agrupamentos: [['rotulo' => 'Entradas', 'colspan' => 3, 'rowspan' => 1|2, 'classe' => 'grupo-entrada|grupo-saida'], ...]
+     * A soma dos colspan deve ser igual à contagem de $subColunas + colunas com rowspan=2.
+     */
+    public function definirCabecalhoAgrupado(array $agrupamentos, array $subColunas): static
+    {
+        $this->agrupamentosCabecalho = $agrupamentos;
+        $this->colunas = $subColunas;
         return $this;
     }
 
@@ -405,21 +420,67 @@ class RelatorioExcelBuilder
             return $linha;
         }
 
-        $linhaCabecalho = $linha;
-        $coluna = 1;
-        foreach ($this->colunas as $titulo) {
-            $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($coluna);
-            $sheet->setCellValue("{$letra}{$linha}", $titulo);
-            $coluna++;
-        }
-        $sheet->getStyle("A{$linha}:{$ultimaColuna}{$linha}")->applyFromArray([
+        $estiloCabecalhoGrupo = [
             'font' => ['bold' => true, 'size' => 9.5, 'color' => ['rgb' => self::BRANCO]],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => self::COR_NAVY]]],
-        ]);
-        $sheet->getRowDimension($linha)->setRowHeight(20);
-        $linha++;
+        ];
+
+        if (!empty($this->agrupamentosCabecalho)) {
+            // Linha 1: grupos com mesclagem (colspan/rowspan)
+            $coluna = 1;
+            foreach ($this->agrupamentosCabecalho as $grupo) {
+                $letraInicio = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($coluna);
+                $colspan = max(1, (int) ($grupo['colspan'] ?? 1));
+                $rowspan = max(1, (int) ($grupo['rowspan'] ?? 1));
+                $letraFim = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($coluna + $colspan - 1);
+                $fimLinha = $linha + $rowspan - 1;
+
+                $sheet->setCellValue("{$letraInicio}{$linha}", $grupo['rotulo'] ?? '');
+                if ($colspan > 1 || $rowspan > 1) {
+                    $sheet->mergeCells("{$letraInicio}{$linha}:{$letraFim}{$fimLinha}");
+                }
+
+                $estilo = $estiloCabecalhoGrupo;
+                $estilo['fill'] = match ($grupo['classe'] ?? '') {
+                    'grupo-entrada' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '166534']],
+                    'grupo-saida' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '991B1B']],
+                    default => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY]],
+                };
+                $sheet->getStyle("{$letraInicio}{$linha}:{$letraFim}{$fimLinha}")->applyFromArray($estilo);
+
+                $coluna += $colspan;
+            }
+            $sheet->getRowDimension($linha)->setRowHeight(20);
+
+            // Linha 2: sub-colunas individuais (as colunas com rowspan=2 já foram mescladas acima)
+            $linha++;
+            $coluna = 1;
+            foreach ($this->colunas as $titulo) {
+                $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($coluna);
+                $sheet->setCellValue("{$letra}{$linha}", $titulo);
+                $coluna++;
+            }
+            $sheet->getStyle("A{$linha}:{$ultimaColuna}{$linha}")->applyFromArray(array_merge($estiloCabecalhoGrupo, [
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY]],
+            ]));
+            $sheet->getRowDimension($linha)->setRowHeight(20);
+            $linhaCabecalho = $linha;
+            $linha++;
+        } else {
+            $linhaCabecalho = $linha;
+            $coluna = 1;
+            foreach ($this->colunas as $titulo) {
+                $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($coluna);
+                $sheet->setCellValue("{$letra}{$linha}", $titulo);
+                $coluna++;
+            }
+            $sheet->getStyle("A{$linha}:{$ultimaColuna}{$linha}")->applyFromArray(array_merge($estiloCabecalhoGrupo, [
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY]],
+            ]));
+            $sheet->getRowDimension($linha)->setRowHeight(20);
+            $linha++;
+        }
 
         if (empty($this->linhas)) {
             $sheet->mergeCells("A{$linha}:{$ultimaColuna}{$linha}");

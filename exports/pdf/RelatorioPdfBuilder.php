@@ -55,6 +55,12 @@ class RelatorioPdfBuilder
     private string $nomeFicheiro;
     private string $rodapeExtra = '';
 
+    /**
+     * Colunas com mesclagem vertical no cabeçalho (relatório tipo planilha).
+     * Cada entrada: ['rotulo' => 'Dia', 'colspan' => 1, 'rowspan' => 2]
+     */
+    private array $agrupamentosCabecalho = [];
+
     public function __construct(string $titulo, string $nomeFicheiro = 'relatorio')
     {
         $this->titulo = $titulo;
@@ -239,6 +245,23 @@ class RelatorioPdfBuilder
     }
 
     /**
+     * Cabeçalho em dois níveis com mesclagem (estilo planilha).
+     * Ex.: definirCabecalhoAgrupado([
+     *        ['rotulo' => 'Dia', 'colspan' => 1, 'rowspan' => 2],
+     *        ['rotulo' => 'Entradas', 'colspan' => 3, 'classe' => 'grupo-entrada'],
+     *        ['rotulo' => 'Saídas',   'colspan' => 2, 'classe' => 'grupo-saida'],
+     *        ['rotulo' => 'Saldo', 'colspan' => 1, 'rowspan' => 2],
+     *      ], $subColunas)
+     * $subColunas: rótulos da segunda linha do cabeçalho (uma por coluna real).
+     */
+    public function definirCabecalhoAgrupado(array $agrupamentos, array $subColunas): static
+    {
+        $this->agrupamentosCabecalho = $agrupamentos;
+        $this->colunas = $subColunas;
+        return $this;
+    }
+
+    /**
      * @param array $linhas Cada linha é um array de células. Cada célula pode ser:
      *   - uma string/número simples; ou
      *   - ['texto' => '...', 'classe' => 'positivo|negativo|badge-sucesso|badge-perigo|numero', 'alinhar' => 'direita']
@@ -396,6 +419,8 @@ class RelatorioPdfBuilder
             }
             table.dados thead th:first-child { border-radius: 4px 0 0 0; }
             table.dados thead th:last-child { border-radius: 0 4px 0 0; }
+            table.dados thead th.grupo-entrada { background: #166534; text-align: center; }
+            table.dados thead th.grupo-saida { background: #991b1b; text-align: center; }
             table.dados tbody td {
                 padding: 6px 8px;
                 font-size: 9pt;
@@ -515,11 +540,37 @@ class RelatorioPdfBuilder
             return '<div class="sem-dados">Nenhum registo encontrado para os filtros selecionados.</div>';
         }
 
-        $html = '<table class="dados"><thead><tr>';
-        foreach ($this->colunas as $col) {
-            $html .= '<th>' . htmlspecialchars($col) . '</th>';
+        $html = '<table class="dados"><thead>';
+
+        if (!empty($this->agrupamentosCabecalho)) {
+            // Linha 1: grupos com colspan/rowspan (estilo planilha)
+            $html .= '<tr>';
+            foreach ($this->agrupamentosCabecalho as $grupo) {
+                $attrs = '';
+                if (($grupo['colspan'] ?? 1) > 1) {
+                    $attrs .= ' colspan="' . (int) $grupo['colspan'] . '"';
+                }
+                if (($grupo['rowspan'] ?? 1) > 1) {
+                    $attrs .= ' rowspan="' . (int) $grupo['rowspan'] . '"';
+                }
+                $classe = !empty($grupo['classe']) ? ' class="' . htmlspecialchars($grupo['classe']) . '"' : '';
+                $html .= '<th' . $attrs . $classe . '>' . htmlspecialchars($grupo['rotulo'] ?? '') . '</th>';
+            }
+            $html .= '</tr><tr>';
+            // Linha 2: sub-colunas (apenas as colunas individuais, sem as de rowspan=2)
+            foreach ($this->colunas as $col) {
+                $html .= '<th>' . htmlspecialchars($col) . '</th>';
+            }
+            $html .= '</tr>';
+        } else {
+            $html .= '<tr>';
+            foreach ($this->colunas as $col) {
+                $html .= '<th>' . htmlspecialchars($col) . '</th>';
+            }
+            $html .= '</tr>';
         }
-        $html .= '</tr></thead><tbody>';
+
+        $html .= '</thead><tbody>';
 
         foreach ($this->linhas as $linha) {
             $html .= '<tr>';
