@@ -2433,7 +2433,15 @@ $isViewer = $usuario_perfil === 'visualizador';
                 <i class="fa-solid fa-bars"></i>
             </div>
             <div class="greeting">
-                <?php echo htmlspecialchars($tituloPagina ?? 'MonanaFinancial'); ?>
+                <?php 
+                if ($isSuperAdmin): 
+                    echo 'Todas as empresas';
+                elseif ($isAdminEmpresa && !empty($empresa_nome)):
+                    echo htmlspecialchars($empresa_nome);
+                else:
+                    echo htmlspecialchars($tituloPagina ?? 'MonanaFinancial');
+                endif; 
+                ?>
             </div>
         </div>
         <div class="topbar-right">
