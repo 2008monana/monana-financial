@@ -101,25 +101,33 @@ class RelatorioPdfBuilder
         $raiz = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
 
         foreach ($valores as $logo) {
-            $caminho = $raiz . '/public/' . ltrim($logo, '/');
-            if (!is_file($caminho)) {
-                // tolera caminhos gravados com "public/" na frente
-                $alternativo = $raiz . '/' . ltrim($logo, '/');
-                $caminho = is_file($alternativo) ? $alternativo : $caminho;
-            }
-            if (!is_file($caminho)) {
-                continue;
+            // tolera valores gravados como "uploads/...", "/uploads/...",
+            // "public/uploads/..." ou caminho absoluto completo
+            $candidatos = [$logo];
+            if (!preg_match('#^(/|[A-Za-z]:[\\\\/])#', $logo)) {
+                $semPublic = preg_replace('#^public/#', '', $logo);
+                $candidatos[] = 'public/' . $semPublic;
+                $candidatos[] = $semPublic;
             }
 
-            $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
-            if (in_array($extensao, self::EXT_RASTER, true)) {
-                return [$caminho];
-            }
-            if ($extensao === 'svg') {
-                // Dompdf não suporta SVG directamente: converter para PNG temporário.
-                $png = $this->converterSvgParaPng($caminho);
-                if ($png !== null) {
-                    return [$png];
+            foreach ($candidatos as $cand) {
+                $caminho = strlen($cand) > 1 && $cand[0] === '/' && @is_file($cand)
+                    ? $cand
+                    : rtrim($raiz, '/') . '/' . ltrim($cand, '/');
+                if (!is_file($caminho)) {
+                    continue;
+                }
+
+                $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
+                if (in_array($extensao, self::EXT_RASTER, true)) {
+                    return [realpath($caminho) ?: $caminho];
+                }
+                if ($extensao === 'svg') {
+                    // Dompdf não suporta SVG directamente: converter para PNG temporário.
+                    $png = $this->converterSvgParaPng($caminho);
+                    if ($png !== null) {
+                        return [$png];
+                    }
                 }
             }
         }

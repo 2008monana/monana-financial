@@ -42,6 +42,7 @@ class RelatorioExcelBuilder
     private const COR_MUTED      = '64748B';
     private const COR_BORDER     = 'E2E8F0';
     private const COR_ZEBRA      = 'F4F6FA';
+    private const COR_AZUL       = '3B82F6'; // "Monana" na marca (visível sobre o fundo navy)
     private const BRANCO         = 'FFFFFF';
 
     private string $titulo;
@@ -164,7 +165,11 @@ class RelatorioExcelBuilder
 
     private function escreverCabecalho($sheet, string $ultimaColuna, int $linha): int
     {
-        // Faixa de marca "MonanaFinancial"
+        // Logotipo resolvido primeiro: quando existe, reserva a coluna A e
+        // recua o texto do cabeçalho para a coluna B (evita sobreposição).
+        $temLogotipo = $this->resolverLogotipo() !== null;
+
+        // Faixa de marca "MonanaFinancial" ("Monana" azul + "Financial" verde)
         $sheet->mergeCells("A{$linha}:{$ultimaColuna}{$linha}");
         $sheet->setCellValue("A{$linha}", 'MonanaFinancial');
         $sheet->getStyle("A{$linha}")->applyFromArray([
@@ -172,13 +177,27 @@ class RelatorioExcelBuilder
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY_DEEP]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
+        // Aplica cor individual por letra (Excel não aceita cores mistas em texto simples):
+        // "Monana" em azul e "Financial" em verde, como no PDF.
+        try {
+            $richMonana = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
+            $richMonana->createTextRun('Monana')->getFont()->setColor(
+                new \PhpOffice\PhpSpreadsheet\Style\Color(new \PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RGB, self::COR_AZUL)
+            );
+            $richMonana->createTextRun('Financial')->getFont()->setColor(
+                new \PhpOffice\PhpSpreadsheet\Style\Color(new \PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RGB, self::COR_GREEN_DEEP)
+            );
+            $sheet->getCell("A{$linha}")->setValue($richMonana);
+        } catch (\Throwable $e) {
+            // se RichText falhar, mantém-se o texto branco simples já definido
+        }
         $sheet->getRowDimension($linha)->setRowHeight(24);
         $linha++;
 
         // Nome da empresa + NIF/endereço (reservamos coluna A para o logotipo)
         $empresaNome = $this->empresa['nome'] ?? '';
         if ($empresaNome !== '') {
-            $inicioTexto = 'B';
+            $inicioTexto = $temLogotipo ? 'B' : 'A';
             $sheet->mergeCells("{$inicioTexto}{$linha}:{$ultimaColuna}{$linha}");
             $sheet->setCellValue("{$inicioTexto}{$linha}", $empresaNome);
             $sheet->getStyle("{$inicioTexto}{$linha}")->applyFromArray([
@@ -246,29 +265,112 @@ class RelatorioExcelBuilder
     }
 
     /**
+     * Resolve o caminho absoluto do logotipo da empresa (upload feito em
+     * Configurações), tolerando diferentes formatos de valor gravado na BD:
+     * "uploads/logos/x.png", "/uploads/...", "public/uploads/..." ou caminho
+     * completo. Converte SVG/WebP para PNG quando necessário, pois o
+     * PhpSpreadsheet só aceita PNG/JPEG/GIF/bmp como desenho embutido.
+     */
+    private function resolverLogotipo(): ?string
+    {
+        $valores = [];
+        $principal = trim((string) ($this->empresa['logotipo'] ?? ''));
+        if ($principal !== '') {
+            $valores[] = $principal;
+        }
+        foreach ($this->empresa as $chave => $valor) {
+            if (is_string($valor) && preg_match('/^logotipo(_\d+)?$/', (string) $chave) && trim($valor) !== '') {
+                $valores[] = trim($valor);
+            }
+        }
+
+        $raiz = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
+
+        foreach ($valores as $logo) {
+            $candidatos = [$logo];
+            if (!preg_match('#^(/|[A-Za-z]:[\\\\/])#', $logo)) {
+                $semPublic = preg_replace('#^public/#', '', $logo);
+                $candidatos[] = 'public/' . $semPublic;
+                $candidatos[] = $semPublic;
+            }
+
+            foreach ($candidatos as $cand) {
+                $caminho = str_starts_with($cand, '/') && strlen($cand) > 1 && @is_file($cand)
+                    ? $cand
+                    : rtrim($raiz, '/') . '/' . ltrim($cand, '/');
+                if (!is_file($caminho)) {
+                    continue;
+                }
+
+                $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
+                if (in_array($extensao, ['png', 'jpg', 'jpeg', 'gif', 'bmp'], true)) {
+                    return realpath($caminho) ?: $caminho;
+                }
+                if (in_array($extensao, ['svg', 'webp'], true)) {
+                    $png = $this->converterParaPng($caminho, $extensao);
+                    if ($png !== null) {
+                        return $png;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Converte SVG/WebP para PNG temporário (via Imagick/Gmagick c/ fallback GD).
+     * Devolve null quando não for possível — nesse caso o relatório é gerado
+     * simplesmente sem logotipo.
+     */
+    private function converterParaPng(string $caminho, string $extensao): ?string
+    {
+        $destino = sys_get_temp_dir() . '/monana_logo_' . md5($caminho . filemtime($caminho)) . '.png';
+        if (is_file($destino)) {
+            return $destino;
+        }
+
+        try {
+            if ($extensao === 'webp' && function_exists('imagewebp') && function_exists('imagecreatefromwebp')) {
+                $img = @imagecreatefromwebp($caminho);
+                if ($img) {
+                    imagealphablending($img, false);
+                    imagesavealpha($img, true);
+                    $ok = imagepng($img, $destino);
+                    imagedestroy($img);
+                    if ($ok && is_file($destino)) {
+                        return $destino;
+                    }
+                }
+            }
+            if ($extensao === 'svg' && extension_loaded('imagick')) {
+                $imagick = new \Imagick();
+                $imagick->setResolution(150, 150);
+                $imagick->readImage($caminho);
+                $imagick->setImageBackgroundColor('white');
+                if (method_exists($imagick, 'flattenImages')) {
+                    $imagick = $imagick->flattenImages();
+                }
+                $imagick->setImageFormat('png');
+                $imagick->writeImage($destino);
+                $imagick->destroy();
+                return is_file($destino) ? $destino : null;
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
      * Insere o logotipo da empresa (upload feito em Configurações) sobre a
      * faixa do cabeçalho, se existir ficheiro de imagem válido.
      */
     private function inserirLogotipo($sheet): void
     {
-        $logo = trim((string) ($this->empresa['logotipo'] ?? ''));
-        if ($logo === '') {
+        $caminho = $this->resolverLogotipo();
+        if ($caminho === null) {
             return;
-        }
-
-        $raiz = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
-        $caminho = $raiz . '/public/' . ltrim($logo, '/');
-        if (!is_file($caminho)) {
-            $alternativo = $raiz . '/' . ltrim($logo, '/');
-            $caminho = is_file($alternativo) ? $alternativo : $caminho;
-        }
-        if (!is_file($caminho)) {
-            return;
-        }
-
-        $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
-        if (!in_array($extensao, ['png', 'jpg', 'jpeg', 'gif'], true)) {
-            return; // SVG/WebP não são suportados pelo PhpSpreadsheet como Drawing
         }
 
         try {
