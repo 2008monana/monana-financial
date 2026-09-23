@@ -3,6 +3,10 @@
  * Controller de Funcionários
  * Gerencia as requisições relacionadas a funcionários
  */
+
+// Garantir que o Model seja carregado
+require_once CAMINHO_RAIZ . '/models/Funcionario.php';
+
 class FuncionariosController {
     private Funcionario $model;
     private Autenticacao $auth;
