@@ -1,37 +1,59 @@
-# ============================================
-# .gitignore para MonanaFinancial
-# ============================================
+```php
+# Compiled and build artifacts
+*.pyc
+*.o
+*.obj
+*.class
+*.exe
+*.dll
+*.so
+*.a
+*.out
 
-# Dependências do Composer
-/vendor/
+# Dependencies
+node_modules/
+vendor/
+composer.lock
+*.lock
 
-# Configuração sensível
-/config/database.php
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
 
-# Logs
-/logs/*.log
-/logs/*.txt
+# Environment
+.env
+.env.local
+.env.*
 
-# Uploads de utilizadores
-/public/uploads/*
-!/public/uploads/.gitkeep
-
-# Exportações temporárias
-/exports/pdf/*.pdf
-/exports/excel/*.xlsx
-
-# Sistema operativo
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# IDEs
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Ficheiros temporários
-*.tmp
-*.temp
-*.bak
+# Build and distribution
+dist/
+build/
+target/
+*.tar*
+*.zip
+*.gz
+*.bz2
+*.xz
+*.7z
+
+# Cache directories
+.cache/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+```

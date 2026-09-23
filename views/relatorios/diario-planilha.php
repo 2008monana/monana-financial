@@ -8,7 +8,11 @@ $totalSaidas = array_sum($totaisSaida);
         <h1 class="relatorio-titulo"><i class="fas fa-table"></i> Planilha de Movimentos <span class="titulo-badge"><?= htmlspecialchars($nomeMes . ' ' . $ano) ?></span></h1>
         <p class="relatorio-subtitulo"><span class="empresa-tag"><i class="fas fa-store"></i> <?= htmlspecialchars($filialNome ?: 'Selecione uma filial') ?></span> <span><i class="fa-regular fa-calendar"></i> <?= date('d/m/Y', strtotime($periodoInicio)) ?> — <?= date('d/m/Y', strtotime($periodoFim)) ?></span> <span><i class="fa-regular fa-clock"></i> <?= $quantidadeDias ?> dia(s) com movimentos</span></p>
     </div>
-    <div class="btn-group"><button onclick="window.print()" class="btn btn-secondary"><i class="fas fa-print"></i> Imprimir</button><a href="<?= URL_BASE ?>/transacoes/fechoDiario?filial_id=<?= $filialId ?>&data=<?= date('Y-m-d') ?>" class="btn btn-primary"><i class="fas fa-edit"></i> Fecho Diário</a></div>
+    <div class="btn-group">
+        <a href="<?= URL_BASE ?>/relatorios/diario-planilha?mes=<?= $mes ?>&ano=<?= $ano ?>&filial_id=<?= $filialId ?>&exportar=excel" class="btn btn-success"><i class="fas fa-file-excel"></i> Excel</a>
+        <a href="<?= URL_BASE ?>/relatorios/diario-planilha?mes=<?= $mes ?>&ano=<?= $ano ?>&filial_id=<?= $filialId ?>&exportar=pdf" class="btn btn-danger"><i class="fas fa-file-pdf"></i> PDF</a>
+        <a href="<?= URL_BASE ?>/transacoes/fechoDiario?filial_id=<?= $filialId ?>&data=<?= date('Y-m-d') ?>" class="btn btn-primary"><i class="fas fa-edit"></i> Fecho Diário</a>
+    </div>
 </div>
 
 <div class="relatorio-filtros"><form method="GET" class="planilha-filtros"><label>Mês<select name="mes"><?php foreach ($meses as $i => $nome): ?><option value="<?= $i ?>" <?= $i == $mes ? 'selected' : '' ?>><?= htmlspecialchars($nome) ?></option><?php endforeach; ?></select></label><label>Ano<select name="ano"><?php foreach ($anos as $a): ?><option value="<?= $a ?>" <?= $a == $ano ? 'selected' : '' ?>><?= $a ?></option><?php endforeach; ?></select></label><label>Filial<select name="filial_id" required><option value="">Selecione...</option><?php foreach ($filiais as $f): ?><option value="<?= $f['id'] ?>" <?= $filialId == $f['id'] ? 'selected' : '' ?>><?= htmlspecialchars($f['nome']) ?></option><?php endforeach; ?></select></label><button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-search"></i> Atualizar</button></form></div>

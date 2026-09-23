@@ -625,6 +625,17 @@ class RelatoriosController extends Controller
             $saldoFinal = $saldoAtual;
         }
 
+        // Verificar exportação
+        if (isset($_GET['exportar'])) {
+            if ($_GET['exportar'] === 'excel') {
+                $this->exportarPlanilhaExcel($linhasPlanilha, $colunasEntrada, $colunasSaida, $totaisEntrada, $totaisSaida, $saldoInicial, $saldoFinal, $filialNome, $mes, $ano);
+                return;
+            } elseif ($_GET['exportar'] === 'pdf') {
+                $this->exportarPlanilhaPDF($linhasPlanilha, $colunasEntrada, $colunasSaida, $totaisEntrada, $totaisSaida, $saldoInicial, $saldoFinal, $filialNome, $mes, $ano);
+                return;
+            }
+        }
+
         $this->renderizar('relatorios/diario-planilha', [
             'tituloPagina' => 'Relatório Planilha',
             'paginaAtiva' => 'planilha',
