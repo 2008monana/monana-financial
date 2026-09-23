@@ -314,6 +314,7 @@ class Transacao extends Model
 
     /**
      * Buscar o saldo final do dia anterior (para o fecho diário)
+     * Nota: Calcula o saldo acumulado até o dia anterior baseado nas transações existentes
      */
     public function buscarSaldoAnterior(int $filialId, string $data): float
     {
@@ -322,23 +323,24 @@ class Transacao extends Model
         }
 
         $dataObj = new DateTime($data);
-        $dataObj->modify('first day of this month');
         $dataObj->modify('-1 day');
         
         $dataAnterior = $dataObj->format('Y-m-d');
         
-        $sql = "SELECT saldo_final FROM transacoes 
-                WHERE filial_id = :filial_id 
-                AND data_transacao = :data 
-                ORDER BY id DESC LIMIT 1";
+        // Calcular saldo acumulado até o dia anterior usando categorias
+        $sql = "SELECT COALESCE(SUM(CASE WHEN c.tipo = 'entrada' THEN t.valor ELSE -t.valor END), 0)
+                FROM transacoes t
+                INNER JOIN categorias c ON c.id = t.categoria_id
+                WHERE t.filial_id = :filial_id 
+                AND t.data_transacao <= :data";
         $stmt = $this->bd->prepare($sql);
         $stmt->execute([
             'filial_id' => $filialId,
             'data' => $dataAnterior
         ]);
-        $resultado = $stmt->fetch();
+        $resultado = $stmt->fetchColumn();
         
-        return $resultado ? (float) $resultado['saldo_final'] : 0;
+        return $resultado ? (float) $resultado : 0;
     }
 
     /**

@@ -31,7 +31,8 @@ class Usuario extends Model
 
     public function porEmpresa(int $empresaId): array
     {
-        $stmt = $this->bd->prepare("SELECT * FROM usuarios WHERE empresa_id = :empresa_id ORDER BY nome");
+        // Excluir super_admin da listagem de usuários da empresa
+        $stmt = $this->bd->prepare("SELECT * FROM usuarios WHERE empresa_id = :empresa_id AND perfil != 'super_admin' ORDER BY nome");
         $stmt->execute(['empresa_id' => $empresaId]);
         return $stmt->fetchAll();
     }

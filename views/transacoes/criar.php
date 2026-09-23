@@ -103,15 +103,28 @@ unset($_SESSION['dados_antigos'], $_SESSION['erros']);
                 <?php endif; ?>
             </div>
 
+            <div class="form-group full-width">
+                <label for="descricao">
+                    <i class="fas fa-align-left"></i> Descrição
+                </label>
+                <textarea id="descricao" name="descricao" rows="3" placeholder="Descrição do lançamento..."><?php echo htmlspecialchars($dadosAntigos['descricao'] ?? ''); ?></textarea>
+            </div>
+        </div>
+
+        <div class="form-row">
             <div class="form-group">
                 <label for="metodo_pagamento">
                     <i class="fas fa-credit-card"></i> Método de Pagamento <span class="required">*</span>
                 </label>
                 <select id="metodo_pagamento" name="metodo_pagamento" required>
                     <option value="">Selecione...</option>
-                    <?php foreach ($metodos_pagamento as $value => $label): ?>
-                    <option value="<?php echo $value; ?>" <?php echo ($dadosAntigos['metodo_pagamento'] ?? '') === $value ? 'selected' : ''; ?>>
-                        <?php echo $label; ?>
+                    <?php foreach ($metodos_pagamento as $metodo): ?>
+                    <option value="<?php echo htmlspecialchars($metodo['nome']); ?>" 
+                            <?php echo ($dadosAntigos['metodo_pagamento'] ?? '') === $metodo['nome'] ? 'selected' : ''; ?>>
+                        <?php if (!empty($metodo['icone'])): ?>
+                            <i class="<?php echo htmlspecialchars($metodo['icone']); ?>"></i>
+                        <?php endif; ?>
+                        <?php echo htmlspecialchars($metodo['nome']); ?>
                     </option>
                     <?php endforeach; ?>
                 </select>
@@ -119,13 +132,6 @@ unset($_SESSION['dados_antigos'], $_SESSION['erros']);
                 <span class="error-text"><i class="fas fa-exclamation-circle"></i> <?php echo $erros['metodo_pagamento']; ?></span>
                 <?php endif; ?>
             </div>
-        </div>
-
-        <div class="form-group full-width">
-            <label for="descricao">
-                <i class="fas fa-align-left"></i> Descrição
-            </label>
-            <textarea id="descricao" name="descricao" rows="3" placeholder="Descrição do lançamento..."><?php echo htmlspecialchars($dadosAntigos['descricao'] ?? ''); ?></textarea>
         </div>
 
         <div class="form-actions">

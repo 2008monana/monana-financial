@@ -2380,6 +2380,9 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'usuarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/usuarios/index">
             <i class="fa-solid fa-users"></i> Utilizadores
         </a>
+        <a class="nav-item <?php echo $paginaAtiva === 'funcionarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/funcionarios/index">
+            <i class="fa-solid fa-user-tie"></i> Funcionários
+        </a>
         <?php endif; ?>
 
         <!-- GRUPO 4: FERRAMENTAS -->
@@ -2390,10 +2393,6 @@ $isViewer = $usuario_perfil === 'visualizador';
         </a>
         <a class="nav-item <?php echo $paginaAtiva === 'backups' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/backups/index">
             <i class="fa-solid fa-database"></i> Backups
-        </a>
-        <!-- NOVO: Métodos de Pagamento -->
-        <a class="nav-item <?php echo $paginaAtiva === 'metodos-pagamento' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/metodos-pagamento/index">
-            <i class="fa-solid fa-credit-card"></i> Métodos de Pagamento
         </a>
         <?php endif; ?>
 
@@ -2437,7 +2436,15 @@ $isViewer = $usuario_perfil === 'visualizador';
                 <i class="fa-solid fa-bars"></i>
             </div>
             <div class="greeting">
-                <?php echo htmlspecialchars($tituloPagina ?? 'MonanaFinancial'); ?>
+                <?php 
+                if ($isSuperAdmin): 
+                    echo 'Todas as empresas';
+                elseif ($isAdminEmpresa && !empty($empresa_nome)):
+                    echo htmlspecialchars($empresa_nome);
+                else:
+                    echo htmlspecialchars($tituloPagina ?? 'MonanaFinancial');
+                endif; 
+                ?>
             </div>
         </div>
         <div class="topbar-right">

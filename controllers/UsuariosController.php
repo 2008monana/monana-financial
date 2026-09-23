@@ -45,11 +45,18 @@ class UsuariosController extends Controller
 
     private function empresaAtualId(): ?int
     {
+        // Se for super_admin, pode escolher empresa via parâmetro
+        if (($_SESSION['usuario_perfil'] ?? '') === 'super_admin') {
+            $valor = $_GET['empresa_id'] ?? $_POST['empresa_id'] ?? null;
+            return $valor ? (int) $valor : null;
+        }
+        
+        // Admin de empresa só vê a sua própria empresa
         if (!empty($_SESSION['empresa_id'])) {
             return (int) $_SESSION['empresa_id'];
         }
-        $valor = $_GET['empresa_id'] ?? $_POST['empresa_id'] ?? null;
-        return $valor ? (int) $valor : null;
+        
+        return null;
     }
 
     public function index(): void
