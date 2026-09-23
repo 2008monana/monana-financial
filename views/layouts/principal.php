@@ -2383,6 +2383,9 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'funcionarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/funcionarios/index">
             <i class="fa-solid fa-user-tie"></i> Funcionários
         </a>
+        <a class="nav-item <?php echo $paginaAtiva === 'metodos_pagamento' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/metodos-pagamento/index">
+            <i class="fa-solid fa-money-bill-wave"></i> Métodos de Pagamento
+        </a>
         <?php endif; ?>
 
         <!-- GRUPO 4: FERRAMENTAS -->

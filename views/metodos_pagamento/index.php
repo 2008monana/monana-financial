@@ -2,8 +2,7 @@
 /**
  * Listagem de Métodos de Pagamento
  */
-$usuario = $this->auth->usuario();
-$pode_criar = in_array($usuario['perfil'], ['super_admin', 'admin_empresa']);
+$pode_criar = in_array(($usuario['perfil'] ?? ''), ['super_admin', 'admin_empresa']);
 ?>
 
 <div class="page-header">

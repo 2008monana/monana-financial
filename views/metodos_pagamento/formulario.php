@@ -2,7 +2,7 @@
 /**
  * Formulário de Método de Pagamento (Criar/Editar)
  */
-$usuario = $this->auth->usuario();
+
 $edicao = isset($metodo) && !empty($metodo);
 $dadosForm = $_SESSION['dados_form'] ?? ($edicao ? $metodo : []);
 $erros = $_SESSION['erros'] ?? [];
