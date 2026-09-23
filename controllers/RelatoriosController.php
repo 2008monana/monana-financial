@@ -1214,10 +1214,10 @@ class RelatoriosController extends Controller
             ->definirCabecalhoAgrupado($agrupamentos, $subColunas)
             ->definirLinhas($linhas)
             ->definirResumo([
-                ['rotulo' => 'Saldo Inicial', 'valor' => $saldoInicial],
-                ['rotulo' => 'Total Entradas', 'valor' => array_sum($totaisEntrada), 'estilo' => 'positivo'],
-                ['rotulo' => 'Total Saídas', 'valor' => array_sum($totaisSaida), 'estilo' => 'negativo'],
-                ['rotulo' => 'Saldo Final', 'valor' => $saldoFinal, 'estilo' => $saldoFinal >= 0 ? 'positivo' : 'negativo'],
+                ['rotulo' => 'Saldo Inicial', 'valor' => $saldoInicial, 'referencia' => true],
+                ['rotulo' => 'Total Entradas', 'valor' => array_sum($totaisEntrada), 'estilo' => 'positivo', 'formula' => 'soma_entradas'],
+                ['rotulo' => 'Total Saídas', 'valor' => array_sum($totaisSaida), 'estilo' => 'negativo', 'formula' => 'soma_saidas'],
+                ['rotulo' => 'Saldo Final', 'valor' => $saldoFinal, 'estilo' => $saldoFinal >= 0 ? 'positivo' : 'negativo', 'formula' => 'saldo_final'],
             ])
             ->definirOrientacao('landscape')
             ->stream();
