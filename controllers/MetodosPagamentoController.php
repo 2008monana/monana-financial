@@ -5,6 +5,7 @@
  */
 
 require_once CAMINHO_RAIZ . '/models/MetodoPagamento.php';
+require_once CAMINHO_RAIZ . '/helpers/Autenticacao.php';
 
 class MetodosPagamentoController {
     private MetodoPagamento $model;

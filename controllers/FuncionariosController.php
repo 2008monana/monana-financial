@@ -6,6 +6,7 @@
 
 // Garantir que o Model seja carregado
 require_once CAMINHO_RAIZ . '/models/Funcionario.php';
+require_once CAMINHO_RAIZ . '/helpers/Autenticacao.php';
 
 class FuncionariosController {
     private Funcionario $model;
@@ -14,6 +15,7 @@ class FuncionariosController {
     public function __construct() {
         $this->model = new Funcionario();
         $this->auth = new Autenticacao();
+        $this->auth->verificarLogin();
     }
 
     /**

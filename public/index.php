@@ -45,6 +45,7 @@ require_once CAMINHO_RAIZ . '/helpers/FormatacaoHelper.php';
 require_once CAMINHO_RAIZ . '/helpers/SegurancaHelper.php';
 require_once CAMINHO_RAIZ . '/helpers/SessaoHelper.php';
 require_once CAMINHO_RAIZ . '/helpers/ValidacaoHelper.php';
+require_once CAMINHO_RAIZ . '/helpers/Autenticacao.php';
 
 // =====================================================
 // CONSTANTES
