@@ -97,7 +97,7 @@ class RelatoriosController extends Controller
             'filiais' => $filiais,
             'resumoMes' => $resumoMes,
             'resumoEmpresas' => $resumoEmpresas,
-            'resumoFiliais' => $resumoFiliais,
+            'resumoFiliais' => [],
             'periodoInicio' => $periodoInicio,
             'periodoFim' => $periodoFim,
             'mesAtual' => $mesAtual,
@@ -578,45 +578,63 @@ class RelatoriosController extends Controller
         $periodoInicio = sprintf('%04d-%02d-01', $ano, $mes);
         $periodoFim = sprintf('%04d-%02d-%02d', $ano, $mes, cal_days_in_month(CAL_GREGORIAN, $mes, $ano));
 
-        // Buscar resumo diário
-        $dias = [];
-        $consolidado = [
-            'total_tpa_bca' => 0,
-            'total_tpa_keve' => 0,
-            'total_transferencias' => 0,
-            'total_despesas' => 0,
-            'total_devolucao' => 0,
-            'total_dinheiro' => 0,
-            'total_vendas' => 0,
-            'total_deposito' => 0,
-            'total_saidas_extra' => 0,
-            'total_gastos_diario' => 0,
-            'total_gastos_extra' => 0,
-            'saldo_final' => 0,
-            'total_registros' => 0,
-        ];
-
-        $resumoFiliais = [];
+        // A planilha adapta as colunas às categorias que tiveram movimentos no período.
+        $colunasEntrada = [];
+        $colunasSaida = [];
+        $linhasPlanilha = [];
+        $totaisEntrada = [];
+        $totaisSaida = [];
+        $saldoInicial = 0.0;
+        $saldoFinal = 0.0;
 
         if ($filialId > 0) {
-            // Buscar resumo diário da filial
-            $dias = $this->transacaoModel->buscarResumoMensalPlanilha($filialId, $ano, $mes);
-            $consolidado = $this->transacaoModel->buscarResumoMensalConsolidado($filialId, $ano, $mes);
+            $movimentos = $this->transacaoModel->buscarPlanilhaPorCategoria($filialId, $periodoInicio, $periodoFim);
+            $saldoInicial = $this->transacaoModel->buscarSaldoAnteriorPlanilha($filialId, $periodoInicio);
+            $saldoAtual = $saldoInicial;
 
-            // Buscar resumo por filial (Super Admin)
-            if ($perfil === 'super_admin') {
-                $empresaFiltro = (int) ($_GET['empresa_id'] ?? $empresaId ?: 0);
-                if ($empresaFiltro > 0) {
-                    $resumoFiliais = $this->transacaoModel->buscarResumoPorFilial($empresaFiltro, $ano, $mes);
+            foreach ($movimentos as $movimento) {
+                $categoriaId = (int) $movimento['categoria_id'];
+                $tipo = $movimento['categoria_tipo'] === 'entrada' ? 'entrada' : 'saida';
+                if ($tipo === 'entrada' && !isset($colunasEntrada[$categoriaId])) {
+                    $colunasEntrada[$categoriaId] = ['id' => $categoriaId, 'nome' => $movimento['categoria_nome']];
+                }
+                if ($tipo === 'saida' && !isset($colunasSaida[$categoriaId])) {
+                    $colunasSaida[$categoriaId] = ['id' => $categoriaId, 'nome' => $movimento['categoria_nome']];
+                }
+
+                $dia = (int) $movimento['dia'];
+                if (!isset($linhasPlanilha[$dia])) {
+                    $linhasPlanilha[$dia] = ['dia' => $dia, 'entradas' => [], 'saidas' => [], 'total_entradas' => 0.0, 'total_saidas' => 0.0, 'saldo' => 0.0];
+                }
+                $valor = (float) $movimento['valor'];
+                $linhasPlanilha[$dia][$tipo . 's'][$categoriaId] = $valor;
+                $linhasPlanilha[$dia]['total_' . $tipo . 's'] += $valor;
+                if ($tipo === 'entrada') {
+                    $totaisEntrada[$categoriaId] = ($totaisEntrada[$categoriaId] ?? 0) + $valor;
+                } else {
+                    $totaisSaida[$categoriaId] = ($totaisSaida[$categoriaId] ?? 0) + $valor;
                 }
             }
+
+            ksort($linhasPlanilha);
+            foreach ($linhasPlanilha as &$linha) {
+                $saldoAtual += $linha['total_entradas'] - $linha['total_saidas'];
+                $linha['saldo'] = $saldoAtual;
+            }
+            unset($linha);
+            $saldoFinal = $saldoAtual;
         }
 
         $this->renderizar('relatorios/diario-planilha', [
             'tituloPagina' => 'Relatório Planilha',
             'paginaAtiva' => 'planilha',
-            'dias' => $dias,
-            'consolidado' => $consolidado,
+            'linhasPlanilha' => $linhasPlanilha,
+            'colunasEntrada' => array_values($colunasEntrada),
+            'colunasSaida' => array_values($colunasSaida),
+            'totaisEntrada' => $totaisEntrada,
+            'totaisSaida' => $totaisSaida,
+            'saldoInicial' => $saldoInicial,
+            'saldoFinal' => $saldoFinal,
             'filialId' => $filialId,
             'filialNome' => $filialNome,
             'filiais' => $filiais,
@@ -625,7 +643,7 @@ class RelatoriosController extends Controller
             'periodoInicio' => $periodoInicio,
             'periodoFim' => $periodoFim,
             'nomeMes' => $this->getNomeMes($mes),
-            'resumoFiliais' => $resumoFiliais,
+            'resumoFiliais' => [],
             'perfil' => $perfil,
             'meses' => $this->getMeses(),
             'anos' => range(date('Y') - 5, date('Y')),

@@ -145,6 +145,41 @@ class Transacao extends Model
     }
 
     /**
+     * Movimentos agregados por dia e categoria para a planilha dinâmica.
+     * A categoria define se o lançamento é uma entrada ou uma saída.
+     */
+    public function buscarPlanilhaPorCategoria(int $filialId, string $inicio, string $fim): array
+    {
+        $sql = "SELECT
+                    DAY(t.data_transacao) AS dia,
+                    c.id AS categoria_id,
+                    c.nome AS categoria_nome,
+                    c.tipo AS categoria_tipo,
+                    SUM(t.valor) AS valor
+                FROM transacoes t
+                INNER JOIN categorias c ON c.id = t.categoria_id
+                WHERE t.filial_id = :filial_id
+                  AND t.data_transacao BETWEEN :inicio AND :fim
+                GROUP BY DAY(t.data_transacao), c.id, c.nome, c.tipo
+                ORDER BY dia, c.tipo, c.nome";
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute(['filial_id' => $filialId, 'inicio' => $inicio, 'fim' => $fim]);
+        return $stmt->fetchAll();
+    }
+
+    /** Saldo acumulado antes do período, usando as categorias de entrada e saída. */
+    public function buscarSaldoAnteriorPlanilha(int $filialId, string $inicio): float
+    {
+        $sql = "SELECT COALESCE(SUM(CASE WHEN c.tipo = 'entrada' THEN t.valor ELSE -t.valor END), 0)
+                FROM transacoes t
+                INNER JOIN categorias c ON c.id = t.categoria_id
+                WHERE t.filial_id = :filial_id AND t.data_transacao < :inicio";
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute(['filial_id' => $filialId, 'inicio' => $inicio]);
+        return (float) $stmt->fetchColumn();
+    }
+
+    /**
      * Buscar resumo diário de um mês inteiro (estilo planilha).
      *
      * A tabela transacoes armazena movimentos normalizados (tipo, valor e
