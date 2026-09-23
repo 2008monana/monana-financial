@@ -44,7 +44,7 @@ class MetodosPagamentoController extends Controller {
         // Mapa empresa_id => nome (para exibir o nome da empresa na listagem em vez do ID)
         $empresas_mapa = [];
         $empresaModel = new Empresa();
-        foreach ($empresaModel->listar() as $emp) {
+        foreach ($empresaModel->ativas() as $emp) {
             $empresas_mapa[(int) $emp['id']] = $emp['nome'];
         }
 
