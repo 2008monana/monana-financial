@@ -25,13 +25,18 @@ class FuncionariosController {
         $this->auth->verificarLogin();
         
         $usuario = $this->auth->usuario();
-        $empresa_id = $usuario['empresa_id'];
+        // Super Admin sem empresa vinculada vê todas as empresas
+        $empresa_id = ($usuario['perfil'] === 'super_admin' && empty($usuario['empresa_id']))
+            ? null
+            : (int) ($usuario['empresa_id'] ?? 0);
         $filial_id = $_GET['filial_id'] ?? null;
         $busca = $_GET['busca'] ?? '';
-        
-        // Super Admin pode ver todas as empresas, outros apenas a sua
-        if ($usuario['perfil'] !== 'super_admin') {
-            $filial_id = $filial_id ?: null;
+
+        // Utilizadores não-super admin devem ter uma empresa vinculada
+        if ($empresa_id === 0 && $usuario['perfil'] !== 'super_admin') {
+            $_SESSION['erro'] = 'Nenhuma empresa associada ao seu utilizador. Contacte o administrador.';
+            header('Location: /dashboard');
+            exit;
         }
         
         $funcionarios = $this->model->listar($empresa_id, $filial_id ? (int)$filial_id : null, $busca);
