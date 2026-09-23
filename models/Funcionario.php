@@ -7,7 +7,7 @@ class Funcionario {
     private PDO $db;
 
     public function __construct() {
-        $this->db = Database::getInstancia();
+        $this->db = Database::obterLigacao();
     }
 
     /**
