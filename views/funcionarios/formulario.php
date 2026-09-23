@@ -5,7 +5,13 @@
 $titulo_pagina = $funcionario ? 'Editar Funcionário' : 'Novo Funcionário';
 include __DIR__ . '/../includes/cabecalho.php';
 
-$usuario = $_SESSION['usuario'];
+$usuario = $_SESSION['usuario'] ?? [
+    'id'         => $_SESSION['usuario_id']     ?? 0,
+    'nome'       => $_SESSION['usuario_nome']   ?? 'Utilizador',
+    'email'      => $_SESSION['usuario_email']  ?? '',
+    'perfil'     => $_SESSION['usuario_perfil'] ?? 'visualizador',
+    'empresa_id' => $_SESSION['empresa_id']     ?? null,
+];
 $erros = $_SESSION['erros'] ?? [];
 $dados_form = $_SESSION['dados_form'] ?? [];
 unset($_SESSION['erros'], $_SESSION['dados_form']);
@@ -27,7 +33,7 @@ if ($funcionario) {
                 </div>
                 
                 <div class="card-body">
-                    <form action="<?= $funcionario ? "/funcionarios/atualizar/{$funcionario['id']}" : '/funcionarios/salvar' ?>" 
+                    <form action="<?= $funcionario ? URL_BASE . "/funcionarios/atualizar/{$funcionario['id']}" : URL_BASE . '/funcionarios/salvar' ?>" 
                           method="POST" 
                           enctype="multipart/form-data" 
                           class="row g-3">
@@ -184,7 +190,7 @@ if ($funcionario) {
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-save me-1"></i><?= $funcionario ? 'Atualizar' : 'Cadastrar' ?>
                                 </button>
-                                <a href="/funcionarios" class="btn btn-secondary">
+                                <a href="<?= URL_BASE ?>/funcionarios" class="btn btn-secondary">
                                     <i class="fas fa-times me-1"></i>Cancelar
                                 </a>
                             </div>

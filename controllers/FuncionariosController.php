@@ -35,7 +35,7 @@ class FuncionariosController {
         // Utilizadores não-super admin devem ter uma empresa vinculada
         if ($empresa_id === 0 && $usuario['perfil'] !== 'super_admin') {
             $_SESSION['erro'] = 'Nenhuma empresa associada ao seu utilizador. Contacte o administrador.';
-            header('Location: /dashboard');
+            header('Location: ' . URL_BASE . '/dashboard');
             exit;
         }
         
@@ -57,7 +57,7 @@ class FuncionariosController {
         // Apenas admin da empresa e super admin podem criar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
             $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
@@ -78,7 +78,7 @@ class FuncionariosController {
         // Apenas admin da empresa e super admin podem criar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
             $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
@@ -110,7 +110,7 @@ class FuncionariosController {
         if (!empty($erros)) {
             $_SESSION['erros'] = $erros;
             $_SESSION['dados_form'] = $dados;
-            header('Location: /funcionarios/criar');
+            header('Location: ' . URL_BASE . '/funcionarios/criar');
             exit;
         }
         
@@ -123,7 +123,7 @@ class FuncionariosController {
             $_SESSION['erro'] = 'Erro ao cadastrar funcionário.';
         }
         
-        header('Location: /funcionarios');
+        header('Location: ' . URL_BASE . '/funcionarios');
         exit;
     }
 
@@ -138,7 +138,7 @@ class FuncionariosController {
         // Apenas admin da empresa e super admin podem editar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
             $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
@@ -146,14 +146,14 @@ class FuncionariosController {
         
         if (!$funcionario) {
             $_SESSION['erro'] = 'Funcionário não encontrado.';
-            header('Location: /funcionarios');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
         // Verificar permissão por empresa
         if ($usuario['perfil'] !== 'super_admin' && $funcionario['empresa_id'] !== $usuario['empresa_id']) {
             $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
@@ -174,7 +174,7 @@ class FuncionariosController {
         // Apenas admin da empresa e super admin podem editar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
             $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
@@ -182,14 +182,14 @@ class FuncionariosController {
         
         if (!$funcionario) {
             $_SESSION['erro'] = 'Funcionário não encontrado.';
-            header('Location: /funcionarios');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
         // Verificar permissão por empresa
         if ($usuario['perfil'] !== 'super_admin' && $funcionario['empresa_id'] !== $usuario['empresa_id']) {
             $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /funcionarios');
+            header('Location: ' . URL_BASE . '/funcionarios');
             exit;
         }
         
@@ -226,7 +226,7 @@ class FuncionariosController {
         if (!empty($erros)) {
             $_SESSION['erros'] = $erros;
             $_SESSION['dados_form'] = $dados;
-            header("Location: /funcionarios/editar/$id");
+            header("Location: " . URL_BASE . "/funcionarios/editar/$id");
             exit;
         }
         
@@ -238,7 +238,7 @@ class FuncionariosController {
             $_SESSION['erro'] = 'Erro ao atualizar funcionário.';
         }
         
-        header("Location: /funcionarios/editar/$id");
+        header("Location: " . URL_BASE . "/funcionarios/editar/$id");
         exit;
     }
 

@@ -16,7 +16,8 @@ class Autenticacao
     {
         if (!SessaoHelper::estaLogado()) {
             $_SESSION['erro'] = 'Faça login para acessar esta página.';
-            header('Location: /auth/login');
+            $base = defined('URL_BASE') ? URL_BASE : '';
+            header('Location: ' . $base . '/auth/login');
             exit;
         }
     }
@@ -52,7 +53,8 @@ class Autenticacao
 
         if (!in_array($usuario['perfil'], $perfis, true)) {
             $_SESSION['erro'] = 'Permissão negada.';
-            header('Location: /dashboard');
+            $base = defined('URL_BASE') ? URL_BASE : '';
+            header('Location: ' . $base . '/dashboard');
             exit;
         }
     }
