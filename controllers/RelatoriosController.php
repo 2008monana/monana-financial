@@ -1089,6 +1089,7 @@ class RelatoriosController extends Controller
                     'nome' => $dados['nome'] ?? '',
                     'nif' => $dados['nif'] ?? '',
                     'endereco' => $dados['endereco'] ?? '',
+                    'logotipo' => $dados['logotipo'] ?? '',
                 ];
             }
         }

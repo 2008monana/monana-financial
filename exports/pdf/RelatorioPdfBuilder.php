@@ -59,12 +59,41 @@ class RelatorioPdfBuilder
     }
 
     /**
-     * Dados da empresa exibidos no cabeçalho: nome, nif, endereco, filial.
+     * Dados da empresa exibidos no cabeçalho: nome, nif, endereco, filial, logotipo.
      */
     public function definirEmpresa(array $empresa): static
     {
         $this->empresa = $empresa;
         return $this;
+    }
+
+    /**
+     * Resolve o caminho absoluto do logotipo da empresa (upload feito em
+     * Configurações). Retorna null quando não existe ficheiro de imagem válido.
+     */
+    private function resolverLogotipo(): ?string
+    {
+        $logo = trim((string) ($this->empresa['logotipo'] ?? ''));
+        if ($logo === '') {
+            return null;
+        }
+
+        $raiz = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
+        $caminho = $raiz . '/public/' . ltrim($logo, '/');
+
+        if (!is_file($caminho)) {
+            // tolera caminhos gravados com "public/" na frente
+            $alternativo = $raiz . '/' . ltrim($logo, '/');
+            $caminho = is_file($alternativo) ? $alternativo : $caminho;
+        }
+
+        if (!is_file($caminho)) {
+            return null;
+        }
+
+        $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
+        // SVG pode falhar no Dompdf; só aceitar raster
+        return in_array($extensao, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true) ? $caminho : null;
     }
 
     /**
@@ -203,17 +232,20 @@ class RelatorioPdfBuilder
             .cabecalho {
                 background: linear-gradient(90deg, ' . self::COR_NAVY_DEEP . ' 0%, ' . self::COR_NAVY . ' 100%);
                 color: #ffffff;
-                padding: 18px 22px;
+                padding: 18px 22px 0 22px;
                 border-radius: 10px;
                 margin-bottom: 18px;
             }
             .cabecalho .linha-topo { width: 100%; }
+            .cabecalho .logotipo { max-height: 55px; max-width: 110px; background: #ffffff; border-radius: 8px; padding: 4px; }
             .cabecalho .marca { font-family: "DejaVu Sans", sans-serif; font-weight: bold; font-size: 15pt; letter-spacing: 0.3px; }
             .cabecalho .marca .destaque { color: ' . self::COR_GREEN . '; }
             .cabecalho .empresa-nome { font-size: 11pt; font-weight: bold; margin-top: 6px; }
             .cabecalho .empresa-info { font-size: 8pt; color: #cbd5e1; margin-top: 2px; }
             .cabecalho .titulo-relatorio { font-size: 14pt; font-weight: bold; text-align: right; }
             .cabecalho .subtitulo-relatorio { font-size: 8.5pt; color: #cbd5e1; text-align: right; margin-top: 4px; }
+            .cabecalho .meta-relatorio { font-size: 7.5pt; color: #94a3b8; text-align: right; margin-top: 4px; font-style: italic; }
+            .faixa-verde { height: 4px; background: linear-gradient(90deg, ' . self::COR_GREEN . ' 0%, ' . self::COR_GREEN_DEEP . ' 100%); border-radius: 0 0 10px 10px; margin: 14px -22px 0 -22px; }
 
             .conteudo { padding: 0 2px; }
 
@@ -226,6 +258,7 @@ class RelatorioPdfBuilder
                 font-size: 8.5pt;
                 text-transform: uppercase;
                 letter-spacing: 0.3px;
+                border-bottom: 2px solid ' . self::COR_GREEN . ';
             }
             table.dados thead th:first-child { border-radius: 4px 0 0 0; }
             table.dados thead th:last-child { border-radius: 0 4px 0 0; }
@@ -294,6 +327,13 @@ class RelatorioPdfBuilder
         }
         $infoLinha = implode(' &nbsp;•&nbsp; ', $infoPartes);
 
+        // Logotipo da empresa (upload em Configurações). Dompdf aceita caminho absoluto local.
+        $logoCaminho = $this->resolverLogotipo();
+        $blocoLogo = '';
+        if ($logoCaminho !== null) {
+            $blocoLogo = '<img src="' . htmlspecialchars($logoCaminho, ENT_QUOTES) . '" alt="Logotipo" class="logotipo" />';
+        }
+
         $blocoEmpresa = '';
         if ($empresaNome !== '') {
             $blocoEmpresa = '<div class="empresa-nome">' . $empresaNome . '</div>';
@@ -302,20 +342,25 @@ class RelatorioPdfBuilder
             }
         }
 
+        $geradoEm = date('d/m/Y \à\s H:i');
+
         return '
             <div class="cabecalho">
                 <table class="linha-topo" style="border-collapse:collapse;">
                     <tr>
-                        <td style="width:60%; vertical-align:top;">
+                        <td style="width:8%; vertical-align:middle;">' . $blocoLogo . '</td>
+                        <td style="width:52%; vertical-align:middle;">
                             <div class="marca">Monana<span class="destaque">Financial</span></div>
                             ' . $blocoEmpresa . '
                         </td>
-                        <td style="width:40%; vertical-align:top;">
+                        <td style="width:40%; vertical-align:middle;">
                             <div class="titulo-relatorio">' . htmlspecialchars($this->titulo) . '</div>
                             <div class="subtitulo-relatorio">' . htmlspecialchars($this->subtitulo) . '</div>
+                            <div class="meta-relatorio">Gerado em ' . $geradoEm . '</div>
                         </td>
                     </tr>
                 </table>
+                <div class="faixa-verde"></div>
             </div>';
     }
 

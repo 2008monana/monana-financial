@@ -26,6 +26,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -143,6 +144,9 @@ class RelatorioExcelBuilder
         $linhaAtual = $this->escreverTabela($sheet, $ultimaColuna, $linhaAtual);
         $this->escreverResumo($sheet, $ultimaColuna, $linhaAtual);
 
+        // Logotipo da empresa sobre a faixa do cabeçalho (se carregado em Configurações)
+        $this->inserirLogotipo($sheet);
+
         // Configuração de impressão
         $sheet->getPageSetup()->setOrientation(
             $this->orientacao === 'landscape' ? PageSetup::ORIENTATION_LANDSCAPE : PageSetup::ORIENTATION_PORTRAIT
@@ -171,15 +175,22 @@ class RelatorioExcelBuilder
         $sheet->getRowDimension($linha)->setRowHeight(24);
         $linha++;
 
-        // Nome da empresa + NIF/endereço
+        // Nome da empresa + NIF/endereço (reservamos coluna A para o logotipo)
         $empresaNome = $this->empresa['nome'] ?? '';
         if ($empresaNome !== '') {
-            $sheet->mergeCells("A{$linha}:{$ultimaColuna}{$linha}");
-            $sheet->setCellValue("A{$linha}", $empresaNome);
-            $sheet->getStyle("A{$linha}")->applyFromArray([
+            $inicioTexto = 'B';
+            $sheet->mergeCells("{$inicioTexto}{$linha}:{$ultimaColuna}{$linha}");
+            $sheet->setCellValue("{$inicioTexto}{$linha}", $empresaNome);
+            $sheet->getStyle("{$inicioTexto}{$linha}")->applyFromArray([
                 'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => self::BRANCO]],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY]],
+                'alignment' => ['vertical' => Alignment::VERTICAL_BOTTOM],
             ]);
+            // fundo navy também na célula do logotipo
+            $sheet->getStyle("A{$linha}")->applyFromArray([
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY]],
+            ]);
+            $sheet->getRowDimension($linha)->setRowHeight(18);
             $linha++;
 
             $infoPartes = [];
@@ -190,14 +201,19 @@ class RelatorioExcelBuilder
                 $infoPartes[] = $this->empresa['endereco'];
             }
             if ($infoPartes) {
-                $sheet->mergeCells("A{$linha}:{$ultimaColuna}{$linha}");
-                $sheet->setCellValue("A{$linha}", implode('   •   ', $infoPartes));
-                $sheet->getStyle("A{$linha}")->applyFromArray([
+                $sheet->mergeCells("{$inicioTexto}{$linha}:{$ultimaColuna}{$linha}");
+                $sheet->setCellValue("{$inicioTexto}{$linha}", implode('   •   ', $infoPartes));
+                $sheet->getStyle("{$inicioTexto}{$linha}")->applyFromArray([
                     'font' => ['size' => 9, 'italic' => true, 'color' => ['rgb' => self::BRANCO]],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY]],
                 ]);
+                $sheet->getStyle("A{$linha}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COR_NAVY]],
+                ]);
+                $sheet->getRowDimension($linha)->setRowHeight(16);
                 $linha++;
             }
+            $sheet->getDefaultColumnDimension()->setWidth(14);
         }
 
         // Título do relatório
@@ -218,7 +234,56 @@ class RelatorioExcelBuilder
             $linha++;
         }
 
+        // Data de geração
+        $sheet->mergeCells("A{$linha}:{$ultimaColuna}{$linha}");
+        $sheet->setCellValue("A{$linha}", 'Gerado em ' . date('d/m/Y H:i'));
+        $sheet->getStyle("A{$linha}")->applyFromArray([
+            'font' => ['size' => 8, 'italic' => true, 'color' => ['rgb' => self::COR_MUTED]],
+        ]);
+        $linha++;
+
         return $linha + 1; // linha em branco de respiro
+    }
+
+    /**
+     * Insere o logotipo da empresa (upload feito em Configurações) sobre a
+     * faixa do cabeçalho, se existir ficheiro de imagem válido.
+     */
+    private function inserirLogotipo($sheet): void
+    {
+        $logo = trim((string) ($this->empresa['logotipo'] ?? ''));
+        if ($logo === '') {
+            return;
+        }
+
+        $raiz = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
+        $caminho = $raiz . '/public/' . ltrim($logo, '/');
+        if (!is_file($caminho)) {
+            $alternativo = $raiz . '/' . ltrim($logo, '/');
+            $caminho = is_file($alternativo) ? $alternativo : $caminho;
+        }
+        if (!is_file($caminho)) {
+            return;
+        }
+
+        $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
+        if (!in_array($extensao, ['png', 'jpg', 'jpeg', 'gif'], true)) {
+            return; // SVG/WebP não são suportados pelo PhpSpreadsheet como Drawing
+        }
+
+        try {
+            $drawing = new Drawing();
+            $drawing->setName('Logotipo da Empresa');
+            $drawing->setDescription('Logotipo carregado nas configurações');
+            $drawing->setPath($caminho);
+            $drawing->setCoordinates('A1');
+            $drawing->setOffsetX(8);
+            $drawing->setOffsetY(4);
+            $drawing->setWidthAndHeight(70, 55);
+            $drawing->setWorksheet($sheet);
+        } catch (\Throwable $e) {
+            // logotipo é decorativo — nunca deve bloquear a exportação
+        }
     }
 
     private function escreverTabela($sheet, string $ultimaColuna, int $linha): int
