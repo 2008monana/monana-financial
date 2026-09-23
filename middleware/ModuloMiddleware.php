@@ -20,6 +20,8 @@ class ModuloMiddleware
         'perfil',
         'notificacoes',
         'logs',
+        'funcionarios',
+        'metodos_pagamento',
     ];
 
     public function __construct()

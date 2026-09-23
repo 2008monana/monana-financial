@@ -5,7 +5,7 @@ require_once CAMINHO_RAIZ . '/models/Modulo.php';
 $perfil = $_SESSION['usuario_perfil'] ?? 'visualizador';
 $paginaAtiva = $paginaAtiva ?? 'dashboard';
 $acessoTotal = $perfil === 'super_admin';
-$modulosAdminEmpresa = ['dashboard', 'movimentos', 'fecho_diario', 'relatorios', 'planilha', 'categorias', 'filiais', 'usuarios', 'backups', 'logs', 'perfil', 'notificacoes'];
+$modulosAdminEmpresa = ['dashboard', 'movimentos', 'fecho_diario', 'relatorios', 'planilha', 'categorias', 'filiais', 'usuarios', 'backups', 'logs', 'perfil', 'notificacoes', 'funcionarios', 'metodos_pagamento'];
 $moduloModel = new Modulo();
 $permitidos = [];
 if (!$acessoTotal && !empty($_SESSION['usuario_id'])) {
@@ -33,6 +33,8 @@ $itens = [
         ['empresas/index', 'fa-building', 'Empresas', 'empresas'],
         ['filiais/index', 'fa-code-branch', 'Filiais', 'filiais'],
         ['usuarios/index', 'fa-users', 'Utilizadores', 'usuarios'],
+        ['funcionarios/index', 'fa-user-tie', 'Funcionários', 'funcionarios'],
+        ['metodos-pagamento/index', 'fa-money-bill-wave', 'Métodos de Pagamento', 'metodos_pagamento'],
     ],
     'administracao' => [
         ['backups/index', 'fa-database', 'Backups', 'backups'],
