@@ -8,7 +8,25 @@ if (!isset($_SESSION['usuario_id'])) {
 $usuario_nome = $_SESSION['usuario_nome'] ?? 'Utilizador';
 $usuario_perfil = $_SESSION['usuario_perfil'] ?? 'visualizador';
 $paginaAtiva = $paginaAtiva ?? 'dashboard';
-$empresa_nome = $empresa_nome ?? '';
+
+// Nome da empresa: prioriza variável passada pela view, senão a sessão (definida no login)
+if (!isset($empresa_nome) || $empresa_nome === '') {
+    $empresa_nome = $_SESSION['empresa_nome'] ?? '';
+}
+
+// Fallback: se ainda não houver nome de empresa e existir empresa_id na sessão, busca na BD
+if ($empresa_nome === '' && !empty($_SESSION['empresa_id']) && class_exists('Empresa')) {
+    try {
+        $empModel = new Empresa();
+        $emp = $empModel->encontrarPorId((int) $_SESSION['empresa_id']);
+        if ($emp) {
+            $empresa_nome = $emp['nome'] ?? '';
+            $_SESSION['empresa_nome'] = $empresa_nome;
+        }
+    } catch (Exception $e) {
+        // silencioso — continua sem nome de empresa
+    }
+}
 
 // =============================================
 // PERFIS
@@ -2419,7 +2437,7 @@ $isViewer = $usuario_perfil === 'visualizador';
         <!-- GRUPO 5: ADMINISTRAÇÃO -->
         <?php if ($isSuperAdmin || $isAdminEmpresa): ?>
         <div class="menu-grupo-label">ADMINISTRAÇÃO</div>
-        <?php if ($isSuperAdmin): ?>
+        <?php if ($isSuperAdmin || $isAdminEmpresa): ?>
         <a class="nav-item <?php echo $paginaAtiva === 'logs' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/logs/index">
             <i class="fa-solid fa-clipboard-list"></i> Logs Auditoria
         </a>
@@ -2461,7 +2479,7 @@ $isViewer = $usuario_perfil === 'visualizador';
                 <?php 
                 if ($isSuperAdmin): 
                     echo 'Todas as empresas';
-                elseif ($isAdminEmpresa && !empty($empresa_nome)):
+                elseif (!empty($empresa_nome)): // admin empresa e colaboradores veem o nome da empresa
                     echo htmlspecialchars($empresa_nome);
                 else:
                     echo htmlspecialchars($tituloPagina ?? 'MonanaFinancial');
