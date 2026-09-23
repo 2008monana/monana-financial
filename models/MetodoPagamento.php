@@ -24,8 +24,10 @@ class MetodoPagamento {
         $sql = "SELECT * FROM metodos_pagamento WHERE 1=1";
         $params = [];
 
+        // O sistema não possui métodos de pagamento globais/padrão:
+        // cada empresa apenas vê os seus próprios métodos.
         if ($empresa_id !== null) {
-            $sql .= " AND (empresa_id = :empresa_id OR empresa_id IS NULL)";
+            $sql .= " AND empresa_id = :empresa_id";
             $params['empresa_id'] = $empresa_id;
         }
 
@@ -156,12 +158,10 @@ class MetodoPagamento {
     }
 
     /**
-     * Obter métodos padrão do sistema
+     * @deprecated O sistema deixou de ter métodos de pagamento globais/"padrão".
+     * Use listar($empresa_id) — cada método pertence sempre a uma empresa.
      */
     public function obterPadroes(): array {
-        $ordem = $this->temColuna('ordem') ? "ordem ASC, " : "";
-        $stmt = $this->db->prepare("SELECT * FROM metodos_pagamento WHERE empresa_id IS NULL AND ativo = 1 ORDER BY {$ordem}nome ASC");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return [];
     }
 }

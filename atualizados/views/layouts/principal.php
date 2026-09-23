@@ -2333,7 +2333,24 @@ $isViewer = $usuario_perfil === 'visualizador';
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar" id="sidebar">
     <div class="side-brand">
-        <img src="<?php echo URL_BASE; ?>/images/logo.png" alt="MonanaFinancial" class="side-logo">
+        <?php
+            // Logotipo da empresa (Configurações da empresa → Logotipo); cai no logo padrão se não existir.
+            $logoEmpresa = '';
+            if (!empty($_SESSION['empresa_id'])) {
+                static $logoCache = null;
+                if ($logoCache === null) {
+                    $logoCache = [];
+                    try {
+                        require_once CAMINHO_RAIZ . '/models/Configuracao.php';
+                        $cfgModel = new Configuracao();
+                        foreach ($cfgModel->obterTodas(null) as $k => $v) { $logoCache['g_' . $k] = $v; }
+                        foreach ($cfgModel->obterTodas((int)$_SESSION['empresa_id']) as $k => $v) { $logoCache[$k] = $v; }
+                    } catch (Throwable $e) { /* silencioso: usa o logo padrão */ }
+                }
+                $logoEmpresa = $logoCache['logotipo'] ?? '';
+            }
+        ?>
+        <img src="<?php echo URL_BASE . '/' . htmlspecialchars($logoEmpresa !== '' ? $logoEmpresa : 'images/logo.png'); ?>" alt="MonanaFinancial" class="side-logo">
         <div class="side-brand-text">
             <div class="name">Monana<span>Financial</span></div>
             <div class="sub">GESTÃO FINANCEIRA</div>
