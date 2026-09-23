@@ -2380,6 +2380,9 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'usuarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/usuarios/index">
             <i class="fa-solid fa-users"></i> Utilizadores
         </a>
+        <a class="nav-item <?php echo $paginaAtiva === 'funcionarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/funcionarios/index">
+            <i class="fa-solid fa-user-tie"></i> Funcionários
+        </a>
         <?php endif; ?>
 
         <!-- GRUPO 4: FERRAMENTAS -->

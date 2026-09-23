@@ -63,7 +63,6 @@ class Modulo extends Model
             ['usuarios', 'Utilizadores', 'fa-users', 8],
             ['fecho_diario', 'Fecho Diário', 'fa-calendar-check', 9],
             ['backups', 'Backups', 'fa-database', 10],
-            ['metodos_pagamento', 'Métodos de Pagamento', 'fa-credit-card', 11],
             ['logs', 'Logs de Auditoria', 'fa-clipboard-list', 12],
             ['configuracoes', 'Configurações', 'fa-gear', 13],
             ['perfil', 'Meu Perfil', 'fa-user-cog', 14],

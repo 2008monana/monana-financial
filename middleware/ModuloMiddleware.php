@@ -19,8 +19,7 @@ class ModuloMiddleware
         'backups',
         'perfil',
         'notificacoes',
-        'metodos_pagamento',  // NOVO
-        'logs',               // CORRIGIDO: LogsController já permite admin_empresa (âmbito por empresa)
+        'logs',
     ];
 
     public function __construct()

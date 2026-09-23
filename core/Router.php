@@ -149,6 +149,17 @@ class Router
         'configuracoes/sistema' => 'configuracoes',
         'configuracoes/empresa' => 'configuracoes',
         'configuracoes/guardar' => 'configuracoes',
+
+        // =============================================
+        // FUNCIONÁRIOS
+        // =============================================
+        'funcionarios' => 'funcionarios',
+        'funcionarios/index' => 'funcionarios',
+        'funcionarios/criar' => 'funcionarios',
+        'funcionarios/salvar' => 'funcionarios',
+        'funcionarios/editar' => 'funcionarios',
+        'funcionarios/atualizar' => 'funcionarios',
+        'funcionarios/excluir' => 'funcionarios',
     ];
 
     /**
