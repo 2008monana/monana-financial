@@ -8,6 +8,7 @@ require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/MetodoPagamento.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
 require_once CAMINHO_RAIZ . '/helpers/Autenticacao.php';
+require_once CAMINHO_RAIZ . '/helpers/flash.php';
 
 class MetodosPagamentoController extends Controller {
     private MetodoPagamento $model;
@@ -28,7 +29,7 @@ class MetodosPagamentoController extends Controller {
         
         // Apenas Super Admin e Admin Empresa podem acessar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
-            $_SESSION['erro'] = 'Permissão negada.';
+            definirFlash('erro', 'Permissão negada.');
             header('Location: ' . URL_BASE . '/dashboard');
             exit;
         }
@@ -67,7 +68,7 @@ class MetodosPagamentoController extends Controller {
         
         // Apenas Super Admin e Admin Empresa podem criar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
-            $_SESSION['erro'] = 'Permissão negada.';
+            definirFlash('erro', 'Permissão negada.');
             header('Location: ' . URL_BASE . '/metodos-pagamento');
             exit;
         }
@@ -97,7 +98,7 @@ class MetodosPagamentoController extends Controller {
         
         // Apenas Super Admin e Admin Empresa podem criar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
-            $_SESSION['erro'] = 'Permissão negada.';
+            definirFlash('erro', 'Permissão negada.');
             header('Location: ' . URL_BASE . '/metodos-pagamento');
             exit;
         }
@@ -145,9 +146,9 @@ class MetodosPagamentoController extends Controller {
         }
         
         if ($this->model->criar($dados_processados)) {
-            $_SESSION['sucesso'] = 'Método de pagamento cadastrado com sucesso!';
+            definirFlash('sucesso', 'Método de pagamento cadastrado com sucesso!');
         } else {
-            $_SESSION['erro'] = 'Erro ao cadastrar método de pagamento.';
+            definirFlash('erro', 'Erro ao cadastrar método de pagamento.');
         }
         
         header('Location: ' . URL_BASE . '/metodos-pagamento');
@@ -164,7 +165,7 @@ class MetodosPagamentoController extends Controller {
         
         // Apenas Super Admin e Admin Empresa podem editar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
-            $_SESSION['erro'] = 'Permissão negada.';
+            definirFlash('erro', 'Permissão negada.');
             header('Location: ' . URL_BASE . '/metodos-pagamento');
             exit;
         }
@@ -173,14 +174,14 @@ class MetodosPagamentoController extends Controller {
         $metodo = $this->model->buscarPorId($id);
         
         if (!$metodo) {
-            $_SESSION['erro'] = 'Método de pagamento não encontrado.';
+            definirFlash('erro', 'Método de pagamento não encontrado.');
             header('Location: ' . URL_BASE . '/metodos-pagamento');
             exit;
         }
         
         // Admin Empresa só pode editar métodos da sua empresa
         if ($usuario['perfil'] === 'admin_empresa' && $metodo['empresa_id'] !== null && $metodo['empresa_id'] != $usuario['empresa_id']) {
-            $_SESSION['erro'] = 'Permissão negada para editar este método.';
+            definirFlash('erro', 'Permissão negada para editar este método.');
             header('Location: ' . URL_BASE . '/metodos-pagamento');
             exit;
         }
@@ -210,7 +211,7 @@ class MetodosPagamentoController extends Controller {
         
         // Apenas Super Admin e Admin Empresa podem atualizar
         if (!in_array($usuario['perfil'], ['super_admin', 'admin_empresa'])) {
-            $_SESSION['erro'] = 'Permissão negada.';
+            definirFlash('erro', 'Permissão negada.');
             header('Location: ' . URL_BASE . '/metodos-pagamento');
             exit;
         }
@@ -219,14 +220,14 @@ class MetodosPagamentoController extends Controller {
         $metodo_existente = $this->model->buscarPorId($id);
         
         if (!$metodo_existente) {
-            $_SESSION['erro'] = 'Método de pagamento não encontrado.';
+            definirFlash('erro', 'Método de pagamento não encontrado.');
             header('Location: ' . URL_BASE . '/metodos-pagamento');
             exit;
         }
         
         // Admin Empresa só pode editar métodos da sua empresa
         if ($usuario['perfil'] === 'admin_empresa' && $metodo_existente['empresa_id'] !== null && $metodo_existente['empresa_id'] != $usuario['empresa_id']) {
-            $_SESSION['erro'] = 'Permissão negada para editar este método.';
+            definirFlash('erro', 'Permissão negada para editar este método.');
             header('Location: ' . URL_BASE . '/metodos-pagamento');
             exit;
         }
@@ -256,9 +257,9 @@ class MetodosPagamentoController extends Controller {
         ];
         
         if ($this->model->atualizar($id, $dados_processados)) {
-            $_SESSION['sucesso'] = 'Método de pagamento atualizado com sucesso!';
+            definirFlash('sucesso', 'Método de pagamento atualizado com sucesso!');
         } else {
-            $_SESSION['erro'] = 'Erro ao atualizar método de pagamento.';
+            definirFlash('erro', 'Erro ao atualizar método de pagamento.');
         }
         
         header('Location: ' . URL_BASE . '/metodos-pagamento');

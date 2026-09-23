@@ -14,7 +14,7 @@ $acao = $edicao ? URL_BASE . '/metodos-pagamento/atualizar' : URL_BASE . '/metod
 
 <div class="page-header">
     <div class="page-header-left">
-        <h1 class="page-title"><i class="fas fa-credit-card"></i> <?php echo $titulo; ?></h1>
+        <h1 class="page-title mp-page-title"><i class="fas fa-credit-card"></i> <?php echo $titulo; ?></h1>
         <p class="page-subtitle">Preencha os dados abaixo</p>
     </div>
     <div class="page-header-right">
@@ -122,122 +122,76 @@ $acao = $edicao ? URL_BASE . '/metodos-pagamento/atualizar' : URL_BASE . '/metod
 </div>
 
 <style>
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-}
-.page-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-}
-.page-subtitle {
-    font-size: 14px;
-    color: #64748b;
-    margin: 4px 0 0 0;
-}
+/* ============================================
+   FORMULÁRIO MÉTODO DE PAGAMENTO — padrão navy/verde do sistema
+   ============================================ */
+
+/* ---- HEADER ---- */
+.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+.mp-page-title { font-family:'Sora',sans-serif; font-size:26px; font-weight:700; color:var(--navy-deep); margin:0; }
+.mp-page-title i { color:var(--green); margin-right:12px; }
+.page-subtitle { font-size:14px; color:var(--muted); margin:0; }
+.page-header-right { display:flex; gap:10px; flex-wrap:wrap; }
+
+/* ---- CARTÃO DO FORMULÁRIO ---- */
 .form-card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background:var(--white); border-radius:var(--radius); border:1px solid var(--border);
+    padding:28px; margin-bottom:24px; overflow:hidden;
 }
+
+/* ---- CAMPOS ---- */
 .form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
+    gap:20px; margin-bottom:20px;
 }
-.form-group {
-    display: flex;
-    flex-direction: column;
+.form-group { display:flex; flex-direction:column; }
+.form-group.full-width { grid-column:1 / -1; }
+.form-group label {
+    font-size:12px; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px;
 }
-.form-group.full-width {
-    grid-column: 1 / -1;
+.form-group label i { color:var(--blue); margin-right:6px; }
+.required { color:var(--red); }
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select {
+    width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:10px;
+    font-family:'Inter',sans-serif; font-size:14px; background:#fff; color:var(--ink); outline:none;
+    transition:border-color .2s, box-shadow .2s;
 }
-label {
-    font-weight: 600;
-    font-size: 14px;
-    color: #334155;
-    margin-bottom: 8px;
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color:var(--navy); box-shadow:0 0 0 3px rgba(14,39,72,.1);
 }
-.required {
-    color: #ef4444;
-}
-input[type="text"],
-input[type="number"],
-textarea,
-select {
-    padding: 10px 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-input:focus,
-textarea:focus,
-select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-.form-text {
-    font-size: 12px;
-    color: #64748b;
-    margin-top: 4px;
-}
-.error-text {
-    font-size: 13px;
-    color: #ef4444;
-    margin-top: 4px;
-}
-.checkbox-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+.form-text { font-size:12px; color:var(--muted); margin-top:4px; }
+.error-text { font-size:13px; color:var(--red); margin-top:4px; }
+
+/* ---- CHECKBOX (toggle visual) ---- */
+.checkbox-group { display:flex; align-items:center; gap:8px; padding:8px 0; }
 .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-weight: normal;
+    display:inline-flex; align-items:center; gap:10px; cursor:pointer;
+    font-size:14px; font-weight:500; color:var(--ink); text-transform:none; letter-spacing:normal;
 }
+.checkbox-label input[type="checkbox"] { width:18px; height:18px; accent-color:var(--green); cursor:pointer; }
+
+/* ---- ACÇÕES ---- */
 .form-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 1px solid #e2e8f0;
+    display:flex; gap:12px; margin-top:24px; padding-top:20px;
+    border-top:1px solid var(--border);
 }
 .btn {
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 500;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
+    display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px;
+    font-size:14px; font-weight:600; font-family:'Inter',sans-serif; text-decoration:none;
+    transition:all .3s ease; border:none; cursor:pointer;
 }
+.btn i { font-size:14px; }
 .btn-primary {
-    background: #3b82f6;
-    color: #fff;
+    background:linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color:var(--white); box-shadow:0 4px 14px rgba(14,39,72,.25);
 }
-.btn-primary:hover {
-    background: #2563eb;
-}
-.btn-outline {
-    background: transparent;
-    color: #64748b;
-    border: 1px solid #cbd5e1;
-}
-.btn-outline:hover {
-    background: #f1f5f9;
-}
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(14,39,72,.35); }
+.btn-outline { background:transparent; color:var(--ink); border:1.5px solid var(--border); }
+.btn-outline:hover { background:var(--bg); }
 </style>
