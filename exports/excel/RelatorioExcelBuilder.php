@@ -282,30 +282,43 @@ class RelatorioExcelBuilder
             }
         }
 
-        $raiz = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
+        $raiz = rtrim(str_replace('\\', '/', defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2)), '/');
 
         foreach ($valores as $logo) {
-            $candidatos = [$logo];
-            if (!preg_match('#^(/|[A-Za-z]:[\\\\/])#', $logo)) {
-                $semPublic = preg_replace('#^public/#', '', $logo);
-                $candidatos[] = 'public/' . $semPublic;
-                $candidatos[] = $semPublic;
+            // aceita URLs completas (http(s)://host/uploads/...) gravadas na BD
+            if (preg_match('#^https?://#i', $logo)) {
+                $logo = '/' . ltrim((string) parse_url($logo, PHP_URL_PATH), '/');
+            }
+            // normaliza separadores (o upload é gravado com "/" mesmo no Windows)
+            $logo = str_replace('\\', '/', $logo);
+
+            // valores absolutos do tipo "/monana-financial/public/uploads/logos/x.png"
+            // (URL_BASE com prefixo de projecto no XAMPP): remover o primeiro segmento
+            $relativo = ltrim($logo, '/');
+            $variantes = [$relativo];
+            if (count(explode('/', $relativo)) > 1) {
+                $variantes[] = implode('/', array_slice(explode('/', $relativo), 1));
             }
 
-            foreach ($candidatos as $cand) {
-                $caminho = str_starts_with($cand, '/') && strlen($cand) > 1 && @is_file($cand)
-                    ? $cand
-                    : rtrim($raiz, '/') . '/' . ltrim($cand, '/');
-                if (!is_file($caminho)) {
+            $caminhos = [];
+            foreach ($variantes as $v) {
+                $semPublic = preg_replace('#^public/#', '', $v);
+                foreach (array_unique(['public/' . $semPublic, $semPublic]) as $rel) {
+                    $caminhos[] = $raiz . '/' . $rel;
+                }
+            }
+
+            foreach ($caminhos as $cand) {
+                if (!is_file($cand)) {
                     continue;
                 }
 
-                $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
+                $extensao = strtolower(pathinfo($cand, PATHINFO_EXTENSION));
                 if (in_array($extensao, ['png', 'jpg', 'jpeg', 'gif', 'bmp'], true)) {
-                    return realpath($caminho) ?: $caminho;
+                    return realpath($cand) ?: $cand;
                 }
                 if (in_array($extensao, ['svg', 'webp'], true)) {
-                    $png = $this->converterParaPng($caminho, $extensao);
+                    $png = $this->converterParaPng($cand, $extensao);
                     if ($png !== null) {
                         return $png;
                     }

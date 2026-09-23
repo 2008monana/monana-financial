@@ -36,8 +36,13 @@ class RelatorioPdfBuilder
     private const COR_BG         = '#f4f6fa';
     private const COR_AZUL       = '#3b82f6'; // "Monana" na marca (visível sobre o fundo navy)
 
-    /** Extensões raster suportadas pelo Dompdf */
-    private const EXT_RASTER = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+    /**
+     * Extensões raster que o Dompdf consegue embutir no PDF.
+     * NOTA: WebP NÃO é suportado pelo Dompdf (a imagem simplesmente não
+     * aparece). Quando o logotipo está em WebP/SVG, convertemos para PNG.
+     */
+    private const EXT_DOMPDF = ['png', 'jpg', 'jpeg', 'gif'];
+    private const EXT_CONVERSAO = ['svg', 'webp'];
 
     private string $titulo = 'Relatório';
     private string $subtitulo = '';
@@ -77,8 +82,14 @@ class RelatorioPdfBuilder
      */
     private function resolverLogotipo(): ?string
     {
+        static $resolvido = false;
+        static $cache = null;
+        if ($resolvido) {
+            return $cache;
+        }
+        $resolvido = true;
         $candidatos = $this->candidatosLogotipo();
-        return $candidatos[0] ?? null;
+        return $cache = $candidatos[0] ?? null;
     }
 
     /**
@@ -89,42 +100,59 @@ class RelatorioPdfBuilder
         $valores = [];
         $principal = trim((string) ($this->empresa['logotipo'] ?? ''));
         if ($principal !== '') {
+            // tolera valores gravados como URL completa (http(s)://host/uploads/...)
+            if (preg_match('#^https?://#i', $principal)) {
+                $principal = '/' . ltrim((string) parse_url($principal, PHP_URL_PATH), '/');
+            }
             $valores[] = $principal;
         }
-        // Chaves extras: logotipo_123, uploads/logos/logo_123_ab12cd.png etc.
+        // Chaves extras: logotipo_123 etc.
         foreach ($this->empresa as $chave => $valor) {
             if (is_string($valor) && preg_match('/^logotipo(_\d+)?$/', (string) $chave) && trim($valor) !== '') {
                 $valores[] = trim($valor);
             }
         }
 
-        $raiz = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
+        $raiz = rtrim(str_replace('\\', '/', defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2)), '/');
 
         foreach ($valores as $logo) {
-            // tolera valores gravados como "uploads/...", "/uploads/...",
-            // "public/uploads/..." ou caminho absoluto completo
-            $candidatos = [$logo];
-            if (!preg_match('#^(/|[A-Za-z]:[\\\\/])#', $logo)) {
-                $semPublic = preg_replace('#^public/#', '', $logo);
-                $candidatos[] = 'public/' . $semPublic;
-                $candidatos[] = $semPublic;
+            // normaliza separadores (o upload é gravado com "/" mesmo no Windows)
+            $logo = str_replace('\\', '/', $logo);
+
+            // URLs de base absolutas do tipo "/monana-financial/uploads/logos/x.png"
+            // (XAMPP): remover o prefixo do projecto para ficar "uploads/logos/x.png".
+            $relativo = ltrim($logo, '/');
+            if (preg_match('#^([A-Za-z]:[\\\\/])#', $logo)) {
+                $caminhos = [$logo]; // caminho absoluto Windows (C:\...\x.png)
+            } else {
+                $partes = explode('/', $relativo);
+                $variantes = [$relativo];
+                if (count($partes) > 1) {
+                    // remove primeiro segmento (ex.: "monana-financial/uploads/..." -> "uploads/...")
+                    $variantes[] = implode('/', array_slice($partes, 1));
+                }
+                $caminhos = [];
+                foreach ($variantes as $v) {
+                    $semPublic = preg_replace('#^public/#', '', $v);
+                    $comPublic = 'public/' . $semPublic;
+                    foreach (array_unique([$comPublic, $semPublic]) as $rel) {
+                        $caminhos[] = $raiz . '/' . $rel;
+                    }
+                }
             }
 
-            foreach ($candidatos as $cand) {
-                $caminho = strlen($cand) > 1 && $cand[0] === '/' && @is_file($cand)
-                    ? $cand
-                    : rtrim($raiz, '/') . '/' . ltrim($cand, '/');
-                if (!is_file($caminho)) {
+            foreach (array_unique($caminhos) as $cand) {
+                if (!is_file($cand)) {
                     continue;
                 }
 
-                $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
-                if (in_array($extensao, self::EXT_RASTER, true)) {
-                    return [realpath($caminho) ?: $caminho];
+                $extensao = strtolower(pathinfo($cand, PATHINFO_EXTENSION));
+                if (in_array($extensao, self::EXT_DOMPDF, true)) {
+                    return [realpath($cand) ?: $cand];
                 }
-                if ($extensao === 'svg') {
-                    // Dompdf não suporta SVG directamente: converter para PNG temporário.
-                    $png = $this->converterSvgParaPng($caminho);
+                if (in_array($extensao, self::EXT_CONVERSAO, true)) {
+                    // Dompdf não suporta SVG nem WebP: converter para PNG temporário.
+                    $png = $this->converterParaPng($cand, $extensao);
                     if ($png !== null) {
                         return [$png];
                     }
@@ -135,21 +163,33 @@ class RelatorioPdfBuilder
     }
 
     /**
-     * Converte um SVG para PNG (via Imagick/Gmagick se disponível). Devolve
-     * null quando não for possível — nesse caso o relatório usa a marca textual.
+     * Converte SVG/WebP para PNG temporário (via Imagick/Gmagick c/ fallback GD).
+     * Devolve null quando não for possível — nesse caso o relatório usa a marca textual.
      */
-    private function converterSvgParaPng(string $caminhoSvg): ?string
+    private function converterParaPng(string $caminho, string $extensao): ?string
     {
-        $destino = sys_get_temp_dir() . '/monana_logo_' . md5($caminhoSvg . filemtime($caminhoSvg)) . '.png';
+        $destino = sys_get_temp_dir() . '/monana_logo_' . md5($caminho . filemtime($caminho)) . '.png';
         if (is_file($destino)) {
             return $destino;
         }
 
         try {
-            if (extension_loaded('imagick')) {
+            if ($extensao === 'webp' && function_exists('imagecreatefromwebp')) {
+                $img = @imagecreatefromwebp($caminho);
+                if ($img) {
+                    imagealphablending($img, false);
+                    imagesavealpha($img, true);
+                    $ok = imagepng($img, $destino);
+                    imagedestroy($img);
+                    if ($ok && is_file($destino)) {
+                        return $destino;
+                    }
+                }
+            }
+            if ($extensao === 'svg' && extension_loaded('imagick')) {
                 $imagick = new \Imagick();
                 $imagick->setResolution(150, 150);
-                $imagick->readImage($caminhoSvg);
+                $imagick->readImage($caminho);
                 $imagick->setImageBackgroundColor('white');
                 if (method_exists($imagick, 'flattenImages')) {
                     $imagick = $imagick->flattenImages();
@@ -159,18 +199,34 @@ class RelatorioPdfBuilder
                 $imagick->destroy();
                 return is_file($destino) ? $destino : null;
             }
-            if (extension_loaded('gmagick')) {
-                $gmagick = new \Gmagick($caminhoSvg);
-                $gmagick->setImageFormat('png');
-                $gmagick->writeImage($destino);
-                return is_file($destino) ? $destino : null;
-            }
         } catch (\Throwable $e) {
             // conversão falhou: seguir sem logotipo (marca textual assume o destaque)
             return null;
         }
 
         return null;
+    }
+
+    /**
+     * Data URI base64 para embutir a imagem directamente no HTML. Garante que
+     * o Dompdf encontra a imagem independentemente de chroot, caminhos
+     * relativos ou restrições de leitura de ficheiros locais.
+     */
+    private function logoDataUri(?string $caminho): ?string
+    {
+        if ($caminho === null || !is_file($caminho)) {
+            return null;
+        }
+        $binario = @file_get_contents($caminho);
+        if ($binario === false || $binario === '') {
+            return null;
+        }
+        $mime = match (strtolower(pathinfo($caminho, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif'         => 'image/gif',
+            default       => 'image/png',
+        };
+        return 'data:' . $mime . ';base64,' . base64_encode($binario);
     }
 
     /**
@@ -405,12 +461,19 @@ class RelatorioPdfBuilder
         }
         $infoLinha = implode(' &nbsp;•&nbsp; ', $infoPartes);
 
-        // Logotipo da empresa (upload em Configurações). Dompdf aceita caminho absoluto local.
+        // Logotipo da empresa (upload em Configurações). Embutido como data URI
+        // base64: é a forma mais fiável de o Dompdf renderizar a imagem, pois
+        // não depende de caminhos absolutos, chroot nem permissões de leitura.
         $logoCaminho = $this->resolverLogotipo();
-        $blocoLogo = '';
-        if ($logoCaminho !== null) {
-            $blocoLogo = '<img src="' . htmlspecialchars($logoCaminho, ENT_QUOTES) . '" alt="Logotipo" class="logotipo" />';
+        $logoSrc = $this->logoDataUri($logoCaminho);
+        if ($logoSrc === null && $logoCaminho !== null) {
+            $logoSrc = str_replace('\\', '/', $logoCaminho); // fallback: caminho absoluto
         }
+        $blocoLogo = '';
+        if ($logoSrc !== null) {
+            $blocoLogo = '<img src="' . htmlspecialchars($logoSrc, ENT_QUOTES) . '" alt="Logotipo" class="logotipo" />';
+        }
+        $temLogo = $logoSrc !== null;
 
         $blocoEmpresa = '';
         if ($empresaNome !== '') {
@@ -426,8 +489,8 @@ class RelatorioPdfBuilder
             <div class="cabecalho">
                 <table class="linha-topo" style="border-collapse:collapse;">
                     <tr>
-                        <td style="width:' . ($logoCaminho !== null ? '18' : '0') . '%; vertical-align:middle;">' . $blocoLogo . '</td>
-                        <td style="width:' . ($logoCaminho !== null ? '42' : '60') . '%; vertical-align:middle;">
+                        <td style="width:' . ($temLogo ? '18' : '0') . '%; vertical-align:middle;">' . $blocoLogo . '</td>
+                        <td style="width:' . ($temLogo ? '42' : '60') . '%; vertical-align:middle;">
                             <div class="marca"><span class="monana">Monana</span><span class="destaque">Financial</span></div>
                             ' . $blocoEmpresa . '
                         </td>
