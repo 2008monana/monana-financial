@@ -196,11 +196,7 @@ class UsuariosController extends Controller
         if (!empty($dados['erros'])) {
             $usuario = $this->usuarioModel->encontrarPorId((int) $id);
             $modulos = $this->moduloModel->todosAtivos();
-            $modulosUsuario = $this->moduloModel->porUsuario((int) $id);
-            $modulosPermitidosIds = array_column(
-                array_filter($modulosUsuario, fn($m) => $m['permitido']),
-                'id'
-            );
+            $modulosPermitidosIds = array_map('intval', $_POST['modulos'] ?? []);
 
             $this->renderizar('usuarios/form', [
                 'tituloPagina'   => 'Editar Utilizador',

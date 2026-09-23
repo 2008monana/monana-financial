@@ -39,8 +39,8 @@ class Router
         'transacoes/editar' => 'movimentos',
         'transacoes/atualizar' => 'movimentos',
         'transacoes/excluir' => 'movimentos',
-        'transacoes/fechoDiario' => 'movimentos',
-        'transacoes/salvarFecho' => 'movimentos',
+        'transacoes/fechoDiario' => 'fecho_diario',
+        'transacoes/salvarFecho' => 'fecho_diario',
         'transacoes/exportar' => 'movimentos',
         'transacoes/exportarPDF' => 'movimentos',
         'transacoes/exportarExcel' => 'movimentos',
@@ -54,7 +54,7 @@ class Router
         'relatorios/mensal' => 'relatorios',
         'relatorios/anual' => 'relatorios',
         'relatorios/filial' => 'relatorios',
-        'relatorios/diario-planilha' => 'relatorios',
+        'relatorios/diario-planilha' => 'planilha',
 
         // =============================================
         // CATEGORIAS
@@ -83,13 +83,13 @@ class Router
         // =============================================
         // EMPRESAS (apenas Super Admin)
         // =============================================
-        'empresas' => 'configuracoes',
-        'empresas/index' => 'configuracoes',
-        'empresas/criar' => 'configuracoes',
-        'empresas/gravar' => 'configuracoes',
-        'empresas/editar' => 'configuracoes',
-        'empresas/atualizar' => 'configuracoes',
-        'empresas/alternarEstado' => 'configuracoes',
+        'empresas' => 'empresas',
+        'empresas/index' => 'empresas',
+        'empresas/criar' => 'empresas',
+        'empresas/gravar' => 'empresas',
+        'empresas/editar' => 'empresas',
+        'empresas/atualizar' => 'empresas',
+        'empresas/alternarEstado' => 'empresas',
 
         // =============================================
         // UTILIZADORES
@@ -131,6 +131,7 @@ class Router
         'backups/configurarAutomatico' => 'backups',
         'backups/download' => 'backups',
         'backups/eliminar' => 'backups',
+        'backups/importar' => 'backups',
 
         // =============================================
         // LOGS (apenas Super Admin)

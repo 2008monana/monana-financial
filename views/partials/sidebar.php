@@ -1,79 +1,57 @@
 <?php
-/**
- * Sidebar do sistema - MonanaFinancial
- * Estrutura organizada por grupos de funcionalidades
- * 
- * NOTA: Este ficheiro substitui completamente o anterior.
- * As mudanças são visíveis: grupos, separadores, novos itens.
- */
+/** Navegação visível apenas para páginas permitidas ao utilizador autenticado. */
+require_once CAMINHO_RAIZ . '/models/Modulo.php';
 
 $perfil = $_SESSION['usuario_perfil'] ?? 'visualizador';
-$isSuperAdmin = $perfil === 'super_admin';
-$isAdminEmpresa = $perfil === 'admin_empresa';
-$isViewer = $perfil === 'visualizador';
 $paginaAtiva = $paginaAtiva ?? 'dashboard';
-
-// =============================================
-// DEFINIÇÃO DOS ÍTENS DO MENU POR GRUPO
-// =============================================
-
-// Grupo 1: PRINCIPAL (todos os utilizadores)
-$grupoPrincipal = [
-    ['rota' => 'dashboard/index', 'icone' => 'fa-house', 'texto' => 'Dashboard', 'modulo' => 'dashboard'],
-    ['rota' => 'transacoes/index', 'icone' => 'fa-list-ul', 'texto' => 'Movimentos', 'modulo' => 'movimentos'],
-];
-
-// Grupo 2: RELATÓRIOS (todos os utilizadores)
-$grupoRelatorios = [
-    ['rota' => 'relatorios/index', 'icone' => 'fa-chart-column', 'texto' => 'Relatórios', 'modulo' => 'relatorios'],
-    ['rota' => 'categorias/index', 'icone' => 'fa-tags', 'texto' => 'Categorias', 'modulo' => 'categorias'],
-];
-
-// Grupo 3: GESTÃO (Admin Empresa + Super Admin)
-$grupoGestao = [];
-if ($isSuperAdmin) {
-    $grupoGestao[] = ['rota' => 'empresas/index', 'icone' => 'fa-building', 'texto' => 'Empresas', 'modulo' => 'empresas'];
-}
-if ($isAdminEmpresa || $isSuperAdmin) {
-    $grupoGestao[] = ['rota' => 'filiais/index', 'icone' => 'fa-code-branch', 'texto' => 'Filiais', 'modulo' => 'filiais'];
-    $grupoGestao[] = ['rota' => 'usuarios/index', 'icone' => 'fa-users', 'texto' => 'Utilizadores', 'modulo' => 'usuarios'];
-}
-
-// Grupo 4: FERRAMENTAS (Admin Empresa + Super Admin)
-$grupoFerramentas = [];
-if ($isAdminEmpresa || $isSuperAdmin) {
-    $grupoFerramentas[] = ['rota' => 'backups/index', 'icone' => 'fa-database', 'texto' => 'Backups', 'modulo' => 'backups'];
-}
-
-// Grupo 5: ADMINISTRAÇÃO (apenas Super Admin)
-$grupoAdmin = [];
-if ($isSuperAdmin) {
-    $grupoAdmin[] = ['rota' => 'logs/index', 'icone' => 'fa-clipboard-list', 'texto' => 'Logs Auditoria', 'modulo' => 'logs'];
-    $grupoAdmin[] = ['rota' => 'configuracoes/index', 'icone' => 'fa-gear', 'texto' => 'Configurações Sistema', 'modulo' => 'configuracoes'];
-}
-
-// Grupo 6: CONTA (todos os utilizadores)
-$grupoConta = [
-    ['rota' => 'perfil/index', 'icone' => 'fa-user-cog', 'texto' => 'Meu Perfil', 'modulo' => 'perfil'],
-    ['rota' => 'notificacoes/index', 'icone' => 'fa-bell', 'texto' => 'Notificações', 'modulo' => 'notificacoes'],
-];
-
-// =============================================
-// FUNÇÃO PARA EXIBIR GRUPO DE ITENS
-// =============================================
-function exibirGrupoMenu($itens, $paginaAtiva, $titulo = null) {
-    if (empty($itens)) return '';
-    
-    $html = '';
-    if ($titulo) {
-        $html .= '<div class="menu-grupo-label">' . $titulo . '</div>';
+$acessoTotal = $perfil === 'super_admin';
+$modulosAdminEmpresa = ['dashboard', 'movimentos', 'fecho_diario', 'relatorios', 'planilha', 'categorias', 'filiais', 'usuarios', 'metodos_pagamento', 'backups', 'logs', 'perfil', 'notificacoes'];
+$moduloModel = new Modulo();
+$permitidos = [];
+if (!$acessoTotal && !empty($_SESSION['usuario_id'])) {
+    foreach ($moduloModel->getPermissoesUsuario((int) $_SESSION['usuario_id']) as $modulo) {
+        if ((int) $modulo['permitido'] === 1) $permitidos[$modulo['nome']] = true;
     }
-    foreach ($itens as $item) {
-        $ativo = ($paginaAtiva === $item['modulo']) ? ' active' : '';
-        $html .= '<a class="nav-item' . $ativo . '" href="' . URL_BASE . '/' . $item['rota'] . '">';
-        $html .= '<i class="fa-solid ' . $item['icone'] . '"></i>';
-        $html .= $item['texto'];
-        $html .= '</a>';
+}
+$temAcessoMenu = static function (string $modulo) use ($acessoTotal, $perfil, $modulosAdminEmpresa, $permitidos): bool {
+    if ($acessoTotal) return true;
+    if ($perfil === 'admin_empresa') return in_array($modulo, $modulosAdminEmpresa, true);
+    return !empty($permitidos[$modulo]);
+};
+$itens = [
+    'principal' => [
+        ['dashboard/index', 'fa-house', 'Dashboard', 'dashboard'],
+        ['transacoes/index', 'fa-list-ul', 'Movimentos', 'movimentos'],
+        ['transacoes/fechoDiario', 'fa-calendar-check', 'Fecho Diário', 'fecho_diario'],
+    ],
+    'relatorios' => [
+        ['relatorios/index', 'fa-chart-column', 'Relatórios', 'relatorios'],
+        ['relatorios/diario-planilha', 'fa-table', 'Planilha', 'planilha'],
+        ['categorias/index', 'fa-tags', 'Categorias', 'categorias'],
+    ],
+    'gestao' => [
+        ['empresas/index', 'fa-building', 'Empresas', 'empresas'],
+        ['filiais/index', 'fa-code-branch', 'Filiais', 'filiais'],
+        ['usuarios/index', 'fa-users', 'Utilizadores', 'usuarios'],
+        ['metodos-pagamento/index', 'fa-credit-card', 'Métodos de Pagamento', 'metodos_pagamento'],
+    ],
+    'administracao' => [
+        ['backups/index', 'fa-database', 'Backups', 'backups'],
+        ['logs/index', 'fa-clipboard-list', 'Logs Auditoria', 'logs'],
+        ['configuracoes/index', 'fa-gear', 'Configurações', 'configuracoes'],
+    ],
+    'conta' => [
+        ['perfil/index', 'fa-user-cog', 'Meu Perfil', 'perfil'],
+        ['notificacoes/index', 'fa-bell', 'Notificações', 'notificacoes'],
+    ],
+];
+function exibirGrupoMenu(array $itens, string $paginaAtiva, string $titulo, callable $temAcessoMenu): string {
+    $visiveis = array_filter($itens, static fn($item) => $temAcessoMenu($item[3]));
+    if (!$visiveis) return '';
+    $html = '<div class="menu-grupo-label">' . $titulo . '</div>';
+    foreach ($visiveis as [$rota, $icone, $texto, $modulo]) {
+        $html .= '<a class="nav-item' . ($paginaAtiva === $modulo ? ' active' : '') . '" href="' . URL_BASE . '/' . $rota . '">';
+        $html .= '<i class="fa-solid ' . $icone . '"></i>' . $texto . '</a>';
     }
     return $html;
 }
@@ -94,38 +72,13 @@ function exibirGrupoMenu($itens, $paginaAtiva, $titulo = null) {
 
     <!-- NAVEGAÇÃO -->
     <nav class="side-nav">
-        <!-- GRUPO 1: PRINCIPAL -->
-        <?php echo exibirGrupoMenu($grupoPrincipal, $paginaAtiva, 'PRINCIPAL'); ?>
-
-        <!-- GRUPO 2: RELATÓRIOS -->
-        <?php echo exibirGrupoMenu($grupoRelatorios, $paginaAtiva, 'RELATÓRIOS'); ?>
-
-        <!-- GRUPO 3: GESTÃO -->
-        <?php if (!empty($grupoGestao)): ?>
-            <?php echo exibirGrupoMenu($grupoGestao, $paginaAtiva, 'GESTÃO'); ?>
-        <?php endif; ?>
-
-        <!-- GRUPO 4: FERRAMENTAS -->
-        <?php if (!empty($grupoFerramentas)): ?>
-            <?php echo exibirGrupoMenu($grupoFerramentas, $paginaAtiva, 'FERRAMENTAS'); ?>
-        <?php endif; ?>
-
-        <!-- GRUPO 5: ADMINISTRAÇÃO (apenas Super Admin) -->
-        <?php if (!empty($grupoAdmin)): ?>
-            <?php echo exibirGrupoMenu($grupoAdmin, $paginaAtiva, 'ADMINISTRAÇÃO'); ?>
-        <?php endif; ?>
-
-        <!-- SEPARADOR -->
+        <?php echo exibirGrupoMenu($itens['principal'], $paginaAtiva, 'PRINCIPAL', $temAcessoMenu); ?>
+        <?php echo exibirGrupoMenu($itens['relatorios'], $paginaAtiva, 'RELATÓRIOS', $temAcessoMenu); ?>
+        <?php echo exibirGrupoMenu($itens['gestao'], $paginaAtiva, 'GESTÃO', $temAcessoMenu); ?>
+        <?php echo exibirGrupoMenu($itens['administracao'], $paginaAtiva, 'ADMINISTRAÇÃO', $temAcessoMenu); ?>
         <div class="menu-divider"></div>
-
-        <!-- GRUPO 6: CONTA -->
-        <?php echo exibirGrupoMenu($grupoConta, $paginaAtiva, 'CONTA'); ?>
-
-        <!-- SAIR -->
-        <a class="nav-item logout-item" href="<?php echo URL_BASE; ?>/auth/logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            Sair
-        </a>
+        <?php echo exibirGrupoMenu($itens['conta'], $paginaAtiva, 'CONTA', $temAcessoMenu); ?>
+        <a class="nav-item logout-item" href="<?php echo URL_BASE; ?>/auth/logout"><i class="fa-solid fa-right-from-bracket"></i>Sair</a>
     </nav>
 
     <!-- RODAPÉ -->

@@ -122,6 +122,34 @@ class BackupsController extends Controller
         exit;
     }
 
+    /** Restaura um ZIP global gerado pelo MonanaFinancial após validação estrutural. */
+    public function importar(): void
+    {
+        if (!$this->csrf()) {
+            definirFlash('erro', 'Token de segurança inválido.');
+            $this->redirecionar('backups/index');
+        }
+        if ($this->empresaId() !== null) {
+            definirFlash('erro', 'A importação de backup está disponível apenas ao Super Administrador.');
+            $this->redirecionar('backups/index');
+        }
+
+        $resultado = BackupHelper::lerSqlImportavel($_FILES['backup'] ?? []);
+        if (!$resultado['sucesso']) {
+            definirFlash('erro', 'Falha ao validar o backup: ' . $resultado['erro']);
+            $this->redirecionar('backups/index');
+        }
+
+        try {
+            Database::obterLigacao()->exec($resultado['sql']);
+            AuditoriaHelper::registar('backup_importado', 'backups', null, null, ['arquivo' => $resultado['nome']], 'alta');
+            definirFlash('sucesso', 'Backup importado e base de dados restaurada com sucesso.');
+        } catch (Throwable $e) {
+            definirFlash('erro', 'Falha ao importar o backup: ' . $e->getMessage());
+        }
+        $this->redirecionar('backups/index');
+    }
+
     public function eliminar(string $id): void
     {
         if (!$this->csrf()) {

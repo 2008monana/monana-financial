@@ -163,8 +163,8 @@ $titulo = $ehEdicao ? 'Editar Utilizador' : 'Novo Utilizador';
                     <i class="fas fa-lock"></i>
                 </div>
                 <div>
-                    <h3>Permissões por Módulo</h3>
-                    <p>Selecione os módulos que este utilizador pode aceder</p>
+                    <h3>Acessos por Página</h3>
+                    <p>Defina exatamente quais páginas ficam disponíveis no menu e na navegação deste utilizador.</p>
                 </div>
             </div>
 
@@ -172,24 +172,24 @@ $titulo = $ehEdicao ? 'Editar Utilizador' : 'Novo Utilizador';
                 <div class="info-box info-box-warning" style="margin-bottom:16px;">
                     <i class="fas fa-info-circle"></i>
                     <div>
-                        <strong>Nota:</strong> O módulo <strong>"Perfil"</strong> é sempre acessível a todos os utilizadores.
-                        Utilizadores sem permissão para um módulo serão redirecionados para o Perfil.
+                        <strong>Como funciona:</strong> cada cartão corresponde a uma página do sistema. Marque as páginas que o utilizador pode abrir; as restantes ficam ocultas e bloqueadas. <strong>Meu Perfil</strong> permanece sempre acessível para a segurança da conta.
                     </div>
                 </div>
 
                 <div class="modulos-grid">
                     <?php foreach ($modulos as $modulo): ?>
-                        <?php if ($modulo['nome'] === 'perfil') continue; ?>
-                        <?php $permitido = in_array($modulo['id'], $modulosPermitidosIds); ?>
-                        <label class="modulo-item <?php echo $permitido ? 'selected' : ''; ?>">
+                        <?php $ehPerfil = $modulo['nome'] === 'perfil'; ?>
+                        <?php $permitido = $ehPerfil || in_array($modulo['id'], $modulosPermitidosIds); ?>
+                        <label class="modulo-item <?php echo $permitido ? 'selected' : ''; ?> <?php echo $ehPerfil ? 'modulo-fixo' : ''; ?>">
                             <input type="checkbox" name="modulos[]" value="<?php echo $modulo['id']; ?>"
                                    <?php echo $permitido ? 'checked' : ''; ?>
+                                   <?php echo $ehPerfil ? 'disabled' : ''; ?>
                                    onchange="this.parentElement.classList.toggle('selected')">
                             <span class="modulo-icon">
                                 <i class="fas <?php echo $modulo['icone'] ?? 'fa-circle'; ?>"></i>
                             </span>
                             <span class="modulo-nome">
-                                <?php echo ucfirst($modulo['nome']); ?>
+                                <?php echo htmlspecialchars($modulo['descricao'] ?? ucfirst(str_replace('_', ' ', $modulo['nome']))); ?>
                             </span>
                             <span class="modulo-check">
                                 <i class="fas fa-check-circle"></i>
@@ -198,11 +198,6 @@ $titulo = $ehEdicao ? 'Editar Utilizador' : 'Novo Utilizador';
                     <?php endforeach; ?>
                 </div>
 
-                <!-- Perfil sempre ativo -->
-                <div class="modulo-perfil-sempre">
-                    <i class="fas fa-user-circle"></i>
-                    <span><strong>Perfil</strong> — sempre acessível</span>
-                </div>
             </div>
         </div>
 
@@ -253,7 +248,8 @@ $titulo = $ehEdicao ? 'Editar Utilizador' : 'Novo Utilizador';
 }
 
 .form-container {
-    max-width: 820px;
+    max-width: 1180px;
+    margin: 0 auto;
 }
 
 .info-banner {
@@ -496,6 +492,8 @@ $titulo = $ehEdicao ? 'Editar Utilizador' : 'Novo Utilizador';
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 10px;
 }
+
+.modulo-fixo { opacity: .78; cursor: not-allowed; }
 
 .modulo-item {
     display: flex;

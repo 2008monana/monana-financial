@@ -10,7 +10,9 @@ class ModuloMiddleware
     private array $modulosPermitidosAdmin = [
         'dashboard',
         'movimentos',
+        'fecho_diario',
         'relatorios',
+        'planilha',
         'categorias',
         'filiais',
         'usuarios',
