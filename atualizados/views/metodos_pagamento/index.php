@@ -99,7 +99,10 @@ $totalPadrao    = count(array_filter($metodos, fn($m) => empty($m['empresa_id'])
                                 <?php if (empty($metodo['empresa_id'])): ?>
                                     <span class="badge badge-info">Padrão do Sistema</span>
                                 <?php else: ?>
-                                    <span class="badge badge-secondary">Empresa #<?php echo (int) $metodo['empresa_id']; ?></span>
+                                    <?php $nome_emp = $empresas_mapa[(int) $metodo['empresa_id']] ?? null; ?>
+                                    <span class="badge badge-secondary" title="Empresa ID <?php echo (int) $metodo['empresa_id']; ?>">
+                                        <?php echo htmlspecialchars($nome_emp ?? ('Empresa #' . (int) $metodo['empresa_id'])); ?>
+                                    </span>
                                 <?php endif; ?>
                             </td>
                             <td>

@@ -41,10 +41,16 @@ class MetodosPagamentoController extends Controller {
         
         $metodos = $this->model->listar($empresa_id, false);
 
+        // Mapa empresa_id => nome (para exibir o nome da empresa na listagem em vez do ID)
+        $empresas_mapa = [];
+        $empresaModel = new Empresa();
+        foreach ($empresaModel->listar() as $emp) {
+            $empresas_mapa[(int) $emp['id']] = $emp['nome'];
+        }
+
         // Nome da empresa para a topbar
         $empresa_nome = '';
         if ($usuario['perfil'] === 'admin_empresa' && !empty($usuario['empresa_id'])) {
-            $empresaModel = new Empresa();
             $empresa = $empresaModel->encontrarPorId((int) $usuario['empresa_id']);
             $empresa_nome = $empresa['nome'] ?? '';
         }
@@ -53,6 +59,7 @@ class MetodosPagamentoController extends Controller {
             'tituloPagina' => 'Métodos de Pagamento',
             'paginaAtiva'  => 'metodos_pagamento',
             'empresa_nome' => $empresa_nome,
+            'empresas_mapa' => $empresas_mapa,
             'metodos'      => $metodos,
             'usuario'      => $usuario,
         ]);
