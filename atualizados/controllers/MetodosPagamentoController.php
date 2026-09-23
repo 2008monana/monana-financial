@@ -39,13 +39,21 @@ class MetodosPagamentoController extends Controller {
             $empresa_id = (int)$usuario['empresa_id'];
         }
         
-        $metodos = $this->model->listar($empresa_id, false);
+        // Parâmetros de pesquisa/filtro (GET)
+        $busca          = trim($_GET['busca'] ?? '');
+        $filtro_empresa = null;
+        if ($usuario['perfil'] === 'super_admin' && !empty($_GET['empresa_id'])) {
+            $filtro_empresa = (int)$_GET['empresa_id'];
+        }
+        $metodos = $this->model->listar($empresa_id, false, $busca, $filtro_empresa);
 
         // Mapa empresa_id => nome (para exibir o nome da empresa na listagem em vez do ID)
         $empresas_mapa = [];
+        $empresas_lista = [];
         $empresaModel = new Empresa();
         foreach ($empresaModel->ativas() as $emp) {
             $empresas_mapa[(int) $emp['id']] = $emp['nome'];
+            $empresas_lista[] = $emp;
         }
 
         // Nome da empresa para a topbar
@@ -60,8 +68,11 @@ class MetodosPagamentoController extends Controller {
             'paginaAtiva'  => 'metodos_pagamento',
             'empresa_nome' => $empresa_nome,
             'empresas_mapa' => $empresas_mapa,
+            'empresas_lista' => $empresas_lista,
             'metodos'      => $metodos,
             'usuario'      => $usuario,
+            'busca'        => $busca,
+            'filtro_empresa' => $filtro_empresa,
         ]);
     }
 

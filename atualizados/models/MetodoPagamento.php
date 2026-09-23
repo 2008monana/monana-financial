@@ -20,7 +20,7 @@ class MetodoPagamento {
     /**
      * Listar métodos de pagamento
      */
-    public function listar(?int $empresa_id = null, bool $apenas_ativos = true): array {
+    public function listar(?int $empresa_id = null, bool $apenas_ativos = true, string $busca = '', ?int $empresa_filtro = null): array {
         $sql = "SELECT * FROM metodos_pagamento WHERE 1=1";
         $params = [];
 
@@ -29,7 +29,24 @@ class MetodoPagamento {
             $params['empresa_id'] = $empresa_id;
         }
 
-        if ($apenas_ativos) {
+        // Filtro por empresa específica (Super Admin) — apenas métodos dessa empresa
+        if ($empresa_filtro !== null) {
+            $sql .= " AND empresa_id = :empresa_filtro";
+            $params['empresa_filtro'] = $empresa_filtro;
+        }
+
+        // Busca por nome ou descrição
+        if ($busca !== '') {
+            $sql .= " AND (nome LIKE :busca";
+            if ($this->temColuna('descricao')) {
+                $sql .= " OR descricao LIKE :busca2";
+                $params['busca2'] = '%' . $busca . '%';
+            }
+            $sql .= ")";
+            $params['busca'] = '%' . $busca . '%';
+        }
+
+        if ($apenas_ativos && $this->temColuna('ativo')) {
             $sql .= " AND ativo = 1";
         }
 

@@ -51,6 +51,36 @@ $totalPadrao    = count(array_filter($metodos, fn($m) => empty($m['empresa_id'])
     </div>
 </div>
 
+<!-- Barra de Pesquisa e Filtros -->
+<div class="card" style="margin-bottom:20px;">
+    <form method="GET" action="<?php echo URL_BASE; ?>/metodos-pagamento" class="filtros-form">
+        <div class="filtro-campo" style="flex:1; min-width:220px;">
+            <label class="filtro-label"><i class="fas fa-search"></i> Pesquisar</label>
+            <input type="text" name="busca" class="filtro-input"
+                   placeholder="Nome ou descrição do método..."
+                   value="<?php echo htmlspecialchars($busca ?? ''); ?>">
+        </div>
+        <?php if (($usuario['perfil'] ?? '') === 'super_admin'): ?>
+            <div class="filtro-campo" style="min-width:220px;">
+                <label class="filtro-label"><i class="fas fa-building"></i> Empresa</label>
+                <select name="empresa_id" class="filtro-input filtro-select">
+                    <option value="">Todas as empresas</option>
+                    <?php foreach ($empresas_lista as $emp): ?>
+                        <option value="<?php echo (int) $emp['id']; ?>"
+                            <?php echo ((int)($filtro_empresa ?? 0) === (int) $emp['id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($emp['nome']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        <?php endif; ?>
+        <div class="filtro-acoes">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrar</button>
+            <a href="<?php echo URL_BASE; ?>/metodos-pagamento" class="btn btn-secondary"><i class="fas fa-times"></i> Limpar</a>
+        </div>
+    </form>
+</div>
+
 <!-- Tabela -->
 <div class="card">
     <div class="card-head">
@@ -184,6 +214,16 @@ $totalPadrao    = count(array_filter($metodos, fn($m) => empty($m['empresa_id'])
 
 /* ---- BOTÕES ---- */
 .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px; font-size:14px; font-weight:600; font-family:'Inter',sans-serif; text-decoration:none; transition:all .3s ease; border:none; cursor:pointer; }
+
+/* ---- PESQUISA / FILTROS ---- */
+.filtros-form { display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; padding:18px 20px; }
+.filtro-campo { display:flex; flex-direction:column; gap:6px; }
+.filtro-label { font-size:12px; font-weight:600; color:var(--navy-deep); text-transform:uppercase; letter-spacing:.03em; }
+.filtro-label i { color:var(--green); margin-right:6px; }
+.filtro-input { padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:'Inter',sans-serif; color:var(--ink); background:#f9fafc; outline:none; transition:border-color .2s, box-shadow .2s; width:100%; }
+.filtro-input:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(16,185,129,.12); background:var(--white); }
+select.filtro-input { cursor:pointer; appearance:auto; }
+.filtro-acoes { display:flex; gap:10px; }
 .btn i { font-size:14px; }
 .btn-primary { background:linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%); color:var(--white); box-shadow:0 4px 14px rgba(14,39,72,.25); }
 .btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(14,39,72,.35); }
