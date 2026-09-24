@@ -145,107 +145,128 @@ class Transacao extends Model
     }
 
     /**
-     * Buscar resumo diário de um mês inteiro (estilo planilha)
+     * Movimentos agregados por dia e categoria para a planilha dinâmica.
+     * A categoria define se o lançamento é uma entrada ou uma saída.
      */
-    public function buscarResumoMensalPlanilha(int $filialId, int $ano, int $mes): array
+    public function buscarPlanilhaPorCategoria(int $filialId, string $inicio, string $fim): array
     {
-        $sql = "SELECT 
-                    DAY(data_transacao) as dia,
-                    SUM(tpa_bca) as tpa_bca,
-                    SUM(tpa_keve) as tpa_keve,
-                    SUM(transferencias) as transferencias,
-                    SUM(despesas) as despesas,
-                    SUM(devolucao) as devolucao,
-                    SUM(dinheiro) as dinheiro,
-                    SUM(total_vendas) as total_vendas,
-                    SUM(deposito) as deposito,
-                    SUM(saidas_extra) as saidas_extra,
-                    SUM(gastos_diario) as gastos_diario,
-                    SUM(gastos_extra) as gastos_extra,
-                    SUM(saldo_final) as saldo_final,
-                    COUNT(*) as total_registros
-                FROM transacoes 
-                WHERE filial_id = :filial_id 
-                AND YEAR(data_transacao) = :ano 
-                AND MONTH(data_transacao) = :mes
-                GROUP BY DAY(data_transacao)
-                ORDER BY dia ASC";
+        $sql = "SELECT
+                    DAY(t.data_transacao) AS dia,
+                    c.id AS categoria_id,
+                    c.nome AS categoria_nome,
+                    c.tipo AS categoria_tipo,
+                    SUM(t.valor) AS valor
+                FROM transacoes t
+                INNER JOIN categorias c ON c.id = t.categoria_id
+                WHERE t.filial_id = :filial_id
+                  AND t.data_transacao BETWEEN :inicio AND :fim
+                GROUP BY DAY(t.data_transacao), c.id, c.nome, c.tipo
+                ORDER BY dia, c.tipo, c.nome";
         $stmt = $this->bd->prepare($sql);
-        $stmt->execute([
-            'filial_id' => $filialId,
-            'ano' => $ano,
-            'mes' => $mes
-        ]);
+        $stmt->execute(['filial_id' => $filialId, 'inicio' => $inicio, 'fim' => $fim]);
         return $stmt->fetchAll();
     }
 
-    /**
-     * Buscar resumo mensal consolidado (igual à planilha)
-     */
-    public function buscarResumoMensalConsolidado(int $filialId, int $ano, int $mes): array
+    /** Saldo acumulado antes do período, usando as categorias de entrada e saída. */
+    public function buscarSaldoAnteriorPlanilha(int $filialId, string $inicio): float
     {
-        $sql = "SELECT 
-                    COALESCE(SUM(tpa_bca), 0) as total_tpa_bca,
-                    COALESCE(SUM(tpa_keve), 0) as total_tpa_keve,
-                    COALESCE(SUM(transferencias), 0) as total_transferencias,
-                    COALESCE(SUM(despesas), 0) as total_despesas,
-                    COALESCE(SUM(devolucao), 0) as total_devolucao,
-                    COALESCE(SUM(dinheiro), 0) as total_dinheiro,
-                    COALESCE(SUM(total_vendas), 0) as total_vendas,
-                    COALESCE(SUM(deposito), 0) as total_deposito,
-                    COALESCE(SUM(saidas_extra), 0) as total_saidas_extra,
-                    COALESCE(SUM(gastos_diario), 0) as total_gastos_diario,
-                    COALESCE(SUM(gastos_extra), 0) as total_gastos_extra,
-                    COALESCE(SUM(saldo_final), 0) as saldo_final,
-                    COUNT(*) as total_registros,
-                    COUNT(DISTINCT DAY(data_transacao)) as dias_com_movimento
-                FROM transacoes 
-                WHERE filial_id = :filial_id 
-                AND YEAR(data_transacao) = :ano 
-                AND MONTH(data_transacao) = :mes";
+        $sql = "SELECT COALESCE(SUM(CASE WHEN c.tipo = 'entrada' THEN t.valor ELSE -t.valor END), 0)
+                FROM transacoes t
+                INNER JOIN categorias c ON c.id = t.categoria_id
+                WHERE t.filial_id = :filial_id AND t.data_transacao < :inicio";
         $stmt = $this->bd->prepare($sql);
-        $stmt->execute([
-            'filial_id' => $filialId,
-            'ano' => $ano,
-            'mes' => $mes
-        ]);
-        return $stmt->fetch();
+        $stmt->execute(['filial_id' => $filialId, 'inicio' => $inicio]);
+        return (float) $stmt->fetchColumn();
     }
 
     /**
-     * Buscar resumo por filial (para relatório consolidado)
+     * Buscar resumo diário de um mês inteiro (estilo planilha).
+     *
+     * A tabela transacoes armazena movimentos normalizados (tipo, valor e
+     * método de pagamento), e não as antigas colunas da planilha. As colunas
+     * apresentadas abaixo são, por isso, calculadas sem depender de campos
+     * legados como tpa_bca ou saldo_final.
      */
+    public function buscarResumoMensalPlanilha(int $filialId, int $ano, int $mes): array
+    {
+        $sql = "SELECT
+                    DAY(data_transacao) AS dia,
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' AND metodo_pagamento = 'tpa' THEN valor ELSE 0 END), 0) AS tpa_bca,
+                    0 AS tpa_keve,
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' AND metodo_pagamento = 'transferencia' THEN valor ELSE 0 END), 0) AS transferencias,
+                    COALESCE(SUM(CASE WHEN tipo IN ('compra', 'custo') THEN valor ELSE 0 END), 0) AS despesas,
+                    COALESCE(SUM(CASE WHEN tipo = 'devolucao' THEN valor ELSE 0 END), 0) AS devolucao,
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' AND metodo_pagamento = 'numerario' THEN valor ELSE 0 END), 0) AS dinheiro,
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' THEN valor ELSE 0 END), 0) AS total_vendas,
+                    0 AS deposito,
+                    0 AS saidas_extra,
+                    0 AS gastos_diario,
+                    0 AS gastos_extra,
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' THEN valor WHEN tipo IN ('compra', 'custo', 'devolucao') THEN -valor ELSE 0 END), 0) AS saldo_final,
+                    COUNT(*) AS total_registros
+                FROM transacoes
+                WHERE filial_id = :filial_id
+                  AND YEAR(data_transacao) = :ano
+                  AND MONTH(data_transacao) = :mes
+                GROUP BY DAY(data_transacao)
+                ORDER BY dia ASC";
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute(['filial_id' => $filialId, 'ano' => $ano, 'mes' => $mes]);
+        return $stmt->fetchAll();
+    }
+
+    /** Buscar o consolidado mensal usando os campos efetivamente existentes em transacoes. */
+    public function buscarResumoMensalConsolidado(int $filialId, int $ano, int $mes): array
+    {
+        $sql = "SELECT
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' AND metodo_pagamento = 'tpa' THEN valor ELSE 0 END), 0) AS total_tpa_bca,
+                    0 AS total_tpa_keve,
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' AND metodo_pagamento = 'transferencia' THEN valor ELSE 0 END), 0) AS total_transferencias,
+                    COALESCE(SUM(CASE WHEN tipo IN ('compra', 'custo') THEN valor ELSE 0 END), 0) AS total_despesas,
+                    COALESCE(SUM(CASE WHEN tipo = 'devolucao' THEN valor ELSE 0 END), 0) AS total_devolucao,
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' AND metodo_pagamento = 'numerario' THEN valor ELSE 0 END), 0) AS total_dinheiro,
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' THEN valor ELSE 0 END), 0) AS total_vendas,
+                    0 AS total_deposito,
+                    0 AS total_saidas_extra,
+                    0 AS total_gastos_diario,
+                    0 AS total_gastos_extra,
+                    COALESCE(SUM(CASE WHEN tipo = 'venda' THEN valor WHEN tipo IN ('compra', 'custo', 'devolucao') THEN -valor ELSE 0 END), 0) AS saldo_final,
+                    COUNT(*) AS total_registros,
+                    COUNT(DISTINCT DAY(data_transacao)) AS dias_com_movimento
+                FROM transacoes
+                WHERE filial_id = :filial_id
+                  AND YEAR(data_transacao) = :ano
+                  AND MONTH(data_transacao) = :mes";
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute(['filial_id' => $filialId, 'ano' => $ano, 'mes' => $mes]);
+        return $stmt->fetch();
+    }
+
+    /** Buscar resumo por filial para o relatório consolidado. */
     public function buscarResumoPorFilial(int $empresaId, int $ano, int $mes): array
     {
-        $sql = "SELECT 
-                    f.id as filial_id,
-                    f.nome as filial_nome,
-                    COALESCE(SUM(t.tpa_bca), 0) as tpa_bca,
-                    COALESCE(SUM(t.tpa_keve), 0) as tpa_keve,
-                    COALESCE(SUM(t.transferencias), 0) as transferencias,
-                    COALESCE(SUM(t.despesas), 0) as despesas,
-                    COALESCE(SUM(t.devolucao), 0) as devolucao,
-                    COALESCE(SUM(t.dinheiro), 0) as dinheiro,
-                    COALESCE(SUM(t.total_vendas), 0) as total_vendas,
-                    COALESCE(SUM(t.deposito), 0) as deposito,
-                    COALESCE(SUM(t.saidas_extra), 0) as saidas_extra,
-                    COALESCE(SUM(t.gastos_diario), 0) as gastos_diario,
-                    COALESCE(SUM(t.gastos_extra), 0) as gastos_extra,
-                    COALESCE(SUM(t.saldo_final), 0) as saldo_final,
-                    COUNT(*) as total_registros
+        $sql = "SELECT
+                    f.id AS filial_id,
+                    f.nome AS filial_nome,
+                    COALESCE(SUM(CASE WHEN t.tipo = 'venda' AND t.metodo_pagamento = 'tpa' THEN t.valor ELSE 0 END), 0) AS tpa_bca,
+                    0 AS tpa_keve,
+                    COALESCE(SUM(CASE WHEN t.tipo = 'venda' AND t.metodo_pagamento = 'transferencia' THEN t.valor ELSE 0 END), 0) AS transferencias,
+                    COALESCE(SUM(CASE WHEN t.tipo IN ('compra', 'custo') THEN t.valor ELSE 0 END), 0) AS despesas,
+                    COALESCE(SUM(CASE WHEN t.tipo = 'devolucao' THEN t.valor ELSE 0 END), 0) AS devolucao,
+                    COALESCE(SUM(CASE WHEN t.tipo = 'venda' AND t.metodo_pagamento = 'numerario' THEN t.valor ELSE 0 END), 0) AS dinheiro,
+                    COALESCE(SUM(CASE WHEN t.tipo = 'venda' THEN t.valor ELSE 0 END), 0) AS total_vendas,
+                    0 AS deposito, 0 AS saidas_extra, 0 AS gastos_diario, 0 AS gastos_extra,
+                    COALESCE(SUM(CASE WHEN t.tipo = 'venda' THEN t.valor WHEN t.tipo IN ('compra', 'custo', 'devolucao') THEN -t.valor ELSE 0 END), 0) AS saldo_final,
+                    COUNT(t.id) AS total_registros
                 FROM filiais f
-                LEFT JOIN transacoes t ON t.filial_id = f.id 
-                    AND YEAR(t.data_transacao) = :ano 
+                LEFT JOIN transacoes t ON t.filial_id = f.id
+                    AND YEAR(t.data_transacao) = :ano
                     AND MONTH(t.data_transacao) = :mes
                 WHERE f.empresa_id = :empresa_id
                 GROUP BY f.id, f.nome
                 ORDER BY f.nome";
         $stmt = $this->bd->prepare($sql);
-        $stmt->execute([
-            'empresa_id' => $empresaId,
-            'ano' => $ano,
-            'mes' => $mes
-        ]);
+        $stmt->execute(['empresa_id' => $empresaId, 'ano' => $ano, 'mes' => $mes]);
         return $stmt->fetchAll();
     }
 
@@ -293,6 +314,7 @@ class Transacao extends Model
 
     /**
      * Buscar o saldo final do dia anterior (para o fecho diário)
+     * Nota: Calcula o saldo acumulado até o dia anterior baseado nas transações existentes
      */
     public function buscarSaldoAnterior(int $filialId, string $data): float
     {
@@ -301,23 +323,24 @@ class Transacao extends Model
         }
 
         $dataObj = new DateTime($data);
-        $dataObj->modify('first day of this month');
         $dataObj->modify('-1 day');
         
         $dataAnterior = $dataObj->format('Y-m-d');
         
-        $sql = "SELECT saldo_final FROM transacoes 
-                WHERE filial_id = :filial_id 
-                AND data_transacao = :data 
-                ORDER BY id DESC LIMIT 1";
+        // Calcular saldo acumulado até o dia anterior usando categorias
+        $sql = "SELECT COALESCE(SUM(CASE WHEN c.tipo = 'entrada' THEN t.valor ELSE -t.valor END), 0)
+                FROM transacoes t
+                INNER JOIN categorias c ON c.id = t.categoria_id
+                WHERE t.filial_id = :filial_id 
+                AND t.data_transacao <= :data";
         $stmt = $this->bd->prepare($sql);
         $stmt->execute([
             'filial_id' => $filialId,
             'data' => $dataAnterior
         ]);
-        $resultado = $stmt->fetch();
+        $resultado = $stmt->fetchColumn();
         
-        return $resultado ? (float) $resultado['saldo_final'] : 0;
+        return $resultado ? (float) $resultado : 0;
     }
 
     /**

@@ -103,9 +103,13 @@ class BackupHelper
 
     private static function tabelaExiste(PDO $pdo, string $tabela): bool
     {
-        $stmt = $pdo->prepare("SHOW TABLES LIKE :t");
-        $stmt->execute(['t' => $tabela]);
-        return (bool) $stmt->fetchColumn();
+        // MariaDB não aceita marcadores de parâmetros em SHOW TABLES LIKE.
+        // information_schema mantém a consulta preparada e compatível.
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :tabela'
+        );
+        $stmt->execute(['tabela' => $tabela]);
+        return (int) $stmt->fetchColumn() > 0;
     }
 
     private static function listarTodasTabelas(PDO $pdo): array
@@ -197,7 +201,7 @@ class BackupHelper
         $caminhoSql = CAMINHO_BACKUPS . '/' . $nomeSql;
         $caminhoZip = CAMINHO_BACKUPS . '/' . $nomeZip;
 
-        file_put_contents($caminhoSql, $conteudoSql);
+        file_put_contents($caminhoSql, rtrim($conteudoSql) . "\n\nSET FOREIGN_KEY_CHECKS=1;\n");
 
         if (!class_exists('ZipArchive')) {
             return ['sucesso' => false, 'erro' => 'A extensão ZipArchive não está disponível no servidor PHP.'];
@@ -224,4 +228,49 @@ class BackupHelper
             'tamanho'  => filesize($caminhoZip),
         ];
     }
+
+    /**
+     * Lê um backup exportado pelo sistema e devolve o SQL apenas quando o
+     * arquivo tem o formato esperado. A execução é feita pelo controlador.
+     */
+    public static function lerSqlImportavel(array $ficheiro): array
+    {
+        if (($ficheiro['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return ['sucesso' => false, 'erro' => 'Selecione um ficheiro de backup válido.'];
+        }
+        if (($ficheiro['size'] ?? 0) < 1 || $ficheiro['size'] > 100 * 1024 * 1024) {
+            return ['sucesso' => false, 'erro' => 'O backup deve ter entre 1 byte e 100 MB.'];
+        }
+        if (!class_exists('ZipArchive')) {
+            return ['sucesso' => false, 'erro' => 'A extensão ZipArchive não está disponível no servidor PHP.'];
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($ficheiro['tmp_name']) !== true) {
+            return ['sucesso' => false, 'erro' => 'O ficheiro enviado não é um ZIP válido.'];
+        }
+        if ($zip->numFiles !== 1) {
+            $zip->close();
+            return ['sucesso' => false, 'erro' => 'O backup deve conter exatamente um ficheiro SQL.'];
+        }
+        $nome = $zip->getNameIndex(0);
+        $info = $zip->statIndex(0);
+        if (!$nome || basename($nome) !== $nome || !str_starts_with($nome, 'backup-global-') || !str_ends_with(strtolower($nome), '.sql') || ($info['size'] ?? 0) > 200 * 1024 * 1024) {
+            $zip->close();
+            return ['sucesso' => false, 'erro' => 'Selecione um backup global gerado pelo sistema.'];
+        }
+        $sql = $zip->getFromIndex(0);
+        $zip->close();
+        if (!is_string($sql) || !str_contains($sql, 'MonanaFinancial')) {
+            return ['sucesso' => false, 'erro' => 'Este arquivo não foi gerado pelo MonanaFinancial.'];
+        }
+        // Um backup restaurável deve trazer a estrutura central da aplicação.
+        foreach (['empresas', 'usuarios', 'transacoes'] as $tabela) {
+            if (!preg_match('/CREATE TABLE.*`' . preg_quote($tabela, '/') . '`/is', $sql)) {
+                return ['sucesso' => false, 'erro' => 'O backup não possui a mesma estrutura da base de dados.'];
+            }
+        }
+        return ['sucesso' => true, 'sql' => $sql, 'nome' => $nome];
+    }
+
 }

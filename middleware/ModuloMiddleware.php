@@ -10,15 +10,18 @@ class ModuloMiddleware
     private array $modulosPermitidosAdmin = [
         'dashboard',
         'movimentos',
+        'fecho_diario',
         'relatorios',
+        'planilha',
         'categorias',
         'filiais',
         'usuarios',
         'backups',
         'perfil',
         'notificacoes',
-        'metodos_pagamento',  // NOVO
-        'logs',               // CORRIGIDO: LogsController já permite admin_empresa (âmbito por empresa)
+        'logs',
+        'funcionarios',
+        'metodos_pagamento',
     ];
 
     public function __construct()

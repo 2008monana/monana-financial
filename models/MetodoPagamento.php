@@ -1,184 +1,116 @@
 <?php
 /**
- * Model MetodoPagamento
- * Gerencia os métodos de pagamento dinâmicos (entradas e saídas)
+ * Model de Métodos de Pagamento
+ * Gerencia operações relacionadas a métodos de pagamento
  */
 
-require_once CAMINHO_RAIZ . '/core/Model.php';
+class MetodoPagamento {
+    private PDO $db;
 
-class MetodoPagamento extends Model
-{
-    protected string $tabela = 'metodos_pagamento';
+    public function __construct() {
+        $this->db = Database::obterLigacao();
+    }
 
     /**
-     * Buscar métodos por empresa
+     * Listar métodos de pagamento
      */
-    public function porEmpresa(int $empresaId, bool $apenasAtivos = true): array
-    {
-        $sql = "SELECT * FROM metodos_pagamento 
-                WHERE empresa_id = :empresa_id";
-        
-        if ($apenasAtivos) {
+    public function listar(?int $empresa_id = null, bool $apenas_ativos = true): array {
+        $sql = "SELECT * FROM metodos_pagamento WHERE 1=1";
+        $params = [];
+
+        if ($empresa_id !== null) {
+            $sql .= " AND (empresa_id = :empresa_id OR empresa_id IS NULL)";
+            $params['empresa_id'] = $empresa_id;
+        }
+
+        if ($apenas_ativos) {
             $sql .= " AND ativo = 1";
         }
-        
-        $sql .= " ORDER BY tipo, ordem, nome";
-        
-        $stmt = $this->bd->prepare($sql);
-        $stmt->execute(['empresa_id' => $empresaId]);
-        return $stmt->fetchAll();
+
+        $sql .= " ORDER BY ordem ASC, nome ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Buscar métodos por tipo (entrada/saida)
+     * Buscar método por ID
      */
-    public function porTipo(int $empresaId, string $tipo): array
-    {
-        $sql = "SELECT * FROM metodos_pagamento 
-                WHERE empresa_id = :empresa_id 
-                AND tipo = :tipo 
-                AND ativo = 1 
-                ORDER BY ordem, nome";
-        $stmt = $this->bd->prepare($sql);
-        $stmt->execute(['empresa_id' => $empresaId, 'tipo' => $tipo]);
-        return $stmt->fetchAll();
+    public function buscarPorId(int $id): ?array {
+        $stmt = $this->db->prepare("SELECT * FROM metodos_pagamento WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $resultado ?: null;
     }
 
     /**
-     * Buscar métodos por categoria
+     * Criar novo método de pagamento
      */
-    public function porCategoria(int $empresaId, string $categoria): array
-    {
-        $sql = "SELECT * FROM metodos_pagamento 
-                WHERE empresa_id = :empresa_id 
-                AND categoria = :categoria 
-                AND ativo = 1 
-                ORDER BY ordem, nome";
-        $stmt = $this->bd->prepare($sql);
-        $stmt->execute(['empresa_id' => $empresaId, 'categoria' => $categoria]);
-        return $stmt->fetchAll();
-    }
+    public function criar(array $dados): bool {
+        $sql = "INSERT INTO metodos_pagamento 
+                (nome, descricao, empresa_id, ativo, ordem, icone) 
+                VALUES (:nome, :descricao, :empresa_id, :ativo, :ordem, :icone)";
 
-    /**
-     * Criar método de pagamento com código automático
-     */
-    public function criar(array $dados): int
-    {
-        // Gerar código a partir do nome se não for fornecido
-        if (empty($dados['codigo'])) {
-            $dados['codigo'] = strtolower(trim($dados['nome']));
-            $dados['codigo'] = preg_replace('/[^a-z0-9_]/', '_', $dados['codigo']);
-            $dados['codigo'] = preg_replace('/_+/', '_', $dados['codigo']);
-        }
-
-        // Verificar se o código já existe para esta empresa
-        $existente = $this->buscarUmPor('codigo', $dados['codigo']);
-        if ($existente && (int)$existente['empresa_id'] === (int)$dados['empresa_id']) {
-            $dados['codigo'] = $dados['codigo'] . '_' . time();
-        }
-
-        return $this->inserir($dados);
-    }
-
-    /**
-     * Buscar método por código
-     */
-    public function porCodigo(int $empresaId, string $codigo): array|false
-    {
-        $sql = "SELECT * FROM metodos_pagamento 
-                WHERE empresa_id = :empresa_id 
-                AND codigo = :codigo 
-                LIMIT 1";
-        $stmt = $this->bd->prepare($sql);
-        $stmt->execute([
-            'empresa_id' => $empresaId,
-            'codigo' => $codigo
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'nome' => $dados['nome'],
+            'descricao' => $dados['descricao'] ?? null,
+            'empresa_id' => $dados['empresa_id'] ?? null,
+            'ativo' => $dados['ativo'] ?? 1,
+            'ordem' => $dados['ordem'] ?? 0,
+            'icone' => $dados['icone'] ?? null
         ]);
-        return $stmt->fetch();
     }
 
     /**
-     * Obter métodos formatados para usar no formulário de fecho diário
+     * Atualizar método de pagamento
      */
-    public function getParaFechoDiario(int $empresaId): array
-    {
-        $metodos = $this->porEmpresa($empresaId);
-        
-        $entradas = [];
-        $saidas = [];
-        
-        foreach ($metodos as $m) {
-            if ($m['tipo'] === 'entrada') {
-                $entradas[] = $m;
-            } else {
-                $saidas[] = $m;
-            }
-        }
-        
-        return [
-            'entradas' => $entradas,
-            'saidas' => $saidas
-        ];
+    public function atualizar(int $id, array $dados): bool {
+        $sql = "UPDATE metodos_pagamento SET 
+                nome = :nome,
+                descricao = :descricao,
+                ativo = :ativo,
+                ordem = :ordem,
+                icone = :icone
+                WHERE id = :id";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'id' => $id,
+            'nome' => $dados['nome'],
+            'descricao' => $dados['descricao'] ?? null,
+            'ativo' => $dados['ativo'] ?? 1,
+            'ordem' => $dados['ordem'] ?? 0,
+            'icone' => $dados['icone'] ?? null
+        ]);
     }
 
     /**
-     * Obter categorias para o select (agrupado)
+     * Excluir método de pagamento
      */
-    public function getCategorias(): array
-    {
-        return [
-            'tpa' => 'TPA (Terminal de Pagamento)',
-            'transferencia' => 'Transferência Bancária',
-            'dinheiro' => 'Dinheiro',
-            'deposito' => 'Depósito',
-            'gasto' => 'Gasto/Despesa',
-            'outro' => 'Outro'
-        ];
+    public function excluir(int $id): bool {
+        $stmt = $this->db->prepare("DELETE FROM metodos_pagamento WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
     }
 
     /**
-     * Cores disponíveis para os métodos
+     * Verificar se método está em uso
      */
-    public function getCoresDisponiveis(): array
-    {
-        return [
-            '#0e2748' => 'Navio Escuro',
-            '#173a67' => 'Navio Claro',
-            '#3b82f6' => 'Azul',
-            '#22c55e' => 'Verde',
-            '#16a34a' => 'Verde Escuro',
-            '#8b5cf6' => 'Roxo',
-            '#f59e0b' => 'Laranja',
-            '#ef4444' => 'Vermelho',
-            '#dc2626' => 'Vermelho Escuro',
-            '#ec4899' => 'Rosa',
-            '#14b8a6' => 'Teal',
-            '#64748b' => 'Cinza',
-            '#101828' => 'Preto'
-        ];
+    public function estaEmUso(int $id): bool {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM transacoes WHERE metodo_pagamento = (SELECT nome FROM metodos_pagamento WHERE id = :id)");
+        $stmt->execute(['id' => $id]);
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+        return ($resultado['total'] ?? 0) > 0;
     }
 
     /**
-     * Ícones disponíveis para os métodos
+     * Obter métodos padrão do sistema
      */
-    public function getIconesDisponiveis(): array
-    {
-        return [
-            'fa-credit-card' => 'Cartão de Crédito',
-            'fa-money-bill' => 'Dinheiro',
-            'fa-university' => 'Banco',
-            'fa-building-columns' => 'Prédio',
-            'fa-receipt' => 'Recibo',
-            'fa-clock' => 'Relógio',
-            'fa-exclamation-triangle' => 'Alerta',
-            'fa-truck' => 'Caminhão',
-            'fa-users' => 'Pessoas',
-            'fa-water' => 'Água',
-            'fa-home' => 'Casa',
-            'fa-tools' => 'Ferramentas',
-            'fa-pen' => 'Caneta',
-            'fa-gas-pump' => 'Bomba de Gasolina',
-            'fa-ellipsis-h' => 'Outros'
-        ];
+    public function obterPadroes(): array {
+        $stmt = $this->db->prepare("SELECT * FROM metodos_pagamento WHERE empresa_id IS NULL AND ativo = 1 ORDER BY ordem ASC");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

@@ -39,8 +39,8 @@ class Router
         'transacoes/editar' => 'movimentos',
         'transacoes/atualizar' => 'movimentos',
         'transacoes/excluir' => 'movimentos',
-        'transacoes/fechoDiario' => 'movimentos',
-        'transacoes/salvarFecho' => 'movimentos',
+        'transacoes/fechoDiario' => 'fecho_diario',
+        'transacoes/salvarFecho' => 'fecho_diario',
         'transacoes/exportar' => 'movimentos',
         'transacoes/exportarPDF' => 'movimentos',
         'transacoes/exportarExcel' => 'movimentos',
@@ -54,7 +54,7 @@ class Router
         'relatorios/mensal' => 'relatorios',
         'relatorios/anual' => 'relatorios',
         'relatorios/filial' => 'relatorios',
-        'relatorios/diario-planilha' => 'relatorios',
+        'relatorios/diario-planilha' => 'planilha',
 
         // =============================================
         // CATEGORIAS
@@ -83,13 +83,13 @@ class Router
         // =============================================
         // EMPRESAS (apenas Super Admin)
         // =============================================
-        'empresas' => 'configuracoes',
-        'empresas/index' => 'configuracoes',
-        'empresas/criar' => 'configuracoes',
-        'empresas/gravar' => 'configuracoes',
-        'empresas/editar' => 'configuracoes',
-        'empresas/atualizar' => 'configuracoes',
-        'empresas/alternarEstado' => 'configuracoes',
+        'empresas' => 'empresas',
+        'empresas/index' => 'empresas',
+        'empresas/criar' => 'empresas',
+        'empresas/gravar' => 'empresas',
+        'empresas/editar' => 'empresas',
+        'empresas/atualizar' => 'empresas',
+        'empresas/alternarEstado' => 'empresas',
 
         // =============================================
         // UTILIZADORES
@@ -131,6 +131,7 @@ class Router
         'backups/configurarAutomatico' => 'backups',
         'backups/download' => 'backups',
         'backups/eliminar' => 'backups',
+        'backups/importar' => 'backups',
 
         // =============================================
         // LOGS (apenas Super Admin)
@@ -150,20 +151,26 @@ class Router
         'configuracoes/guardar' => 'configuracoes',
 
         // =============================================
-        // MÉTODOS DE PAGAMENTO (NOVO)
+        // FUNCIONÁRIOS
+        // =============================================
+        'funcionarios' => 'funcionarios',
+        'funcionarios/index' => 'funcionarios',
+        'funcionarios/criar' => 'funcionarios',
+        'funcionarios/salvar' => 'funcionarios',
+        'funcionarios/editar' => 'funcionarios',
+        'funcionarios/atualizar' => 'funcionarios',
+        'funcionarios/excluir' => 'funcionarios',
+
+        // =============================================
+        // MÉTODOS DE PAGAMENTO
         // =============================================
         'metodos-pagamento' => 'metodos_pagamento',
         'metodos-pagamento/index' => 'metodos_pagamento',
         'metodos-pagamento/criar' => 'metodos_pagamento',
-        'metodos-pagamento/gravar' => 'metodos_pagamento',
+        'metodos-pagamento/salvar' => 'metodos_pagamento',
         'metodos-pagamento/editar' => 'metodos_pagamento',
         'metodos-pagamento/atualizar' => 'metodos_pagamento',
-        'metodos-pagamento/alternarEstado' => 'metodos_pagamento',
-        'metodos-pagamento/eliminar' => 'metodos_pagamento',
-        'metodos-pagamento/criarCategoriaSaida' => 'metodos_pagamento',
-        'metodos-pagamento/gravarCategoriaSaida' => 'metodos_pagamento',
-        'metodos-pagamento/alternarEstadoCategoria' => 'metodos_pagamento',
-        'metodos-pagamento/eliminarCategoria' => 'metodos_pagamento',
+        'metodos-pagamento/excluir' => 'metodos_pagamento',
     ];
 
     /**

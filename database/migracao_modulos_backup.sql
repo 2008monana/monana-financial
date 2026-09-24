@@ -35,19 +35,23 @@ CREATE TABLE IF NOT EXISTS usuario_modulo_permissoes (
 ) ENGINE=InnoDB;
 
 -- Catálogo de páginas/módulos existentes (tem de acompanhar o Router::$rotaParaModulo).
--- 'perfil' não entra aqui de propósito: é sempre acessível a todos (ver ModuloMiddleware).
+-- 'perfil' está no catálogo para ficar explícito no formulário, embora permaneça sempre acessível.
 INSERT IGNORE INTO modulos (nome, descricao, icone, ordem) VALUES
-    ('dashboard',          'Painel principal',                 'fa-house',            1),
-    ('movimentos',         'Transações / Movimentos',          'fa-list-ul',          2),
-    ('relatorios',         'Relatórios',                       'fa-chart-column',     3),
-    ('categorias',         'Categorias',                       'fa-tags',             4),
-    ('filiais',            'Filiais',                          'fa-code-branch',      5),
-    ('usuarios',           'Utilizadores',                     'fa-users',            6),
-    ('metodos_pagamento',  'Métodos de pagamento',             'fa-credit-card',      7),
-    ('notificacoes',       'Notificações',                     'fa-bell',             8),
-    ('backups',            'Cópias de segurança',              'fa-database',         9),
-    ('logs',               'Logs de auditoria',                'fa-clipboard-list',  10),
-    ('configuracoes',      'Configurações do sistema',         'fa-gear',            11);
+    ('dashboard',          'Dashboard',                       'fa-house',            1),
+    ('movimentos',         'Movimentos',                      'fa-list-ul',          2),
+    ('relatorios',         'Relatórios',                      'fa-chart-column',     3),
+    ('planilha',           'Planilha',                        'fa-table',            4),
+    ('categorias',         'Categorias',                      'fa-tags',             5),
+    ('empresas',           'Empresas',                        'fa-building',         6),
+    ('filiais',            'Filiais',                         'fa-code-branch',      7),
+    ('usuarios',           'Utilizadores',                    'fa-users',            8),
+    ('fecho_diario',       'Fecho Diário',                    'fa-calendar-check',   9),
+    ('backups',            'Backups',                         'fa-database',        10),
+    ('metodos_pagamento',  'Métodos de Pagamento',             'fa-credit-card',     11),
+    ('logs',               'Logs de Auditoria',                'fa-clipboard-list',  12),
+    ('configuracoes',      'Configurações',                    'fa-gear',            13),
+    ('perfil',             'Meu Perfil',                      'fa-user-cog',        14),
+    ('notificacoes',       'Notificações',                     'fa-bell',            15);
 
 -- ---------------------------------------------------------------------
 -- MÓDULO DE BACKUP
