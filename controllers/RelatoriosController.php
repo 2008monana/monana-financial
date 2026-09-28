@@ -8,6 +8,7 @@
 
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Transacao.php';
+require_once CAMINHO_RAIZ . '/models/Categoria.php';
 require_once CAMINHO_RAIZ . '/models/Filial.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
 require_once CAMINHO_RAIZ . '/models/Usuario.php';
@@ -533,6 +534,253 @@ class RelatoriosController extends Controller
             'meses' => $this->getMeses(),
             'anos' => range(date('Y') - 5, date('Y')),
         ]);
+    }
+
+    /**
+     * Pesquisa de Movimentos (por descrição e tipo)
+     * Barra de pesquisa + selects de Descrição, Tipo e Período (Diário/Mensal/Anual/Filial)
+     * Exibe toda a informação relacionada com a descrição/tipo pesquisados.
+     */
+    public function pesquisa(): void
+    {
+        $perfil = $_SESSION['usuario_perfil'] ?? 'visualizador';
+        $empresaId = $_SESSION['empresa_id'] ?? null;
+
+        // ----- Filtros recebidos -----
+        $descricao = trim($_GET['descricao'] ?? '');
+        $tiposArr  = array_filter((array) ($_GET['tipo'] ?? []), fn($v) => $v !== '' && $v !== 'todos');
+        $periodo   = $_GET['periodo'] ?? 'todos'; // todos|diario|mensal|anual|filial
+        $data      = $_GET['data'] ?? date('Y-m-d');
+        $mes       = (int) ($_GET['mes'] ?? date('m'));
+        $ano       = (int) ($_GET['ano'] ?? date('Y'));
+        $filialId  = (int) ($_GET['filial_id'] ?? 0);
+        $empresaFiltro = ($perfil === 'super_admin' && isset($_GET['empresa_id']) && $_GET['empresa_id'] > 0)
+            ? (int) $_GET['empresa_id'] : null;
+
+        if ($mes < 1 || $mes > 12) $mes = (int) date('m');
+        if ($ano < 2000 || $ano > 2100) $ano = (int) date('Y');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data)) $data = date('Y-m-d');
+
+        $tiposValidos = ['venda', 'compra', 'despesa', 'devolucao', 'transferencia'];
+        $tiposArr = array_values(array_intersect($tiposArr, $tiposValidos));
+
+        // ----- Limites de data conforme o período selecionado -----
+        $temFiltroPeriodo = in_array($periodo, ['diario', 'mensal', 'anual', 'filial'], true);
+        $dataInicio = null;
+        $dataFim    = null;
+        switch ($periodo) {
+            case 'diario':
+                $dataInicio = $data;
+                $dataFim = $data;
+                break;
+            case 'mensal':
+                $dataInicio = sprintf('%04d-%02d-01', $ano, $mes);
+                $dataFim = sprintf('%04d-%02d-%02d', $ano, $mes, cal_days_in_month(CAL_GREGORIAN, $mes, $ano));
+                break;
+            case 'anual':
+                $dataInicio = sprintf('%04d-01-01', $ano);
+                $dataFim = sprintf('%04d-12-31', $ano);
+                break;
+            case 'filial':
+                $dataInicio = sprintf('%04d-%02d-01', $ano, $mes);
+                $dataFim = sprintf('%04d-%02d-%02d', $ano, $mes, cal_days_in_month(CAL_GREGORIAN, $mes, $ano));
+                break;
+        }
+
+        // ----- Filial do utilizador -----
+        if ($perfil !== 'super_admin') {
+            $filiais = $this->filialModel->porEmpresa((int) $empresaId);
+        } else {
+            $filiais = $empresaFiltro
+                ? array_values(array_filter($this->filialModel->todas(), fn($f) => (int) $f['empresa_id'] === $empresaFiltro))
+                : $this->filialModel->todas();
+        }
+
+        // ----- Buscar transações -----
+        $transacoes = [];
+        $temPesquisa = $descricao !== '' || !empty($tiposArr) || $temFiltroPeriodo || $filialId > 0 || $empresaFiltro !== null;
+
+        if ($temPesquisa) {
+            $empresaBusca = $perfil === 'super_admin' ? $empresaFiltro : (int) $empresaId;
+
+            if ($temFiltroPeriodo || $filialId > 0) {
+                // Usa buscarComFiltros (suporta intervalo de datas e filial)
+                $transacoes = $this->transacaoModel->buscarComFiltros(
+                    $empresaBusca,
+                    null,
+                    $dataInicio ?: '2000-01-01',
+                    $dataFim ?: date('Y-m-d'),
+                    count($tiposArr) === 1 ? $tiposArr[0] : '',
+                    0,
+                    $filialId,
+                    $descricao
+                );
+                // Se houver múltiplos tipos, filtra em PHP
+                if (count($tiposArr) > 1) {
+                    $transacoes = array_values(array_filter(
+                        $transacoes,
+                        fn($t) => in_array($t['tipo'], $tiposArr, true)
+                    ));
+                }
+            } else {
+                // Sem período: pesquisa direta por descrição/tipo (todos os tempos)
+                $transacoes = $this->transacaoModel->pesquisar(
+                    $empresaBusca,
+                    $descricao,
+                    implode(',', $tiposArr)
+                );
+            }
+        }
+
+        $totais = $this->calcularTotais($transacoes);
+        $totais['total_registos'] = count($transacoes);
+
+        // ----- Categorias e descrições para os selects -----
+        $categoriasDisponiveis = [];
+        if ($perfil === 'super_admin') {
+            if ($empresaFiltro) {
+                foreach ((new Categoria())->porEmpresa((int) $empresaFiltro) as $c) {
+                    $categoriasDisponiveis[$c['id']] = $c;
+                }
+            } else {
+                foreach ((new Categoria())->ativas() as $c) {
+                    $categoriasDisponiveis[$c['id']] = $c;
+                }
+            }
+        } else {
+            foreach ((new Categoria())->porEmpresa((int) $empresaId) as $c) {
+                $categoriasDisponiveis[$c['id']] = $c;
+            }
+        }
+
+        // Descrições distintas para o select
+        $descricoesDisponiveis = $this->transacaoModel->descricoesDistintas(
+            $perfil === 'super_admin' ? $empresaFiltro : (int) $empresaId
+        );
+
+        // ----- Exportação -----
+        if (isset($_GET['exportar']) && $temPesquisa) {
+            $rotuloPeriodo = match ($periodo) {
+                'diario' => 'Diário ' . date('d/m/Y', strtotime($data)),
+                'mensal' => 'Mensal ' . $this->getNomeMes($mes) . '/' . $ano,
+                'anual' => 'Anual ' . $ano,
+                'filial' => 'Filial ' . $this->getNomeMes($mes) . '/' . $ano,
+                default => 'Todos os períodos',
+            };
+            $titulo = 'Pesquisa de Movimentos - ' . $rotuloPeriodo;
+            if ($descricao !== '') $titulo .= ' | Descrição: ' . $descricao;
+
+            if ($_GET['exportar'] === 'excel') {
+                $this->exportarPesquisaExcel($transacoes, $totais, $titulo);
+                return;
+            } elseif ($_GET['exportar'] === 'pdf') {
+                $this->exportarPesquisaPDF($transacoes, $totais, $titulo);
+                return;
+            }
+        }
+
+        $this->renderizar('relatorios/pesquisa', [
+            'tituloPagina' => 'Pesquisa de Movimentos',
+            'paginaAtiva' => 'relatorios',
+            'perfil' => $perfil,
+            'empresas' => $perfil === 'super_admin' ? $this->empresaModel->todos() : [],
+            'empresaFiltro' => $empresaFiltro,
+            'filiais' => $filiais,
+            'filialId' => $filialId,
+            'descricao' => $descricao,
+            'descricoesDisponiveis' => $descricoesDisponiveis,
+            'categoriasDisponiveis' => $categoriasDisponiveis,
+            'tiposSelecionados' => $tiposArr,
+            'periodo' => $periodo,
+            'data' => $data,
+            'mes' => $mes,
+            'ano' => $ano,
+            'transacoes' => $transacoes,
+            'totais' => $totais,
+            'temPesquisa' => $temPesquisa,
+            'meses' => $this->getMeses(),
+            'anos' => range(date('Y') - 5, (int) date('Y')),
+        ]);
+    }
+
+    /**
+     * Exportar resultados da pesquisa em Excel
+     */
+    private function exportarPesquisaExcel(array $transacoes, array $totais, string $titulo): void
+    {
+        $fmtMoeda = static fn($v) => number_format((float) $v, 2, ',', ' ');
+        $rotulosTipos = [
+            'venda' => 'Venda', 'compra' => 'Compra', 'despesa' => 'Despesa',
+            'devolucao' => 'Devolução', 'transferencia' => 'Transferência',
+        ];
+
+        $linhas = [];
+        foreach ($transacoes as $t) {
+            $linhas[] = [
+                date('d/m/Y', strtotime($t['data_transacao'])),
+                $rotulosTipos[$t['tipo']] ?? ucfirst($t['tipo']),
+                $t['descricao'] ?? '-',
+                $t['categoria_nome'] ?? '-',
+                $t['filial_nome'] ?? '-',
+                $t['empresa_nome'] ?? '-',
+                ['valor' => (float) $t['valor'], 'tipo' => 'moeda', 'estilo' => $t['tipo'] === 'venda' ? 'positivo' : 'negativo'],
+                $t['usuario_nome'] ?? '-',
+            ];
+        }
+
+        $empresa = $this->buscarEmpresa();
+
+        (new RelatorioExcelBuilder($titulo, 'pesquisa_movimentos'))
+            ->definirEmpresa($empresa)
+            ->definirSubtitulo('Total de registos: ' . $totais['total_registos'])
+            ->definirColunas(['Data', 'Tipo', 'Descrição', 'Categoria', 'Filial', 'Empresa', 'Valor (Kz)', 'Registado por'])
+            ->definirLinhas($linhas)
+            ->definirResumo([
+                ['rotulo' => 'Total Entradas', 'valor' => $totais['entradas'], 'estilo' => 'positivo'],
+                ['rotulo' => 'Total Saídas', 'valor' => $totais['saidas'], 'estilo' => 'negativo'],
+                ['rotulo' => 'Saldo', 'valor' => $totais['saldo'], 'estilo' => $totais['saldo'] >= 0 ? 'positivo' : 'negativo'],
+            ])
+            ->stream();
+    }
+
+    /**
+     * Exportar resultados da pesquisa em PDF
+     */
+    private function exportarPesquisaPDF(array $transacoes, array $totais, string $titulo): void
+    {
+        $fmtMoeda = static fn($v) => number_format((float) $v, 2, ',', ' ');
+        $rotulosTipos = [
+            'venda' => 'Venda', 'compra' => 'Compra', 'despesa' => 'Despesa',
+            'devolucao' => 'Devolução', 'transferencia' => 'Transferência',
+        ];
+
+        $linhas = [];
+        foreach ($transacoes as $t) {
+            $linhas[] = [
+                date('d/m/Y', strtotime($t['data_transacao'])),
+                $rotulosTipos[$t['tipo']] ?? ucfirst($t['tipo']),
+                $t['descricao'] ?? '-',
+                $t['categoria_nome'] ?? '-',
+                $t['filial_nome'] ?? '-',
+                ['texto' => $fmtMoeda($t['valor']) . ' Kz', 'classe' => $t['tipo'] === 'venda' ? 'positivo' : 'negativo', 'alinhar' => 'direita'],
+            ];
+        }
+
+        $empresa = $this->buscarEmpresa();
+
+        (new RelatorioPdfBuilder($titulo, 'pesquisa_movimentos'))
+            ->definirEmpresa($empresa)
+            ->definirSubtitulo('Total de registos: ' . $totais['total_registos'])
+            ->definirColunas(['Data', 'Tipo', 'Descrição', 'Categoria', 'Filial', 'Valor'])
+            ->definirLinhas($linhas)
+            ->definirCartoesResumo([
+                ['rotulo' => 'Registos', 'valor' => (string) $totais['total_registos'], 'cor' => 'navy'],
+                ['rotulo' => 'Entradas', 'valor' => $fmtMoeda($totais['entradas']) . ' Kz', 'cor' => 'verde'],
+                ['rotulo' => 'Saídas', 'valor' => $fmtMoeda($totais['saidas']) . ' Kz', 'cor' => 'vermelho'],
+                ['rotulo' => 'Saldo', 'valor' => $fmtMoeda($totais['saldo']) . ' Kz', 'cor' => $totais['saldo'] >= 0 ? 'verde' : 'vermelho'],
+            ])
+            ->definirOrientacao('landscape')
+            ->stream();
     }
 
     // =============================================

@@ -2390,6 +2390,9 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'relatorios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/index">
             <i class="fa-solid fa-chart-column"></i> Relatórios
         </a>
+        <a class="nav-item" href="<?php echo URL_BASE; ?>/relatorios/pesquisa">
+            <i class="fa-solid fa-magnifying-glass"></i> Pesquisa
+        </a>
         <a class="nav-item <?php echo $paginaAtiva === 'planilha' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/diario-planilha">
             <i class="fa-solid fa-table"></i> Planilha
         </a>
@@ -2414,9 +2417,6 @@ $isViewer = $usuario_perfil === 'visualizador';
         </a>
         <a class="nav-item <?php echo $paginaAtiva === 'usuarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/usuarios/index">
             <i class="fa-solid fa-users"></i> Utilizadores
-        </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'funcionarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/funcionarios/index">
-            <i class="fa-solid fa-user-tie"></i> Funcionários
         </a>
         <a class="nav-item <?php echo $paginaAtiva === 'metodos_pagamento' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/metodos-pagamento/index">
             <i class="fa-solid fa-money-bill-wave"></i> Métodos de Pagamento

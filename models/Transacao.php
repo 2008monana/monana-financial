@@ -86,6 +86,79 @@ class Transacao extends Model
     }
 
     /**
+     * Pesquisar transações por descrição e/ou tipo (para o relatório de Pesquisa)
+     * $tipos pode ser um tipo único ('venda') ou vários separados por vírgula
+     * ($empresaId = null para super admin ver todas as empresas)
+     */
+    public function pesquisar(
+        ?int $empresaId,
+        string $descricao = '',
+        string $tipos = '',
+        int $limite = 1000
+    ): array {
+        $sql = "SELECT t.*,
+                       f.nome as filial_nome,
+                       f.empresa_id,
+                       e.nome as empresa_nome,
+                       c.nome as categoria_nome,
+                       u.nome as usuario_nome
+                FROM transacoes t
+                LEFT JOIN filiais f ON t.filial_id = f.id
+                LEFT JOIN empresas e ON t.empresa_id = e.id
+                LEFT JOIN categorias c ON t.categoria_id = c.id
+                LEFT JOIN usuarios u ON t.usuario_id = u.id
+                WHERE 1=1";
+
+        $params = [];
+
+        if ($empresaId !== null && $empresaId > 0) {
+            $sql .= " AND t.empresa_id = :empresa_id";
+            $params['empresa_id'] = $empresaId;
+        }
+
+        if (trim($descricao) !== '') {
+            $sql .= " AND (t.descricao LIKE :busca OR c.nome LIKE :busca)";
+            $params['busca'] = '%' . trim($descricao) . '%';
+        }
+
+        if (trim($tipos) !== '') {
+            $listaTipos = array_filter(array_map('trim', explode(',', $tipos)), fn($v) => $v !== 'todos');
+            if (!empty($listaTipos)) {
+                $placeholders = [];
+                foreach (array_values($listaTipos) as $i => $tp) {
+                    $chave = 'tipo_' . $i;
+                    $placeholders[] = ':' . $chave;
+                    $params[$chave] = $tp;
+                }
+                $sql .= ' AND t.tipo IN (' . implode(',', $placeholders) . ')';
+            }
+        }
+
+        $sql .= " ORDER BY t.data_transacao DESC, t.id DESC LIMIT " . (int) $limite;
+
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Listar descrições distintas (top valores usados) para o select do formulário
+     */
+    public function descricoesDistintas(?int $empresaId, int $limite = 300): array
+    {
+        $sql = "SELECT DISTINCT descricao FROM transacoes WHERE descricao IS NOT NULL AND descricao <> ''";
+        $params = [];
+        if ($empresaId !== null && $empresaId > 0) {
+            $sql .= " AND empresa_id = :empresa_id";
+            $params['empresa_id'] = $empresaId;
+        }
+        $sql .= " ORDER BY descricao ASC LIMIT " . (int) $limite;
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
      * Buscar transações por usuário
      */
     public function porUsuario(int $usuarioId, int $limite = 10): array
