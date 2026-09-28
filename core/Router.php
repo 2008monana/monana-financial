@@ -17,6 +17,8 @@ class Router
         'auth/enviarLinkRedefinicao',
         'auth/redefinirSenha',
         'auth/salvarNovaSenha',
+        'auth/processarEsqueciSenha',
+        'auth/atualizarSenha',
     ];
 
     // Mapeamento de rotas para módulos (para verificação de permissão)

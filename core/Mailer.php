@@ -46,7 +46,7 @@ class Mailer {
                 'nome' => $nome,
                 'email' => $para,
                 'senha' => $senha,
-                'login_url' => APP_URL . '/login'
+                'login_url' => URL_BASE . '/auth/login'
             ]);
             
             $this->mail->Body = $corpo;
@@ -66,7 +66,7 @@ class Mailer {
             $this->mail->addAddress($para);
             $this->mail->Subject = 'Redefinição de Senha - MonanaFinancial';
             
-            $linkRedefinicao = APP_URL . '/redefinir-senha?token=' . $token;
+            $linkRedefinicao = URL_BASE . '/auth/redefinirSenha?token=' . urlencode($token);
             
             $corpo = $this->renderizarTemplate('redefinir-senha', [
                 'nome' => $nome,
@@ -96,7 +96,7 @@ class Mailer {
                 'email' => $para,
                 'senha' => $senha,
                 'empresa' => $empresa,
-                'login_url' => APP_URL . '/login'
+                'login_url' => URL_BASE . '/auth/login'
             ]);
             
             $this->mail->Body = $corpo;
