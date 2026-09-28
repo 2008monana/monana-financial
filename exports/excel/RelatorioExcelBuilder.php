@@ -505,7 +505,13 @@ class RelatorioExcelBuilder
         }
 
         $primeiraLinhaDados = $linha;
+        $totalCelulas = count($this->colunas);
         foreach ($this->linhas as $indice => $linhaDados) {
+            // Linha de totais da tabela (rotulada "TOTAL" na 1ª coluna):
+            // se vier com valores fixos, são substituídos por fórmulas SUM()
+            // sobre as linhas de dados — assim os totais recalculam sozinhos
+            // quando o utilizador altera um número numa célula.
+            $ehLinhaTotal = $this->detectarLinhaTotal($linhaDados);
             $coluna = 1;
             foreach ($linhaDados as $celula) {
                 $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($coluna);
@@ -519,6 +525,14 @@ class RelatorioExcelBuilder
                     $valor = $celula;
                     $tipo = 'texto';
                     $estilo = null;
+                }
+
+                if ($ehLinhaTotal && $coluna >= 2 && $coluna <= $totalCelulas && in_array($tipo, ['moeda', 'numero'], true)) {
+                    $formulaLinha = $this->montarFormulaColuna($coluna, $primeiraLinhaDados, $linha - 1);
+                    if ($formulaLinha !== null) {
+                        $valor = $formulaLinha;
+                        $tipo = 'formula';
+                    }
                 }
 
                 if ($tipo === 'formula') {
@@ -564,6 +578,10 @@ class RelatorioExcelBuilder
                 ]);
             }
 
+            if ($ehLinhaTotal) {
+                $this->linhaTotaisTabela = $linha;
+            }
+
             $linha++;
         }
 
@@ -604,6 +622,13 @@ class RelatorioExcelBuilder
             $valor = $item['valor'] ?? 0;
             $estilo = $item['estilo'] ?? null;
             $formula = $this->montarFormulaResumo($item, $linha);
+
+            // Referência explícita (ex.: 'referencia' => true) guarda a célula
+            // onde o valor foi escrito, para que fórmulas posteriores do
+            // resumo (ex.: saldo final) possam somá-la.
+            if (!empty($item['referencia'])) {
+                $this->celulaReferenciaResumo = "{$this->colunaResumo}{$linha}";
+            }
 
             $sheet->setCellValue("A{$linha}", $rotulo);
             $sheet->getStyle("A{$linha}")->applyFromArray(['font' => ['bold' => true, 'size' => 10]]);
@@ -679,13 +704,22 @@ class RelatorioExcelBuilder
             $span = max(1, (int) ($grupo['colspan'] ?? 1));
             if ($classe === 'grupo-entrada') {
                 $qtdEntrada = $span;
-                $inicioSaida = $inicioSaida + $span;
+                $inicioSaida += $span;
             } elseif ($classe === 'grupo-saida') {
                 $qtdSaida = $span;
             }
         }
         if ($qtdEntrada === 0 && $qtdSaida === 0) {
             return null;
+        }
+
+        // A coluna "Saldo" (última da tabela) já é uma fórmula linha a linha:
+        // o total dela deve somar essa coluna, não entradas − saídas.
+        $temColunaSaldo = false;
+        foreach ($this->agrupamentosCabecalho as $grupo) {
+            if ((int) ($grupo['rowspan'] ?? 1) >= 2 && ($grupo['rotulo'] ?? '') === 'Saldo') {
+                $temColunaSaldo = true;
+            }
         }
 
         $letraInicial = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2);
@@ -725,6 +759,37 @@ class RelatorioExcelBuilder
         }
 
         return null;
+    }
+
+    /**
+     * Detecta se uma linha de dados é a linha de totais da tabela
+     * (primeira célula com rótulo "TOTAL", "TOTAIS" ou "SUBTOTAL").
+     */
+    private function detectarLinhaTotal(array $linhaDados): bool
+    {
+        if (count($linhaDados) < 2 || count($linhaDados) !== count($this->colunas)) {
+            return false;
+        }
+        $primeira = reset($linhaDados);
+        $rotulo = is_array($primeira) ? ($primeira['valor'] ?? '') : $primeira;
+        if (!is_string($rotulo)) {
+            return false;
+        }
+        return in_array(mb_strtoupper(trim($rotulo)), ['TOTAL', 'TOTAIS', 'SUBTOTAL'], true);
+    }
+
+    /**
+     * Monta uma fórmula SUM() nativa do Excel para a coluna indicada,
+     * somando as linhas de dados acima da linha de totais.
+     * Retorna null se não houver linhas de dados válidas.
+     */
+    private function montarFormulaColuna(int $indiceColuna, int $linhaInicio, int $linhaFim): ?string
+    {
+        if ($linhaFim < $linhaInicio) {
+            return null;
+        }
+        $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($indiceColuna);
+        return "=SUM({$letra}{$linhaInicio}:{$letra}{$linhaFim})";
     }
 
     private function temFormulasResumo(): bool
