@@ -3,9 +3,9 @@
  * Modelo de Redefinição de Senha
  */
 class RedefinicaoSenha extends Model {
-    protected $tabela = 'redefinicoes_senha';
-    protected $chavePrimaria = 'id';
-    protected $preenchiveis = [
+    protected string $tabela = 'redefinicoes_senha';
+    protected string $chavePrimaria = 'id';
+    protected array $preenchiveis = [
         'usuario_id', 'token', 'expira_em', 'usado'
     ];
 

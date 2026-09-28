@@ -30,7 +30,7 @@
         </div>
     <?php endif; ?>
 
-    <form method="POST" action="/redefinir-senha">
+    <form method="POST" action="auth/salvarNovaSenha">
         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
         <input type="hidden" name="token" value="<?php echo $token; ?>">
         

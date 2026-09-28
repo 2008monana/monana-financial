@@ -54,7 +54,7 @@ $baseDir = dirname($_SERVER['SCRIPT_NAME']);
         </div>
     <?php endif; ?>
     
-    <form method="POST" action="<?php echo $baseDir; ?>/esqueci-senha">
+    <form method="POST" action="<?php echo $baseDir; ?>/auth/processarEsqueciSenha">
         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
         
         <div class="campo">
