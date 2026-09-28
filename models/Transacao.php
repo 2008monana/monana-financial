@@ -49,9 +49,13 @@ class Transacao extends Model
 
         // Filtrar por filiais (utilizador interno)
         if (!empty($filiaisIds)) {
-            $placeholders = implode(',', array_fill(0, count($filiaisIds), '?'));
-            $sql .= " AND t.filial_id IN ({$placeholders})";
-            $params = array_merge($params, $filiaisIds);
+            $placeholders = [];
+            foreach (array_values($filiaisIds) as $i => $fid) {
+                $chave = 'filial_in_' . $i;
+                $placeholders[] = ':' . $chave;
+                $params[$chave] = (int) $fid;
+            }
+            $sql .= " AND t.filial_id IN (" . implode(',', $placeholders) . ")";
         }
 
         // Filtrar por tipo

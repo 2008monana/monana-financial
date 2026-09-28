@@ -26,7 +26,6 @@ $itens = [
     ],
     'relatorios' => [
         ['relatorios/index', 'fa-chart-column', 'Relatórios', 'relatorios'],
-        ['relatorios/pesquisa', 'fa-magnifying-glass', 'Pesquisa', 'relatorios'],
         ['relatorios/diario-planilha', 'fa-table', 'Planilha', 'planilha'],
         ['categorias/index', 'fa-tags', 'Categorias', 'categorias'],
     ],
