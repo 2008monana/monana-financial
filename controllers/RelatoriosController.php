@@ -681,7 +681,7 @@ class RelatoriosController extends Controller
 
         $this->renderizar('relatorios/pesquisa', [
             'tituloPagina' => 'Pesquisa de Movimentos',
-            'paginaAtiva' => 'relatorios',
+            'paginaAtiva' => 'pesquisa',
             'perfil' => $perfil,
             'empresas' => $perfil === 'super_admin' ? $this->empresaModel->todos() : [],
             'empresaFiltro' => $empresaFiltro,
