@@ -76,10 +76,17 @@ class Transacao extends Model
             $params['filial_id'] = $filialId;
         }
 
-        // Busca por descrição
+        // Busca por descrição / utilizador / empresa
+        // IMPORTANTE: com PDO::ATTR_EMULATE_PREPARES = false (MySQL nativo),
+        // repetir o mesmo placeholder (:busca) no SQL provoca o erro
+        // "SQLSTATE[HY093]: Invalid parameter number". Por isso usamos
+        // placeholders DISTINTOS para cada ocorrência do termo pesquisado.
         if (!empty($busca)) {
-            $sql .= " AND (t.descricao LIKE :busca OR u.nome LIKE :busca OR e.nome LIKE :busca)";
-            $params['busca'] = "%{$busca}%";
+            $sql .= " AND (t.descricao LIKE :busca_desc OR u.nome LIKE :busca_user OR e.nome LIKE :busca_empresa)";
+            $termo = '%' . trim($busca) . '%';
+            $params['busca_desc'] = $termo;
+            $params['busca_user'] = $termo;
+            $params['busca_empresa'] = $termo;
         }
 
         $sql .= " ORDER BY t.data_transacao DESC, t.id DESC";
@@ -121,8 +128,11 @@ class Transacao extends Model
         }
 
         if (trim($descricao) !== '') {
-            $sql .= " AND (t.descricao LIKE :busca OR c.nome LIKE :busca)";
-            $params['busca'] = '%' . trim($descricao) . '%';
+            // Placeholders distintos: necessário pois EMULATE_PREPARES = false
+            $sql .= " AND (t.descricao LIKE :busca_desc OR c.nome LIKE :busca_cat)";
+            $termo = '%' . trim($descricao) . '%';
+            $params['busca_desc'] = $termo;
+            $params['busca_cat'] = $termo;
         }
 
         if (trim($tipos) !== '') {

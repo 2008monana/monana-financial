@@ -19,17 +19,62 @@ $queryAtual = $_GET;
 unset($queryAtual['exportar']);
 $qsExport = http_build_query($queryAtual);
 ?>
-<div class="relatorio-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+<style>
+/* ===== Página de Pesquisa de Movimentos ===== */
+.pesquisa-hero {
+    background: linear-gradient(135deg, #123c6b 0%, #1d5fa8 100%);
+    border-radius: 14px; padding: 22px 24px; color: #fff;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+    box-shadow: 0 6px 18px rgba(18, 60, 107, .25);
+}
+.pesquisa-hero h2 { margin: 0; font-size: 21px; font-weight: 700; }
+.pesquisa-hero p { margin: 5px 0 0; font-size: 13px; opacity: .85; }
+.pesquisa-hero .btn-hero {
+    background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.35);
+    padding: 9px 16px; border-radius: 8px; text-decoration: none; font-size: 13.5px; font-weight: 600;
+    transition: background .15s ease;
+}
+.pesquisa-hero .btn-hero:hover { background: rgba(255,255,255,.28); }
+.pesquisa-form {
+    background: #fff; padding: 20px; border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(18,60,107,.10); margin-bottom: 20px;
+    border: 1px solid #e6ebf2;
+}
+.pesquisa-form label { font-weight: 600; display: block; margin-bottom: 5px; color: #344054; font-size: 13px; }
+.pesquisa-form input[type="text"], .pesquisa-form input[type="date"], .pesquisa-form select {
+    width: 100%; padding: 9px 10px; border: 1px solid #d0d5dd; border-radius: 8px;
+    box-sizing: border-box; font-size: 14px; background: #fff; color: #1d2939;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.pesquisa-form input:focus, .pesquisa-form select:focus {
+    outline: none; border-color: #1d5fa8; box-shadow: 0 0 0 3px rgba(29,95,168,.15);
+}
+.pesquisa-kpi {
+    background: #fff; border-radius: 12px; padding: 16px 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07); border-left: 4px solid #1d5fa8;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.pesquisa-kpi small { color: #667085; font-size: 12.5px; }
+.pesquisa-kpi .valor { font-size: 22px; font-weight: 800; color: #123c6b; }
+.pesquisa-tabela th { padding: 11px 12px; }
+.pesquisa-tabela td { padding: 10px 12px; }
+.pesquisa-tabela tbody tr { transition: background .12s ease; }
+.pesquisa-tabela tbody tr:hover { background: #f5f8fc; }
+@media (max-width: 640px) { .pesquisa-hero { flex-direction: column; align-items: flex-start; } }
+</style>
+
+<div class="pesquisa-hero">
     <div>
-        <h2 style="margin:0; color:#123c6b;"><i class="fa-solid fa-magnifying-glass-chart" style="color:#1d5fa8;"></i> Pesquisa de Movimentos</h2>
-        <p style="margin:4px 0 0; color:#667085;">Encontre movimentos por <strong>descrição</strong> e <strong>tipo</strong>, combinando filtros de categoria, empresa, filial e período.</p>
+        <h2><i class="fa-solid fa-magnifying-glass-chart"></i> Pesquisa de Movimentos</h2>
+        <p>Encontre movimentos por <strong>descrição</strong> e <strong>tipo</strong>, combinando filtros de categoria, empresa, filial e período.</p>
     </div>
     <?php if (!empty($temPesquisa)): ?>
-    <div style="display:flex; gap:8px;">
-        <a class="btn btn-outline" href="<?php echo URL_BASE; ?>/relatorios/pesquisa?<?php echo htmlspecialchars($qsExport); ?>&exportar=excel">
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a class="btn-hero" href="<?php echo URL_BASE; ?>/relatorios/pesquisa?<?php echo htmlspecialchars($qsExport); ?>&exportar=excel">
             <i class="fa-solid fa-file-excel"></i> Exportar Excel
         </a>
-        <a class="btn btn-outline" href="<?php echo URL_BASE; ?>/relatorios/pesquisa?<?php echo htmlspecialchars($qsExport); ?>&exportar=pdf">
+        <a class="btn-hero" href="<?php echo URL_BASE; ?>/relatorios/pesquisa?<?php echo htmlspecialchars($qsExport); ?>&exportar=pdf">
             <i class="fa-solid fa-file-pdf"></i> Exportar PDF
         </a>
     </div>
@@ -37,18 +82,24 @@ $qsExport = http_build_query($queryAtual);
 </div>
 
 <!-- ===== FORMULÁRIO DE PESQUISA ===== -->
-<form method="get" action="<?php echo URL_BASE; ?>/relatorios/pesquisa" class="filtro-form" id="formPesquisa"
-      style="background:#fff; padding:20px; border-radius:12px; box-shadow:0 1px 6px rgba(18,60,107,.10); margin-bottom:20px; border:1px solid #e6ebf2;">
+<form method="get" action="<?php echo URL_BASE; ?>/relatorios/pesquisa" class="filtro-form pesquisa-form" id="formPesquisa">
     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; align-items:end;">
 
         <!-- Barra de pesquisa de descrição -->
         <div style="grid-column:span 2; min-width:260px;">
-            <label style="font-weight:600; display:block; margin-bottom:5px; color:#344054; font-size:13px;">Descrição</label>
+            <label>
+                <i class="fa-solid fa-font" style="color:#1d5fa8; margin-right:4px;"></i>Descrição
+            </label>
             <div style="position:relative;">
                 <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#98a2b3; font-size:13px;"></i>
                 <input type="text" name="descricao" id="inputDescricao" value="<?php echo htmlspecialchars($descricao); ?>"
                        placeholder="Digite ou escolha uma descrição..." list="listaDescricoes" autocomplete="off"
-                       style="width:100%; padding:9px 10px 9px 32px; border:1px solid #d0d5dd; border-radius:8px; box-sizing:border-box; font-size:14px;">
+                       style="padding-left:32px; padding-right:34px;">
+                <?php if ($descricao !== ''): ?>
+                <a href="#" id="limparDescricao" title="Limpar" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#98a2b3; text-decoration:none; font-size:13px;">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </a>
+                <?php endif; ?>
             </div>
             <datalist id="listaDescricoes">
                 <?php foreach ($descricoesDisponiveis as $d): ?>
@@ -57,25 +108,27 @@ $qsExport = http_build_query($queryAtual);
             </datalist>
         </div>
 
-        <!-- Select de Tipo (múltiplos permitidos) -->
+        <!-- Select de Tipo (dropdown simples) -->
         <div>
-            <label style="font-weight:600; display:block; margin-bottom:5px; color:#344054; font-size:13px;">Tipo</label>
-            <select name="tipo[]" multiple size="1" id="selTipo"
-                    style="width:100%; padding:8px 10px; border:1px solid #d0d5dd; border-radius:8px; min-height:38px; box-sizing:border-box; font-size:14px;"
-                    title="Segure Ctrl (ou Cmd no Mac) para escolher vários tipos">
+            <label>
+                <i class="fa-solid fa-tags" style="color:#1d5fa8; margin-right:4px;"></i>Tipo
+            </label>
+            <?php $tipoUnico = count($tiposSelecionados) === 1 ? $tiposSelecionados[0] : ''; ?>
+            <select name="tipo" id="selTipo">
+                <option value="">Todos os tipos</option>
                 <?php foreach ($rotulosTipos as $valor => $info): ?>
-                    <option value="<?php echo $valor; ?>" <?php echo in_array($valor, $tiposSelecionados, true) ? 'selected' : ''; ?>>
+                    <option value="<?php echo $valor; ?>" <?php echo $tipoUnico === $valor ? 'selected' : ''; ?>>
                         <?php echo $info['r']; ?>
                     </option>
                 <?php endforeach; ?>
             </select>
-            <small style="color:#98a2b3;">Ctrl+clique: vários tipos</small>
+            <small style="color:#98a2b3;"><i class="fa-solid fa-circle-info"></i> vazio = todos os tipos</small>
         </div>
 
         <!-- Select de Categoria (filtra no cliente) -->
         <div>
-            <label style="font-weight:600; display:block; margin-bottom:5px; color:#344054; font-size:13px;">Categoria</label>
-            <select id="selCategoria" style="width:100%; padding:9px 10px; border:1px solid #d0d5dd; border-radius:8px; box-sizing:border-box; font-size:14px;">
+            <label>Categoria</label>
+            <select id="selCategoria">
                 <option value="">Todas as categorias</option>
                 <?php foreach ($categoriasDisponiveis as $c): ?>
                     <option value="<?php echo htmlspecialchars(mb_strtolower($c['nome'])); ?>">
@@ -87,8 +140,8 @@ $qsExport = http_build_query($queryAtual);
 
         <!-- Select de Período -->
         <div>
-            <label style="font-weight:600; display:block; margin-bottom:5px; color:#344054; font-size:13px;">Período</label>
-            <select name="periodo" id="selPeriodo" style="width:100%; padding:9px 10px; border:1px solid #d0d5dd; border-radius:8px; box-sizing:border-box; font-size:14px;">
+            <label>Período</label>
+            <select name="periodo" id="selPeriodo">
                 <option value="todos"   <?php echo $periodo === 'todos' ? 'selected' : ''; ?>>Todos os tempos</option>
                 <option value="diario"  <?php echo $periodo === 'diario' ? 'selected' : ''; ?>>Diário</option>
                 <option value="mensal"  <?php echo $periodo === 'mensal' ? 'selected' : ''; ?>>Mensal</option>
@@ -99,14 +152,14 @@ $qsExport = http_build_query($queryAtual);
 
         <!-- Campos dinâmicos conforme o período -->
         <div id="campoData" style="<?php echo $periodo === 'diario' ? '' : 'display:none;'; ?>">
-            <label style="font-weight:600; display:block; margin-bottom:5px; color:#344054; font-size:13px;">Data</label>
+            <label>Data</label>
             <input type="date" name="data" value="<?php echo htmlspecialchars($data); ?>"
-                   style="width:100%; padding:9px 10px; border:1px solid #d0d5dd; border-radius:8px; box-sizing:border-box; font-size:14px;">
+                  >
         </div>
 
         <div class="camposMesAno" style="<?php echo in_array($periodo, ['mensal', 'anual', 'filial'], true) ? '' : 'display:none;'; ?>">
-            <label style="font-weight:600; display:block; margin-bottom:5px; color:#344054; font-size:13px;">Mês</label>
-            <select name="mes" style="width:100%; padding:9px 10px; border:1px solid #d0d5dd; border-radius:8px; box-sizing:border-box; font-size:14px;">
+            <label>Mês</label>
+            <select name="mes">
                 <?php foreach ($meses as $num => $nome): ?>
                     <option value="<?php echo $num; ?>" <?php echo $num === $mes ? 'selected' : ''; ?>><?php echo $nome; ?></option>
                 <?php endforeach; ?>
@@ -114,8 +167,8 @@ $qsExport = http_build_query($queryAtual);
         </div>
 
         <div class="camposMesAno" style="<?php echo in_array($periodo, ['mensal', 'anual', 'filial'], true) ? '' : 'display:none;'; ?>">
-            <label style="font-weight:600; display:block; margin-bottom:5px; color:#344054; font-size:13px;">Ano</label>
-            <select name="ano" style="width:100%; padding:9px 10px; border:1px solid #d0d5dd; border-radius:8px; box-sizing:border-box; font-size:14px;">
+            <label>Ano</label>
+            <select name="ano">
                 <?php foreach ($anos as $a): ?>
                     <option value="<?php echo $a; ?>" <?php echo $a === $ano ? 'selected' : ''; ?>><?php echo $a; ?></option>
                 <?php endforeach; ?>
@@ -125,8 +178,8 @@ $qsExport = http_build_query($queryAtual);
         <!-- Empresa (Super Admin) -->
         <?php if ($perfil === 'super_admin'): ?>
         <div>
-            <label style="font-weight:600; display:block; margin-bottom:5px; color:#344054; font-size:13px;">Empresa</label>
-            <select name="empresa_id" style="width:100%; padding:9px 10px; border:1px solid #d0d5dd; border-radius:8px; box-sizing:border-box; font-size:14px;">
+            <label>Empresa</label>
+            <select name="empresa_id">
                 <option value="0">Todas as empresas</option>
                 <?php foreach ($empresas as $e): ?>
                     <option value="<?php echo $e['id']; ?>" <?php echo ((int)($empresaFiltro ?? 0)) === (int)$e['id'] ? 'selected' : ''; ?>>
@@ -139,8 +192,8 @@ $qsExport = http_build_query($queryAtual);
 
         <!-- Filial (aparece quando período = filial) -->
         <div id="campoFilial" style="<?php echo $periodo === 'filial' ? '' : 'display:none;'; ?>">
-            <label style="font-weight:600; display:block; margin-bottom:5px; color:#344054; font-size:13px;">Filial</label>
-            <select name="filial_id" style="width:100%; padding:9px 10px; border:1px solid #d0d5dd; border-radius:8px; box-sizing:border-box; font-size:14px;">
+            <label>Filial</label>
+            <select name="filial_id">
                 <option value="0">Todas as filiais</option>
                 <?php foreach ($filiais as $f): ?>
                     <option value="<?php echo $f['id']; ?>" <?php echo (int)$filialId === (int)$f['id'] ? 'selected' : ''; ?>>
@@ -163,22 +216,22 @@ $qsExport = http_build_query($queryAtual);
 <?php if (!empty($temPesquisa)): ?>
 
     <!-- Cartões de totais -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:16px;">
-        <div class="kpi-card" style="background:#fff; border-radius:10px; padding:14px 16px; box-shadow:0 1px 4px rgba(0,0,0,.08); border-left:4px solid #1d5fa8;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:16px;">
+        <div class="pesquisa-kpi" style="border-left-color:#1d5fa8;">
             <small style="color:#667085;"><i class="fa-solid fa-list-check"></i> Registos encontrados</small>
-            <div style="font-size:22px; font-weight:700; color:#123c6b;"><?php echo $totais['total_registos']; ?></div>
+            <div class="valor"><?php echo $totais['total_registos']; ?></div>
         </div>
-        <div class="kpi-card" style="background:#fff; border-radius:10px; padding:14px 16px; box-shadow:0 1px 4px rgba(0,0,0,.08); border-left:4px solid #0a8f3c;">
+        <div class="pesquisa-kpi" style="border-left-color:#0a8f3c;">
             <small style="color:#667085;"><i class="fa-solid fa-arrow-trend-up"></i> Entradas</small>
-            <div style="font-size:22px; font-weight:700; color:#0a8f3c;"><?php echo $fmt($totais['entradas']); ?></div>
+            <div class="valor" style="color:#0a8f3c;"><?php echo $fmt($totais['entradas']); ?></div>
         </div>
-        <div class="kpi-card" style="background:#fff; border-radius:10px; padding:14px 16px; box-shadow:0 1px 4px rgba(0,0,0,.08); border-left:4px solid #c62828;">
+        <div class="pesquisa-kpi" style="border-left-color:#c62828;">
             <small style="color:#667085;"><i class="fa-solid fa-arrow-trend-down"></i> Saídas</small>
-            <div style="font-size:22px; font-weight:700; color:#c62828;"><?php echo $fmt($totais['saidas']); ?></div>
+            <div class="valor" style="color:#c62828;"><?php echo $fmt($totais['saidas']); ?></div>
         </div>
-        <div class="kpi-card" style="background:#fff; border-radius:10px; padding:14px 16px; box-shadow:0 1px 4px rgba(0,0,0,.08); border-left:4px solid <?php echo $totais['saldo'] >= 0 ? '#0a8f3c' : '#c62828'; ?>;">
+        <div class="pesquisa-kpi" style="border-left-color:<?php echo $totais['saldo'] >= 0 ? '#0a8f3c' : '#c62828'; ?>;">
             <small style="color:#667085;"><i class="fa-solid fa-scale-balanced"></i> Saldo</small>
-            <div style="font-size:22px; font-weight:700; color:<?php echo $totais['saldo'] >= 0 ? '#0a8f3c' : '#c62828'; ?>;"><?php echo $fmt($totais['saldo']); ?></div>
+            <div class="valor" style="color:<?php echo $totais['saldo'] >= 0 ? '#0a8f3c' : '#c62828'; ?>;"><?php echo $fmt($totais['saldo']); ?></div>
         </div>
     </div>
 
@@ -189,7 +242,7 @@ $qsExport = http_build_query($queryAtual);
                 Nenhum movimento encontrado com esses critérios.
             </p>
         <?php else: ?>
-        <table class="tabela" id="tblResultados" style="width:100%; border-collapse:collapse; font-size:14px;">
+        <table class="tabela pesquisa-tabela" id="tblResultados" style="width:100%; border-collapse:collapse; font-size:14px;">
             <thead>
                 <tr style="background:#123c6b; color:#fff; text-align:left;">
                     <th style="padding:11px 12px;">Data</th>
@@ -262,6 +315,16 @@ $qsExport = http_build_query($queryAtual);
         document.getElementById('campoFilial').style.display = (v === 'filial') ? '' : 'none';
     }
     if (selPeriodo) { selPeriodo.addEventListener('change', atualizarCampos); atualizarCampos(); }
+
+    // Limpar campo de descrição (X)
+    var btnLimpar = document.getElementById('limparDescricao');
+    if (btnLimpar) {
+        btnLimpar.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.getElementById('inputDescricao').value = '';
+            document.getElementById('formPesquisa').submit();
+        });
+    }
 
     // Filtro rápido por categoria (no cliente)
     var selCat = document.getElementById('selCategoria');

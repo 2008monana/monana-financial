@@ -2393,6 +2393,9 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'planilha' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/diario-planilha">
             <i class="fa-solid fa-table"></i> Planilha
         </a>
+        <a class="nav-item <?php echo $paginaAtiva === 'pesquisa' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/pesquisa">
+            <i class="fa-solid fa-magnifying-glass"></i> Pesquisa de Movimentos
+        </a>
         <a class="nav-item <?php echo $paginaAtiva === 'categorias' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/categorias/index">
             <i class="fa-solid fa-tags"></i> Categorias
         </a>

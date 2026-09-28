@@ -548,7 +548,13 @@ class RelatoriosController extends Controller
 
         // ----- Filtros recebidos -----
         $descricao = trim($_GET['descricao'] ?? '');
-        $tiposArr  = array_filter((array) ($_GET['tipo'] ?? []), fn($v) => $v !== '' && $v !== 'todos');
+        // Tipo agora é um dropdown simples ('' = todos); mantém compatibilidade com tipo[]
+        $tipoRecebido = $_GET['tipo'] ?? '';
+        if (is_array($tipoRecebido)) {
+            $tiposArr = array_filter($tipoRecebido, fn($v) => $v !== '' && $v !== 'todos');
+        } else {
+            $tiposArr = ($tipoRecebido !== '' && $tipoRecebido !== 'todos') ? [$tipoRecebido] : [];
+        }
         $periodo   = $_GET['periodo'] ?? 'todos'; // todos|diario|mensal|anual|filial
         $data      = $_GET['data'] ?? date('Y-m-d');
         $mes       = (int) ($_GET['mes'] ?? date('m'));
