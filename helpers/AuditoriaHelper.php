@@ -43,6 +43,7 @@ class AuditoriaHelper
         'senha_recuperacao_solicitada' => ['Recuperação de senha solicitada', 'aviso'],
         'login_sucesso'                => ['Início de sessão', 'sucesso'],
         'login_falhado'                => ['Tentativa de início de sessão falhada', 'perigo'],
+        'login_bloqueado'              => ['Dispositivo bloqueado por excesso de tentativas', 'perigo'],
         'logout'                       => ['Fim de sessão', 'info'],
         'permissao_negada'             => ['Acesso negado por permissões', 'perigo'],
         'importacao_concluida'         => ['Importação de Excel concluída', 'sucesso'],
@@ -96,8 +97,51 @@ class AuditoriaHelper
                 $motivo
             );
         } catch (Throwable $e) {
-            // A auditoria nunca deve interromper o fluxo principal da aplicação.
-            error_log('[Auditoria] ' . $e->getMessage());
+            // 1ª falha: tenta auto-criar as colunas em falta e repete uma única vez.
+            try {
+                self::garantirEsquema();
+                (new LogAuditoria())->registar(
+                    $usuarioId ?? (isset($_SESSION['usuario_id']) ? (int) $_SESSION['usuario_id'] : null),
+                    $acao,
+                    $tabelaAfetada,
+                    $registoId,
+                    self::ocultarSensivel($dadosAntigos),
+                    self::ocultarSensivel($dadosNovos),
+                    in_array($prioridade, self::PRIORIDADES, true) ? $prioridade : 'media',
+                    $motivo
+                );
+            } catch (Throwable $e2) {
+                // A auditoria nunca deve interromper o fluxo principal da aplicação.
+                error_log('[Auditoria] ' . $e2->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Garante que a tabela logs_auditoria possui todas as colunas necessárias
+     * (compatível com bases de dados antigas que ainda não têm ip_origem, etc.).
+     */
+    private static function garantirEsquema(): void
+    {
+        $pdo = Database::obterLigacao();
+        $colunas = [
+            'tabela_afetada' => "ALTER TABLE logs_auditoria ADD COLUMN tabela_afetada VARCHAR(100) NULL",
+            'registo_id'     => "ALTER TABLE logs_auditoria ADD COLUMN registo_id INT NULL",
+            'dados_antigos'  => "ALTER TABLE logs_auditoria ADD COLUMN dados_antigos LONGTEXT NULL",
+            'dados_novos'    => "ALTER TABLE logs_auditoria ADD COLUMN dados_novos LONGTEXT NULL",
+            'ip_origem'      => "ALTER TABLE logs_auditoria ADD COLUMN ip_origem VARCHAR(45) NULL",
+            'user_agent'     => "ALTER TABLE logs_auditoria ADD COLUMN user_agent VARCHAR(500) NULL",
+            'motivo'         => "ALTER TABLE logs_auditoria ADD COLUMN motivo VARCHAR(255) NULL",
+        ];
+        foreach ($colunas as $nome => $sql) {
+            $st = $pdo->prepare(
+                'SELECT COUNT(*) FROM information_schema.columns
+                 WHERE table_schema = DATABASE() AND table_name = :t AND column_name = :c'
+            );
+            $st->execute([':t' => 'logs_auditoria', ':c' => $nome]);
+            if ((int) $st->fetchColumn() === 0) {
+                $pdo->exec($sql);
+            }
         }
     }
 

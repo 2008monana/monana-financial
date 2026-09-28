@@ -83,7 +83,7 @@ if (isset($_SESSION['usuario_id'])) {
         </a>
 
         <!-- SAIR -->
-        <a href="<?php echo URL_BASE; ?>/auth/logout" class="logout-btn" title="Sair">
+        <a href="#" onclick="confirmarLogout(event)" class="logout-btn" title="Sair">
             <i class="fas fa-sign-out-alt"></i>
         </a>
     </div>

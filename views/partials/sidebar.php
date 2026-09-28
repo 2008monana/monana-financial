@@ -78,7 +78,7 @@ function exibirGrupoMenu(array $itens, string $paginaAtiva, string $titulo, call
         <?php echo exibirGrupoMenu($itens['administracao'], $paginaAtiva, 'ADMINISTRAÇÃO', $temAcessoMenu); ?>
         <div class="menu-divider"></div>
         <?php echo exibirGrupoMenu($itens['conta'], $paginaAtiva, 'CONTA', $temAcessoMenu); ?>
-        <a class="nav-item logout-item" href="<?php echo URL_BASE; ?>/auth/logout"><i class="fa-solid fa-right-from-bracket"></i>Sair</a>
+        <a class="nav-item logout-item" href="#" onclick="confirmarLogout(event)"><i class="fa-solid fa-right-from-bracket"></i>Sair</a>
     </nav>
 
     <!-- RODAPÉ -->
