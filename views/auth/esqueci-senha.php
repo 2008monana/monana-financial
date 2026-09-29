@@ -1,6 +1,6 @@
 <?php 
 $titulo = 'Recuperar Senha'; 
-$baseDir = dirname($_SERVER['SCRIPT_NAME']);
+$baseDir = rtrim(URL_BASE, "/");
 ?>
 <?php $this->layout = 'login'; ?>
 
@@ -34,7 +34,7 @@ $baseDir = dirname($_SERVER['SCRIPT_NAME']);
 <div class="lado-formulario">
     <div class="cabecalho">
         <p class="saudacao">
-            <a href="<?php echo $baseDir; ?>/login" style="color:var(--muted);text-decoration:none;">
+            <a href="<?php echo $baseDir; ?>/auth" style="color:var(--muted);text-decoration:none;">
                 <i class="fas fa-arrow-left"></i> Voltar ao login
             </a>
         </p>

@@ -11,8 +11,34 @@ if (!defined('CAMINHO_RAIZ')) {
 // Ambiente: 'desenvolvimento' ou 'producao'
 define('AMBIENTE', 'desenvolvimento');
 
-// URL base do sistema
-define('URL_BASE', 'http://localhost/monana-financial/public');
+// =====================================================
+// URL BASE DO SISTEMA (URLs "limpas", sem /public)
+// Detecta automaticamente o prefixo da aplicação:
+// - Local (XAMPP): http://localhost/monana-financial
+// - Domínio próprio: http://seudominio.ao  (ou https)
+// Basta colocar o conteúdo do pasta /public na raiz do
+// servidor (ou apontar o DocumentRoot para /public).
+// =====================================================
+$__scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+    ? 'https' : 'http';
+$__host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$__dir    = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
+if ($__dir === '/' || $__dir === '.') {
+    $__dir = '';
+}
+// Remove um eventual "/public" final ( URLs limpas não mostram a pasta public )
+$__dir = preg_replace('#/public$#', '', rtrim($__dir, '/'));
+define('URL_BASE', $__scheme . '://' . $__host . $__dir);
+unset($__scheme, $__host, $__dir);
+
+// Alias usados por alguns layouts/views antigas
+if (!defined('APP_URL')) {
+    define('APP_URL', URL_BASE);
+}
+if (!defined('APP_NOME')) {
+    define('APP_NOME', 'MonanaFinancial');
+}
 
 // Nome do sistema
 define('NOME_SISTEMA', 'MonanaFinancial');

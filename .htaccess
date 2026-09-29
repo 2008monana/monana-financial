@@ -1,0 +1,19 @@
+# =====================================================
+# MonanaFinancial - Encaminhamento para /public (URLs limpas)
+# Coloque este ficheiro na RAIZ do projeto
+# (C:\xampp\htdocs\monana-financial\.htaccess)
+# =====================================================
+
+# Bloqueia acesso direto a pastas sensíveis
+RewriteEngine On
+RewriteRule ^(config|controllers|core|database|exports|helpers|logs|middleware|models|storage|vendor|views)(/|$) - [F,L]
+
+# Se o pedido não apontar para /public, encaminha para public/index.php
+RewriteCond %{REQUEST_URI} !^/?public/
+RewriteRule ^(.*)$ public/index.php?url=$1 [QSA,L]
+
+# Se apontar para /public/algum-ficheiro-inexistente, também cai no index
+RewriteCond %{REQUEST_URI} ^/?public/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^public/(.*)$ public/index.php?url=$1 [QSA,L]

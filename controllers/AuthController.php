@@ -32,10 +32,18 @@ class AuthController extends Controller
     {
         // Se já existe sessão activa, vai directo ao dashboard
         if (!empty($_SESSION['usuario_id'])) {
-            $this->redirecionar('dashboard/index');
+            $this->redirecionar('dashboard');
         }
 
         $this->renderizarSemLayout('auth/login');
+    }
+
+    /**
+     * Alias para URLs limpas: /auth (sem necessidade de /auth/login)
+     */
+    public function index(): void
+    {
+        $this->login();
     }
 
     /**
@@ -140,7 +148,7 @@ class AuthController extends Controller
         AuditoriaHelper::registar('logout', 'usuarios', (int) ($_SESSION['usuario_id'] ?? 0), null, ['duracao_segundos' => max(0, time() - (int) ($_SESSION['sessao_iniciada_em'] ?? time()))], 'media');
         $_SESSION = [];
         session_destroy();
-        $this->redirecionar('auth/login');
+        $this->redirecionar('auth');
     }
 
     /** Exibe a tela de "esqueci a senha" */
@@ -285,7 +293,7 @@ class AuthController extends Controller
         // Redireciona para a página de login com aviso de sucesso
         require_once CAMINHO_RAIZ . '/helpers/flash.php';
         definirFlash('sucesso', 'Palavra-passe alterada com sucesso. Inicie sessão com a sua nova senha.');
-        $this->redirecionar('auth/login');
+        $this->redirecionar('auth');
     }
 
     /** Valida o token CSRF dos formulários públicos de autenticação */

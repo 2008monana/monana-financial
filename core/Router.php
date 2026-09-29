@@ -11,8 +11,11 @@ if (!defined('CAMINHO_RAIZ')) {
 class Router
 {
     private array $rotasPublicas = [
+        'auth',
+        'auth/index',
         'auth/login',
         'auth/autenticar',
+        'auth/logout',
         'auth/esqueciSenha',
         'auth/enviarLinkRedefinicao',
         'auth/redefinirSenha',
@@ -20,6 +23,22 @@ class Router
         'auth/processarEsqueciSenha',
         'auth/atualizarSenha',
     ];
+
+    /**
+     * Normaliza a rota para as chaves de $rotaParaModulo.
+     * Ex: 'dashboard' => 'dashboard/index'; 'metodos-pagamento' => 'metodos-pagamento/index'
+     */
+    private function normalizarRota(string $modulo, string $acao): string
+    {
+        $rota = $modulo . '/' . $acao;
+        if ($acao === 'index' || !isset($this->rotaParaModulo[$rota])) {
+            $rotaIndex = $modulo . '/index';
+            if (isset($this->rotaParaModulo[$rotaIndex])) {
+                return $rotaIndex;
+            }
+        }
+        return $rota;
+    }
 
     // Mapeamento de rotas para módulos (para verificação de permissão)
     private array $rotaParaModulo = [
@@ -224,7 +243,24 @@ class Router
         
         $parametro = $partes[2] ?? null;
 
-        $rotaAtual = ($partes[0] ?? '') . '/' . $acaoOriginal;
+        // =============================================
+        // CORREÇÃO: URLs limpas (ex: /dashboard em vez de /dashboard/index)
+        // Se o "método" não existir no controlador, é na verdade o index
+        // Ex: /relatorios/pesquisa → método 'pesquisa'; /categorias → método 'index'
+        // =============================================
+        if ($parametro === null && $acao !== 'index') {
+            $caminhoTmp = CAMINHO_RAIZ . '/controllers/' . $nomeControlador . '.php';
+            if (file_exists($caminhoTmp)) {
+                require_once $caminhoTmp;
+                if (class_exists($nomeControlador) && !method_exists($nomeControlador, $acao)) {
+                    $acaoOriginal = 'index';
+                    $acao = 'index';
+                }
+            }
+        }
+
+        // Rota normalizada para verificação de permissões
+        $rotaAtual = $this->normalizarRota($partes[0] ?? '', $acaoOriginal);
 
         // =============================================
         // MIDDLEWARE DE AUTENTICAÇÃO
