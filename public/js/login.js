@@ -44,21 +44,74 @@ document.addEventListener('DOMContentLoaded', function () {
     modal.hidden = true;
   }
 
+  // Fallback: se a via AJAX falhar (ex.: ficheiro JS do servidor nao
+  // carregou / endpoint indisponivel), envia o formulario nativamente
+  // por POST para o endereco absoluto — nunca por GET com credenciais na URL.
+  let submissaoNativaEmCurso = false;
+  function submeterNativamente() {
+    if (submissaoNativaEmCurso) return;
+    submissaoNativaEmCurso = true;
+    fecharModal();
+    btnSubmit.disabled = false;
+    try { form.submit(); } catch (e) { /* nada a fazer */ }
+  }
+
   form.addEventListener('submit', async function (evento) {
+    // Impede SEMPRE o envio GET/relativo do formulario, mesmo que o
+    // browser tenha ignorado parte do script anteriormente.
     evento.preventDefault();
+
+    const emailCampo = document.getElementById('email');
+    const email = (emailCampo.value || '').trim();
+    const senha = campoSenha.value || '';
+
+    // Valiacoes locais simples (evitam pedidos invalidos ao servidor)
+    if (email === '' || senha === '') {
+      abrirModalProcessando();
+      mostrarModalErro('Preencha o utilizador e a palavra-passe.');
+      setTimeout(function () {
+        fecharModal();
+        (email === '' ? emailCampo : campoSenha).focus();
+      }, 2200);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      abrirModalProcessando();
+      mostrarModalErro('O e-mail inserido parece incompleto ou invalido. Verifique se falta o nome de dominio (ex.: @empresa.com).');
+      setTimeout(function () {
+        fecharModal();
+        emailCampo.focus();
+      }, 3000);
+      return;
+    }
+
     btnSubmit.disabled = true;
     abrirModalProcessando();
 
-    const dados = new FormData(form);
+    const params = new URLSearchParams();
+    params.append('email', email);
+    params.append('senha', senha);
     const inicio = Date.now();
-    const DURACAO_MINIMA_PROCESSANDO_MS = 5000; // 5 segundos, conforme especificação
+    const DURACAO_MINIMA_PROCESSANDO_MS = 5000; // 5 segundos, conforme especificacao
 
     try {
       const resposta = await fetch(URL_BASE + '/auth/autenticar', {
         method: 'POST',
-        body: dados,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: params.toString(),
       });
-      const resultado = await resposta.json();
+
+      const texto = await resposta.text();
+      let resultado;
+      try {
+        resultado = JSON.parse(texto);
+      } catch (e) {
+        // O servidor devolveu algo que nao e JSON (pagina de erro, HTML, etc.)
+        throw new Error('resposta-invalida');
+      }
 
       const decorrido = Date.now() - inicio;
       if (decorrido < DURACAO_MINIMA_PROCESSANDO_MS) {
@@ -80,9 +133,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 2200);
       }
     } catch (erro) {
-      mostrarModalErro('Não foi possível ligar ao servidor. Tente novamente.');
-      btnSubmit.disabled = false;
-      setTimeout(fecharModal, 2200);
+      // Sem ligacao / resposta inesperada: usa o envio POST nativo do
+      // formulario (nunca GET) para que o utilizador consiga iniciar sessao.
+      submeterNativamente();
     }
   });
 });

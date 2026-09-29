@@ -13,7 +13,10 @@
 
   <!-- Lado esquerdo: marca -->
   <div class="brand-side">
-    <img class="brand-photo" src="<?= URL_BASE ?>/images/login-bg.jpg" alt="">
+    <img class="brand-photo"
+         src="<?= URL_BASE ?>/images/login-bg.jpg"
+         onerror="this.onerror=null;this.src='<?= URL_BASE ?>/images/background-monana.png';"
+         alt="">
 
     <div class="brand-mark">
       <img src="<?= URL_BASE ?>/images/logo.png" alt="MonanaFinancial" class="brand-logo">
@@ -56,12 +59,19 @@
     <div class="welcome-title">Entrar na <span>MonanaFinancial</span></div>
     <div class="welcome-sub">Introduza as suas credenciais para aceder ao painel.</div>
 
-    <form id="form-login" autocomplete="on">
+    <?php if (!empty($erro)): ?>
+      <div class="aviso aviso-erro" role="alert"><?= htmlspecialchars($erro) ?></div>
+    <?php endif; ?>
+    <?php if (!empty($sucesso)): ?>
+      <div class="aviso aviso-sucesso" role="status"><?= htmlspecialchars($sucesso) ?></div>
+    <?php endif; ?>
+
+    <form id="form-login" method="post" action="<?= URL_BASE ?>/auth/autenticar" autocomplete="off">
       <div class="field">
         <label for="email">Utilizador</label>
         <div class="input-wrap">
           <i class="fa-regular fa-circle-user leading"></i>
-          <input id="email" name="email" type="email" placeholder="Digite o seu e-mail" autocomplete="username" required>
+          <input id="email" name="email" type="text" inputmode="email" placeholder="Digite o seu e-mail" autocomplete="username" autocapitalize="none" spellcheck="false" required>
         </div>
       </div>
 

@@ -3,6 +3,18 @@
 Options -Indexes -MultiViews +FollowSymLinks
 RewriteEngine On
 
+# =========================================================
+# 0) AUTO-REPARACAO DE URL (independente do .htaccess da raiz):
+#    se o pedido chegar a esta pasta ainda com o prefixo do
+#    projeto no caminho (ex.: /monana-financial/auth/login ou
+#    /auth/login?email=...&senha=...), remove o prefixo e
+#    redireciona para a URL limpa. Sem isto, o formulario de
+#    login era enviado por GET como caminho relativo e as
+#    credenciais acabavam por aparecer na barra de enderecos.
+# =========================================================
+RewriteCond %{REQUEST_URI} ^/(?:[^/]+/)+(css|js|images|uploads|auth|dashboard|transacoes|relatorios|categorias|filiais|empresas|usuarios|perfil|notificacoes|backups|logs|configuracoes|metodos-pagamento|importacao)(/[^?]*)?($|\?)
+RewriteRule .* /%1%2 [R=302,L]
+
 # Ficheiros e pastas reais (css, js, images, uploads) sao servidos diretamente
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
