@@ -62,6 +62,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const resposta = await fetch(URL_BASE + '/auth/autenticar', {
         method: 'POST',
         body: dados,
+        headers: {
+          // Garante que o servidor responde em JSON (e não com redirect HTML)
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
       });
       const resultado = await resposta.json();
 
