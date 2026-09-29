@@ -1,6 +1,9 @@
+# MonanaFinancial - pasta /public (defesa em profundidade)
+
+Options -Indexes -MultiViews +FollowSymLinks
 RewriteEngine On
 
-# Ficheiros estáticos são servidos diretamente (nunca passam pelo index.php)
+# Ficheiros reais (css, js, images, uploads) sao servidos diretamente
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
