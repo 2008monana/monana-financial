@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MonanaFinancial — Iniciar Sessão</title>
-<link rel="icon" href="<?= URL_BASE ?>/images/favicon.png">
-<link rel="stylesheet" href="<?= URL_BASE ?>/css/login.css">
+<link rel="icon" href="<?= URL_BASE ?>/images/favicon.png?v=<?= time() ?>" type="image/png">
+<link rel="stylesheet" href="<?= URL_BASE ?>/css/login.css?v=<?= @filemtime(CAMINHO_RAIZ . '/public/css/login.css') ?: time() ?>">
 </head>
 <body>
 

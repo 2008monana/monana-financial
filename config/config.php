@@ -67,8 +67,11 @@ if (AMBIENTE === 'desenvolvimento') {
 // PASTAS DE ESCRITA (logs / ficheiros temporários)
 // Criadas automaticamente se não existirem, para evitar
 // erros de escrita e conflitos com rotas do sistema.
+// NOTA: a pasta de logs está DENTRO de /storage — nunca na
+// raiz do projeto, porque uma pasta física "/logs" na raiz
+// conflituava com a rota /logs e gerava "403 Forbidden".
 // =====================================================
-foreach (['logs', 'storage/logs', 'storage/cache', 'storage/exports'] as $__pasta) {
+foreach (['storage/app_logs', 'storage/logs', 'storage/cache', 'storage/exports'] as $__pasta) {
     $__caminhoPasta = CAMINHO_RAIZ . '/' . $__pasta;
     if (!is_dir($__caminhoPasta)) {
         @mkdir($__caminhoPasta, 0775, true);
