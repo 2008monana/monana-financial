@@ -2379,7 +2379,13 @@ $isViewer = $usuario_perfil === 'visualizador';
                     if (strpos($caminhoRel, 'uploads/') !== 0) {
                         $caminhoRel = 'uploads/' . $caminhoRel;
                     }
-                    $logoSrc = URL_BASE . '/' . $caminhoRel;
+                    // Se o ficheiro não existir fisicamente, cai no logo padrão
+                    if (!is_file(CAMINHO_RAIZ . '/public/' . $caminhoRel)) {
+                        $caminhoRel = 'images/logo.png';
+                        $logoSrc = URL_BASE . '/' . $caminhoRel;
+                    } else {
+                        $logoSrc = URL_BASE . '/' . $caminhoRel;
+                    }
                 }
             } else {
                 $logoSrc = URL_BASE . '/images/logo.png';

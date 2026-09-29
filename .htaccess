@@ -3,22 +3,26 @@
 # Ficheiro na RAIZ do projeto (C:\xampp\htdocs\monana-financial\.htaccess)
 # =====================================================
 
+Options -Indexes -MultiViews
 RewriteEngine On
 
 # =============================================
 # 1) FICHEIROS ESTÁTICOS REAIS em /public
 #    (css, js, images, fonts, uploads) são SERVIDOS diretamente.
-#    Isto corrige o erro "Forbidden" no logotipo, favicon e CSS.
+#    Ex.: /monana-financial/css/login.css -> /monana-financial/public/css/login.css
+#    A regra funciona tanto na raiz de htdocs como em subpastas.
 # =============================================
-RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
-RewriteRule ^(css|js|images|fonts|uploads)/(.+)$ public/$1/$2 [L]
+RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} !-f [OR]
+RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} !-d
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+RewriteRule ^(.+)$ public/$1 [L]
 
 # =============================================
-# 2) PEDIDOS COM NOME DE FICHEIRO (.php, .html, etc.)
-#    que não são estáticos -> 404
+# 2) PEDIDOS COM EXTENSÃO DE FICHEIRO (.php, .html, etc.)
+#    que não são ficheiros estáticos reais -> 404
 #    (impede acesso direto a index.php, config.php, etc.)
 # =============================================
-RewriteCond %{REQUEST_URI} !^/(css|js|images|fonts|uploads)/
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_URI} \.[a-zA-Z0-9]{1,6}(/|$)
 RewriteRule .* - [R=404,L]
 
