@@ -13,13 +13,13 @@
             <select name="modulo"><option value="">Todos</option><?php foreach(($opcoesModulos ?? []) as $chave=>$rotulo):?><option value="<?=htmlspecialchars($chave)?>" <?=($filtros['modulo']??'')===$chave?'selected':''?>><?=htmlspecialchars($rotulo)?></option><?php endforeach?></select>
         </label>
         <label>Ação
-            <select name="acao"><option value="">Todas</option><?php foreach($opcoesAcoes as $chave=>$rotulo):?><option value="<?=htmlspecialchars($chave)?>" <?=$filtros['acao']===$chave?'selected':''?>><?=htmlspecialchars($rotulo)?></option><?php endforeach?></select>
+            <select name="acao"><option value="">Todas</option><?php foreach($opcoesAcoes as $chave=>$rotulo):?><option value="<?=htmlspecialchars($chave)?>" <?=($filtros['acao']??'')===$chave?'selected':''?>><?=htmlspecialchars($rotulo)?></option><?php endforeach?></select>
         </label>
         <label>Pesquisar
             <input type="search" name="busca" placeholder="Descrição, utilizador ou IP" value="<?=htmlspecialchars($filtros['busca']??'')?>">
         </label>
-        <label>De<input type="date" name="inicio" value="<?=htmlspecialchars($filtros['inicio'])?>"></label>
-        <label>Até<input type="date" name="fim" value="<?=htmlspecialchars($filtros['fim'])?>"></label>
+        <label>De (data inicial)<input type="date" name="inicio" max="<?=htmlspecialchars($filtros['fim'] ?: date('Y-m-d'))?>" value="<?=htmlspecialchars($filtros['inicio']??'')?>"></label>
+        <label>Até (data final)<input type="date" name="fim" min="<?=htmlspecialchars($filtros['inicio'] ?: '1970-01-01')?>" value="<?=htmlspecialchars($filtros['fim']??'')?>"></label>
         <div class="filtros-acoes">
             <button class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filtrar</button>
             <?php if(array_filter($filtros)):?><a class="btn btn-outline" href="<?=URL_BASE?>/logs">Limpar</a><?php endif;?>

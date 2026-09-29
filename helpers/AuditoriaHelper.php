@@ -68,10 +68,12 @@ class AuditoriaHelper
         'filiais'           => 'Filiais',
         'empresas'          => 'Empresas',
         'usuarios'          => 'Utilizadores',
+        'permissoes'        => 'Permissões',
         'configuracoes'     => 'Configurações',
         'logs_auditoria'    => 'Logs de auditoria',
         'notificacoes'      => 'Notificações',
         'backups'           => 'Backups',
+        'tentativas_login'  => 'Autenticação',
     ];
 
     public static function registar(
