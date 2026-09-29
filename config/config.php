@@ -23,12 +23,22 @@ $__scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
     ? 'https' : 'http';
 $__host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+// SCRIPT_NAME ex.: /monana-financial/public/index.php ou /public/index.php
 $__dir    = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
-if ($__dir === '/' || $__dir === '.') {
+// Remove um eventual "/public" final ( URLs limpas não mostram a pasta public )
+$__dir = preg_replace('#(/public)?$#', '', rtrim($__dir, '/'));
+// Garante o prefixo "/" inicial quando existe subpasta (ex.: "/monana-financial").
+// Se $__dir for '' ou '/', a aplicação está na raiz do DocumentRoot.
+if ($__dir !== '' && $__dir !== '/') {
+    if ($__dir[0] !== '/') {
+        // dirname devolveu caminho relativo (raro); reconstrói via REQUEST_URI
+        $ru = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $pos = stripos($ru, '/public/');
+        $__dir = $pos !== false ? substr($ru, 0, $pos) : '';
+    }
+} else {
     $__dir = '';
 }
-// Remove um eventual "/public" final ( URLs limpas não mostram a pasta public )
-$__dir = preg_replace('#/public$#', '', rtrim($__dir, '/'));
 define('URL_BASE', $__scheme . '://' . $__host . $__dir);
 unset($__scheme, $__host, $__dir);
 

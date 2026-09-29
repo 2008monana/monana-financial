@@ -220,12 +220,20 @@ class Router
         if (preg_match('#\.(php[0-9]?|phtml|html?|js|css|json|xml|zip|tar|gz|bak|sql|log|swp|env|ini)$#i', $caminho)) {
             return true;
         }
-        // Bloqueio do acesso direto a pasta public via URL limpa
-        $primeiro = strtolower(explode('/', $caminho)[0]);
-        if ($primeiro === 'public') {
-            return true;
-        }
         return false;
+    }
+
+    /**
+     * Pastas de codigo-fonte que NUNCA devem ser acessiveis por URL.
+     * Em vez de "Forbidden" (403), devolvem 404 — nenhuma informacao
+     * e revelada sobre a estrutura interna do sistema.
+     */
+    private function caminhoFonte(string $caminho): bool
+    {
+        $pastas = ['config', 'controllers', 'core', 'database', 'exports',
+                   'helpers', 'middleware', 'models', 'storage', 'vendor', 'views'];
+        $primeiro = strtolower(explode('/', $caminho)[0]);
+        return in_array($primeiro, $pastas, true);
     }
 
     /**
@@ -257,9 +265,39 @@ class Router
         // REGRA DE URLs LIMPAS: so dominio + modulo (+ acao + parametro).
         // Qualquer link fora desta estrutura vai para a pagina 404.
         // =============================================
-        if ($this->caminhoInvalido($caminho)) {
+        if ($this->caminhoInvalido($caminho) || $this->caminhoFonte($caminho)) {
             $this->responder404();
             return;
+        }
+
+        // =============================================
+        // AUTO-REPARACAO DE URL: se o pedido chegou com prefixos internos
+        // (ex.: /public/monana-financial/logs, por cache de links antigos),
+        // remove-os ate sobrar apenas "modulo/acao" e redireciona
+        // permanentemente para a estrutura limpa dominio/modulo.
+        // =============================================
+        $partesUrl = $caminho !== '' ? explode('/', $caminho) : [];
+        $primeiro = strtolower($partesUrl[0] ?? '');
+        if ($primeiro === 'public' || (!empty($partesUrl) && !isset($this->rotaParaModulo[$partesUrl[0]]) && $partesUrl[0] !== '')) {
+            $modulosConhecidos = array_unique(array_values($this->rotaParaModulo));
+            $controladoresValidos = [
+                'dashboard', 'transacoes', 'relatorios', 'categorias', 'filiais',
+                'empresas', 'usuarios', 'perfil', 'notificacoes', 'backups',
+                'logs', 'configuracoes', 'metodos-pagamento', 'auth', 'importacao',
+            ];
+            for ($i = 0, $n = count($partesUrl); $i < $n; $i++) {
+                $seg = $partesUrl[$i];
+                if (in_array($seg, $controladoresValidos, true)
+                    || in_array(strtolower($seg), $modulosConhecidos, true)) {
+                    $reconstruido = implode('/', array_slice($partesUrl, $i));
+                    if ($reconstruido !== $caminho) {
+                        $qs = $_SERVER['QUERY_STRING'] ?? '';
+                        header('Location: ' . URL_BASE . '/' . $reconstruido . ($qs !== '' ? '?' . $qs : ''), true, 302);
+                        exit;
+                    }
+                    break;
+                }
+            }
         }
 
         // Se estiver vazio, vai para o dashboard
