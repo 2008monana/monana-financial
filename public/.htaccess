@@ -27,6 +27,15 @@ RewriteCond $0 ^[^/]+/(auth|dashboard|transacoes|relatorios|categorias|filiais|e
 RewriteRule ^[^/]+/(.*)$ index.php?url=$1 [QSA,L]
 
 # =========================================================
+# 0c) ROTA /logs DENTRO DE public/: se existir uma pasta
+#     publica "logs" (criada por instalacoes antigas ou pelo
+#     proprio sistema), o Apache entraria nela e devolvia
+#     "403 Forbidden" em vez de correr o LogsController.
+#     Esta regra encaminha SEMPRE /logs para o front controller.
+# =========================================================
+RewriteRule ^logs(/.*)?$ index.php?url=logs$1 [QSA,L]
+
+# =========================================================
 # 1) FICHEIROS ESTATICOS REAIS (css, js, images, uploads):
 #     servidos diretamente com MIME types forcados, para que o
 #     navegador NUNCA recuse aplicar uma folha de estilos
