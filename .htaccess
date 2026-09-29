@@ -4,8 +4,8 @@
 #
 # IMPORTANTE: este ficheiro usa regras RELATIVAS ao diretório onde está
 # instalado (funciona em htdocs/monana-financial e em domínio próprio).
-# Para aplicar: substitua este ficheiro no XAMPP e REINICIE o Apache
-# (Alterações no .htaccess podem ficar em cache até o serviço reiniciar).
+# Para aplicar: substitua este ficheiro no XAMPP, REINICIE o Apache e
+# faça um hard refresh no navegador (Ctrl+Shift+R).
 # =====================================================
 
 Options -Indexes -MultiViews +FollowSymLinks
@@ -15,23 +15,27 @@ RewriteEngine On
 # 1) REDIRECIONAMENTO EXTERNO: pedidos que ainda mostram /public/
 #    na URL (ex.: http://localhost/monana-financial/public/dashboard)
 #    passam a usar a estrutura limpa dominio/modulo.
-#    Funciona com qualquer número de segmentos (inclui query string).
 # =============================================
 RewriteCond %{THE_REQUEST} (\S*/)?public/([^\s?]+)
 RewriteRule ^public/(.*)$ $1 [R=302,L]
 RewriteRule ^public/?$ ./ [R=302,L]
 
 # =============================================
-# 2) FICHEIROS ESTÁTICOS REAIS em /public
-#    (css, js, images, uploads) são servidos via rewrite interno.
+# 2) FICHEIROS ESTÁTICOS REAIS (css, js, images, uploads)
 #    Ex.: /monana-financial/css/login.css -> /public/css/login.css
-#    IMPORTANTE: a regra NÃO pode depender de %{DOCUMENT_ROOT}, porque o
-#    DOCUMENT_ROOT do Apache aponta para htdocs/ e não inclui a subpasta
+#    IMPORTANTE: a regra NÃO depende de %{DOCUMENT_ROOT}, porque no
+#    XAMPP o DOCUMENT_ROOT aponta para htdocs/ e não inclui a subpasta
 #    do projeto. Usamos apenas caminhos relativos + REQUEST_FILENAME.
+#    Condição extra: se existir uma PASTA com o mesmo nome dentro de
+#    /public (ex.: /logs -> existe /public/logs), também é servida por
+#    rewrite interno. Isto evita o conflito entre a pasta física "logs"
+#    da raiz (usada pelo PHP para escrever ficheiros de log) e a rota
+#    "/logs" do sistema — que antes gerava "403 Forbidden" do Apache.
 # =============================================
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond public%{REQUEST_URI} -f
+RewriteCond public%{REQUEST_URI} -f [OR]
+RewriteCond public%{REQUEST_URI} -d
 RewriteRule ^(.+)$ public/$1 [L]
 
 # =============================================
@@ -46,7 +50,7 @@ RewriteRule .* - [R=404,L]
 # =============================================
 # 4) URLs LIMPAS: tudo o resto cai em public/index.php
 #    (o Router trata os acessos proibidos a pastas de código-fonte,
-#     devolvendo 404 — nunca "Forbidden", conforme a estrutura pedida)
+#     devolvendo 404 — nunca "Forbidden")
 # =============================================
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

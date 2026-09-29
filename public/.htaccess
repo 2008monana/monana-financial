@@ -3,7 +3,7 @@
 Options -Indexes -MultiViews +FollowSymLinks
 RewriteEngine On
 
-# Ficheiros reais (css, js, images, uploads) sao servidos diretamente
+# Ficheiros e pastas reais (css, js, images, uploads) sao servidos diretamente
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]

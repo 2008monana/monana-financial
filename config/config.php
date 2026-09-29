@@ -16,8 +16,6 @@ define('AMBIENTE', 'desenvolvimento');
 // Detecta automaticamente o prefixo da aplicação:
 // - Local (XAMPP): http://localhost/monana-financial
 // - Domínio próprio: http://seudominio.ao  (ou https)
-// Basta colocar o conteúdo do pasta /public na raiz do
-// servidor (ou apontar o DocumentRoot para /public).
 // =====================================================
 $__scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
@@ -64,6 +62,19 @@ if (AMBIENTE === 'desenvolvimento') {
     ini_set('display_errors', 0);
     error_reporting(0);
 }
+
+// =====================================================
+// PASTAS DE ESCRITA (logs / ficheiros temporários)
+// Criadas automaticamente se não existirem, para evitar
+// erros de escrita e conflitos com rotas do sistema.
+// =====================================================
+foreach (['logs', 'storage/logs', 'storage/cache', 'storage/exports'] as $__pasta) {
+    $__caminhoPasta = CAMINHO_RAIZ . '/' . $__pasta;
+    if (!is_dir($__caminhoPasta)) {
+        @mkdir($__caminhoPasta, 0775, true);
+    }
+}
+unset($__pasta, $__caminhoPasta);
 
 // =====================================================
 // CORREÇÃO: Só inicia a sessão se ainda não estiver ativa
