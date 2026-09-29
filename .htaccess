@@ -21,6 +21,13 @@ RewriteEngine On
 # =============================================
 # 1) PASTAS DE CODIGO-FONTE: acesso directo proibido
 #    (apenas quando o pedido aponta fisicamente para elas).
+#    IMPORTANTE: a pasta "logs" NAO e bloqueada aqui porque o
+#    modulo de Auditoria usa a rota dinamica /logs — que tambem
+#    corresponde ao nome da pasta fisica logs/ na raiz. Sem esta
+#    excepcao, o Apache devolvia "403 Forbidden" ao clicar no link
+#    do sidebar. O bloqueio do conteudo real de logs/ e feito por
+#    um ficheiro logs/.htaccess proprio (Require all denied), que
+#    so se aplica a pedidos directos a ficheiros dentro da pasta.
 # =============================================
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
