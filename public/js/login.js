@@ -1,3 +1,8 @@
+// Sinal de que este script foi efetivamente carregado e executado.
+// A página de login usa esta flag para decidir se precisa do fallback
+// de envio por POST (quando o ficheiro JS não chega ao navegador).
+window.MONANA_LOGIN_JS_OK = true;
+
 document.addEventListener('DOMContentLoaded', function () {
   const form            = document.getElementById('form-login');
   const btnSubmit       = document.getElementById('btn-submit');
