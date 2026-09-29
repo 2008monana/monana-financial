@@ -21,7 +21,7 @@
     </div>
     <div class="page-header-right">
         <?php if (empty($_SESSION['empresa_id'])): ?>
-            <a href="<?php echo URL_BASE; ?>/usuarios/index" class="btn btn-secondary">
+            <a href="<?php echo URL_BASE; ?>/usuarios" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Trocar Empresa
             </a>
         <?php endif; ?>

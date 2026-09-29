@@ -67,18 +67,18 @@ class BackupsController extends Controller
     {
         if (!$this->csrf()) {
             definirFlash('erro', 'Token de segurança inválido.');
-            $this->redirecionar('backups/index');
+            $this->redirecionar('backups');
         }
 
         $this->executar('manual');
-        $this->redirecionar('backups/index');
+        $this->redirecionar('backups');
     }
 
     public function configurarAutomatico(): void
     {
         if (!$this->csrf()) {
             definirFlash('erro', 'Token de segurança inválido.');
-            $this->redirecionar('backups/index');
+            $this->redirecionar('backups');
         }
 
         $empresaId = $this->empresaId();
@@ -94,7 +94,7 @@ class BackupsController extends Controller
         ], 'media');
 
         definirFlash('sucesso', 'Agendamento de backup automático atualizado.');
-        $this->redirecionar('backups/index');
+        $this->redirecionar('backups');
     }
 
     public function download(string $id): void
@@ -127,17 +127,17 @@ class BackupsController extends Controller
     {
         if (!$this->csrf()) {
             definirFlash('erro', 'Token de segurança inválido.');
-            $this->redirecionar('backups/index');
+            $this->redirecionar('backups');
         }
         if ($this->empresaId() !== null) {
             definirFlash('erro', 'A importação de backup está disponível apenas ao Super Administrador.');
-            $this->redirecionar('backups/index');
+            $this->redirecionar('backups');
         }
 
         $resultado = BackupHelper::lerSqlImportavel($_FILES['backup'] ?? []);
         if (!$resultado['sucesso']) {
             definirFlash('erro', 'Falha ao validar o backup: ' . $resultado['erro']);
-            $this->redirecionar('backups/index');
+            $this->redirecionar('backups');
         }
 
         try {
@@ -147,14 +147,14 @@ class BackupsController extends Controller
         } catch (Throwable $e) {
             definirFlash('erro', 'Falha ao importar o backup: ' . $e->getMessage());
         }
-        $this->redirecionar('backups/index');
+        $this->redirecionar('backups');
     }
 
     public function eliminar(string $id): void
     {
         if (!$this->csrf()) {
             definirFlash('erro', 'Token de segurança inválido.');
-            $this->redirecionar('backups/index');
+            $this->redirecionar('backups');
         }
 
         $registo = $this->backups->encontrarVisivel((int) $id, $this->empresaId());
@@ -168,7 +168,7 @@ class BackupsController extends Controller
             definirFlash('sucesso', 'Backup eliminado.');
         }
 
-        $this->redirecionar('backups/index');
+        $this->redirecionar('backups');
     }
 
     // ---------------------------------------------------------------

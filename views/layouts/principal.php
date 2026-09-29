@@ -2378,16 +2378,16 @@ $isViewer = $usuario_perfil === 'visualizador';
     <nav class="side-nav">
         <!-- GRUPO 1: PRINCIPAL -->
         <div class="menu-grupo-label">PRINCIPAL</div>
-        <a class="nav-item <?php echo $paginaAtiva === 'dashboard' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/dashboard/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'dashboard' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/dashboard\">
             <i class="fa-solid fa-house"></i> Dashboard
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'transacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'transacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes\">
             <i class="fa-solid fa-list-ul"></i> Movimentos
         </a>
 
         <!-- GRUPO 2: RELATÓRIOS -->
         <div class="menu-grupo-label">RELATÓRIOS</div>
-        <a class="nav-item <?php echo $paginaAtiva === 'relatorios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'relatorios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios\">
             <i class="fa-solid fa-chart-column"></i> Relatórios
         </a>
         <a class="nav-item <?php echo $paginaAtiva === 'planilha' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/diario-planilha">
@@ -2396,7 +2396,7 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'pesquisa' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/pesquisa">
             <i class="fa-solid fa-magnifying-glass"></i> Pesquisa de Movimentos
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'categorias' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/categorias/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'categorias' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/categorias\">
             <i class="fa-solid fa-tags"></i> Categorias
         </a>
 
@@ -2406,19 +2406,19 @@ $isViewer = $usuario_perfil === 'visualizador';
         <?php endif; ?>
 
         <?php if ($isSuperAdmin): ?>
-        <a class="nav-item <?php echo $paginaAtiva === 'empresas' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/empresas/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'empresas' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/empresas\">
             <i class="fa-solid fa-building"></i> Empresas
         </a>
         <?php endif; ?>
 
         <?php if ($isAdminEmpresa || $isSuperAdmin): ?>
-        <a class="nav-item <?php echo $paginaAtiva === 'filiais' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/filiais/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'filiais' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/filiais\">
             <i class="fa-solid fa-code-branch"></i> Filiais
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'usuarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/usuarios/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'usuarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/usuarios\">
             <i class="fa-solid fa-users"></i> Utilizadores
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'metodos_pagamento' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/metodos-pagamento/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'metodos_pagamento' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/metodos-pagamento\">
             <i class="fa-solid fa-money-bill-wave"></i> Métodos de Pagamento
         </a>
         <?php endif; ?>
@@ -2429,7 +2429,7 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'fecho-diario' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes/fechoDiario">
             <i class="fa-solid fa-file-invoice-day"></i> Fecho Diário
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'backups' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/backups/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'backups' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/backups\">
             <i class="fa-solid fa-database"></i> Backups
         </a>
         <?php endif; ?>
@@ -2438,11 +2438,11 @@ $isViewer = $usuario_perfil === 'visualizador';
         <?php if ($isSuperAdmin || $isAdminEmpresa): ?>
         <div class="menu-grupo-label">ADMINISTRAÇÃO</div>
         <?php if ($isSuperAdmin || $isAdminEmpresa): ?>
-        <a class="nav-item <?php echo $paginaAtiva === 'logs' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/logs/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'logs' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/logs\">
             <i class="fa-solid fa-clipboard-list"></i> Logs Auditoria
         </a>
         <?php endif; ?>
-        <a class="nav-item <?php echo $paginaAtiva === 'configuracoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/configuracoes/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'configuracoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/configuracoes\">
             <i class="fa-solid fa-gear"></i> Configurações
         </a>
         <?php endif; ?>
@@ -2451,10 +2451,10 @@ $isViewer = $usuario_perfil === 'visualizador';
 
         <!-- GRUPO 6: CONTA -->
         <div class="menu-grupo-label">CONTA</div>
-        <a class="nav-item <?php echo $paginaAtiva === 'perfil' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/perfil/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'perfil' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/perfil\">
             <i class="fa-solid fa-user-cog"></i> Meu Perfil
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'notificacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/notificacoes/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'notificacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/notificacoes\">
             <i class="fa-solid fa-bell"></i> Notificações
         </a>
 
@@ -2492,11 +2492,11 @@ $isViewer = $usuario_perfil === 'visualizador';
                 <i class="fa-regular fa-calendar"></i>
                 <?php echo date('d/m/Y'); ?>
             </div>
-            <a class="bell-wrap" href="<?php echo URL_BASE; ?>/notificacoes/index" title="Notificações">
+            <a class="bell-wrap" href="<?php echo URL_BASE; ?>/notificacoes\" title="Notificações">
                 <i class="fa-regular fa-bell"></i>
                 <div class="bell-dot">0</div>
             </a>
-            <a class="profile" href="<?php echo URL_BASE; ?>/perfil/index">
+            <a class="profile" href="<?php echo URL_BASE; ?>/perfil\">
                 <div class="avatar"><?php echo strtoupper(substr($usuario_nome, 0, 2)); ?></div>
                 <div class="profile-name"><?php echo htmlspecialchars($usuario_nome); ?></div>
             </a>

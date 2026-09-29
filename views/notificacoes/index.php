@@ -25,7 +25,7 @@
                 </button>
             </form>
         <?php endif; ?>
-        <a href="<?php echo URL_BASE; ?>/dashboard/index" class="btn btn-outline">
+        <a href="<?php echo URL_BASE; ?>/dashboard" class="btn btn-outline">
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
     </div>

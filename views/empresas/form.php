@@ -12,7 +12,7 @@ $subtitulo = $ehEdicao ? 'Atualize os dados da empresa' : 'Registe uma nova empr
         </h1>
         <p class="page-subtitle"><?php echo $subtitulo; ?></p>
     </div>
-    <a href="<?php echo URL_BASE; ?>/empresas/index" class="btn btn-secondary">
+    <a href="<?php echo URL_BASE; ?>/empresas" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Voltar
     </a>
 </div>
@@ -201,7 +201,7 @@ $subtitulo = $ehEdicao ? 'Atualize os dados da empresa' : 'Registe uma nova empr
                         <i class="fas fa-info-circle"></i>
                         <div>
                             O administrador atual pode ser gerido em 
-                            <a href="<?php echo URL_BASE; ?>/usuarios/index?empresa_id=<?php echo (int) $empresa['id']; ?>" style="color:var(--green-dark); font-weight:600;">
+                            <a href="<?php echo URL_BASE; ?>/usuarios?empresa_id=<?php echo (int) $empresa['id']; ?>" style="color:var(--green-dark); font-weight:600;">
                                 Utilizadores → <?php echo htmlspecialchars($empresa['nome'] ?? ''); ?>
                             </a>
                         </div>
@@ -218,7 +218,7 @@ $subtitulo = $ehEdicao ? 'Atualize os dados da empresa' : 'Registe uma nova empr
                 <i class="fas <?php echo $ehEdicao ? 'fa-save' : 'fa-plus'; ?>"></i>
                 <?php echo $ehEdicao ? 'Guardar Alterações' : 'Criar Empresa'; ?>
             </button>
-            <a href="<?php echo URL_BASE; ?>/empresas/index" class="btn btn-secondary">
+            <a href="<?php echo URL_BASE; ?>/empresas" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Cancelar
             </a>
         </div>

@@ -14,7 +14,7 @@
         </p>
     </div>
     <div class="page-header-right">
-        <a href="<?php echo URL_BASE; ?>/transacoes/index" class="btn btn-outline">
+        <a href="<?php echo URL_BASE; ?>/transacoes" class="btn btn-outline">
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
     </div>

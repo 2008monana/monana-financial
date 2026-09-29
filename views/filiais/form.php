@@ -13,7 +13,7 @@ $titulo = $ehEdicao ? 'Editar Filial' : 'Nova Filial';
             <?php echo $ehEdicao ? 'Atualize os dados da filial' : 'Registe uma nova filial'; ?>
         </p>
     </div>
-    <a href="<?php echo URL_BASE; ?>/filiais/index<?php echo empty($_SESSION['empresa_id']) && $empresaId ? '?empresa_id=' . (int) $empresaId : ''; ?>" class="btn btn-secondary">
+    <a href="<?php echo URL_BASE; ?>/filiais<?php echo empty($_SESSION['empresa_id']) && $empresaId ? '?empresa_id=' . (int) $empresaId : ''; ?>" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Voltar
     </a>
 </div>
@@ -89,7 +89,7 @@ $titulo = $ehEdicao ? 'Editar Filial' : 'Nova Filial';
                 <i class="fas <?php echo $ehEdicao ? 'fa-save' : 'fa-plus'; ?>"></i>
                 <?php echo $ehEdicao ? 'Guardar Alterações' : 'Criar Filial'; ?>
             </button>
-            <a href="<?php echo URL_BASE; ?>/filiais/index<?php echo empty($_SESSION['empresa_id']) && $empresaId ? '?empresa_id=' . (int) $empresaId : ''; ?>" class="btn btn-secondary">
+            <a href="<?php echo URL_BASE; ?>/filiais<?php echo empty($_SESSION['empresa_id']) && $empresaId ? '?empresa_id=' . (int) $empresaId : ''; ?>" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Cancelar
             </a>
         </div>

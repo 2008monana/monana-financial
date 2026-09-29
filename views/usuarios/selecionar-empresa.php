@@ -65,7 +65,7 @@
             // CONTAGEM CORRETA DE UTILIZADORES
             $totalUsuarios = $empresa['total_usuarios'] ?? 0;
         ?>
-            <a href="<?php echo URL_BASE; ?>/usuarios/index?empresa_id=<?php echo $empresa['id']; ?>" 
+            <a href="<?php echo URL_BASE; ?>/usuarios?empresa_id=<?php echo $empresa['id']; ?>" 
                class="selection-card" 
                style="--card-color: <?php echo $cor['bg']; ?>; --card-light: <?php echo $cor['light']; ?>;">
                 

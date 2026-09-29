@@ -202,11 +202,66 @@ class Router
         return $resultado;
     }
 
+    /**
+     * Estrutura valida de URL: apenas "dominio/modulo" ou "dominio/modulo/acao[/parametro]".
+     * Qualquer coisa fora desta estrutura (nomes de ficheiros como index.php,
+     * extensoes .php/.html, caminhos com /public/, etc.) deve resultar em 404.
+     */
+    private function caminhoInvalido(string $caminho): bool
+    {
+        if ($caminho === '') {
+            return false; // raiz -> dashboard
+        }
+        // Apenas letras, numeros, hifen, underscore e barras - nada de pontos!
+        if (!preg_match('#^[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+){0,2}$#', $caminho)) {
+            return true;
+        }
+        // Bloqueio explicito de nomes de ficheiros / extensoes conhecidas
+        if (preg_match('#\.(php[0-9]?|phtml|html?|js|css|json|xml|zip|tar|gz|bak|sql|log|swp|env|ini)$#i', $caminho)) {
+            return true;
+        }
+        // Bloqueio do acesso direto a pasta public via URL limpa
+        $primeiro = strtolower(explode('/', $caminho)[0]);
+        if ($primeiro === 'public') {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Resposta padrao 404 para URLs fora da estrutura permitida
+     */
+    private function responder404(): void
+    {
+        http_response_code(404);
+        $caminhoErro = CAMINHO_RAIZ . '/views/errors/404.php';
+        if (file_exists($caminhoErro)) {
+            require_once $caminhoErro;
+            return;
+        }
+        echo '<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8"><title>404 - Pagina nao encontrada</title>'
+           . '<style>body{font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;'
+           . 'min-height:100vh;margin:0;background:#f3f4f6}.box{text-align:center;padding:40px}'
+           . 'h1{color:#1e3a8a;font-size:72px;margin:0}p{color:#6b7280}a{color:#2563eb;text-decoration:none'
+           . ';font-weight:bold}</style></head><body><div class="box"><h1>404</h1>'
+           . '<p>A pagina que procura nao existe ou o endereco esta incorreto.</p>'
+           . '<p><a href="' . URL_BASE . '/dashboard">Voltar ao Dashboard</a></p></div></body></html>';
+    }
+
     public function despachar(string $caminho): void
     {
         // Limpar o caminho
         $caminho = trim($caminho, '/');
-        
+
+        // =============================================
+        // REGRA DE URLs LIMPAS: so dominio + modulo (+ acao + parametro).
+        // Qualquer link fora desta estrutura vai para a pagina 404.
+        // =============================================
+        if ($this->caminhoInvalido($caminho)) {
+            $this->responder404();
+            return;
+        }
+
         // Se estiver vazio, vai para o dashboard
         if ($caminho === '') {
             $caminho = 'dashboard/index';
@@ -300,8 +355,7 @@ class Router
         }
 
         if (!file_exists($caminhoControlador)) {
-            http_response_code(404);
-            echo "Página não encontrada. Controlador: " . $nomeControlador;
+            $this->responder404();
             return;
         }
 
@@ -322,8 +376,7 @@ class Router
         }
 
         if (!method_exists($nomeControlador, $acao)) {
-            http_response_code(404);
-            echo "Ação não encontrada: " . $acao . " (URL original: " . $acaoOriginal . ")";
+            $this->responder404();
             return;
         }
 

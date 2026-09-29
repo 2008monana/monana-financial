@@ -15,7 +15,7 @@ $subtitulo = $ehEdicao ? 'Atualize os dados da categoria' : 'Registe uma nova ca
         </h1>
         <p class="page-subtitle"><?php echo $subtitulo; ?></p>
     </div>
-    <a href="<?php echo URL_BASE; ?>/categorias/index<?php echo $empresaId ? '?empresa_id=' . $empresaId : ''; ?>" class="btn btn-secondary">
+    <a href="<?php echo URL_BASE; ?>/categorias<?php echo $empresaId ? '?empresa_id=' . $empresaId : ''; ?>" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Voltar
     </a>
 </div>
@@ -100,7 +100,7 @@ $subtitulo = $ehEdicao ? 'Atualize os dados da categoria' : 'Registe uma nova ca
                 <i class="fas <?php echo $ehEdicao ? 'fa-save' : 'fa-plus'; ?>"></i>
                 <?php echo $ehEdicao ? 'Guardar Alterações' : 'Criar Categoria'; ?>
             </button>
-            <a href="<?php echo URL_BASE; ?>/categorias/index<?php echo $empresaId ? '?empresa_id=' . $empresaId : ''; ?>" class="btn btn-secondary">
+            <a href="<?php echo URL_BASE; ?>/categorias<?php echo $empresaId ? '?empresa_id=' . $empresaId : ''; ?>" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Cancelar
             </a>
         </div>

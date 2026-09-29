@@ -72,7 +72,7 @@ class ConfiguracoesController extends Controller
     {
         if (!SegurancaHelper::validarTokenCSRF($_POST['csrf_token'] ?? '')) {
             definirFlash('erro', 'Sessão expirada. Volte a tentar.');
-            $this->redirecionar('configuracoes/index');
+            $this->redirecionar('configuracoes');
             return;
         }
 

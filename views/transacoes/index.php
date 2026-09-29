@@ -20,7 +20,7 @@
                 <span class="filtro-tipo-badge">
                     <i class="fas fa-filter"></i>
                     <?php echo $filtroAtivo; ?>
-                    <a href="<?php echo URL_BASE; ?>/transacoes/index" class="remover-filtro" title="Remover filtro">
+                    <a href="<?php echo URL_BASE; ?>/transacoes" class="remover-filtro" title="Remover filtro">
                         <i class="fas fa-times"></i>
                     </a>
                 </span>
@@ -29,10 +29,10 @@
     </div>
     <div class="page-header-right">
         <div class="btn-group">
-            <a href="<?php echo URL_BASE; ?>/transacoes/index?exportar=excel&<?php echo http_build_query($filtros); ?>" class="btn btn-success">
+            <a href="<?php echo URL_BASE; ?>/transacoes?exportar=excel&<?php echo http_build_query($filtros); ?>" class="btn btn-success">
                 <i class="fas fa-file-excel"></i> Excel
             </a>
-            <a href="<?php echo URL_BASE; ?>/transacoes/index?exportar=pdf&<?php echo http_build_query($filtros); ?>" class="btn btn-danger">
+            <a href="<?php echo URL_BASE; ?>/transacoes?exportar=pdf&<?php echo http_build_query($filtros); ?>" class="btn btn-danger">
                 <i class="fas fa-file-pdf"></i> PDF
             </a>
             <?php if ($perfil !== 'visualizador'): ?>
@@ -52,24 +52,24 @@
         <i class="fas fa-filter"></i> Filtrar por:
     </span>
     <div class="filtros-rapidos-group">
-        <a href="<?php echo URL_BASE; ?>/transacoes/index?tipo=venda" 
+        <a href="<?php echo URL_BASE; ?>/transacoes?tipo=venda" 
            class="filtro-rapido <?php echo ($filtros['tipo'] ?? '') === 'venda' ? 'active' : ''; ?>">
             <i class="fas fa-cart-shopping"></i> Vendas
         </a>
-        <a href="<?php echo URL_BASE; ?>/transacoes/index?tipo=compra" 
+        <a href="<?php echo URL_BASE; ?>/transacoes?tipo=compra" 
            class="filtro-rapido <?php echo ($filtros['tipo'] ?? '') === 'compra' ? 'active' : ''; ?>">
             <i class="fas fa-box"></i> Compras
         </a>
-        <a href="<?php echo URL_BASE; ?>/transacoes/index?tipo=custo" 
+        <a href="<?php echo URL_BASE; ?>/transacoes?tipo=custo" 
            class="filtro-rapido <?php echo ($filtros['tipo'] ?? '') === 'custo' ? 'active' : ''; ?>">
             <i class="fas fa-file-invoice-dollar"></i> Despesas
         </a>
-        <a href="<?php echo URL_BASE; ?>/transacoes/index?tipo=devolucao" 
+        <a href="<?php echo URL_BASE; ?>/transacoes?tipo=devolucao" 
            class="filtro-rapido <?php echo ($filtros['tipo'] ?? '') === 'devolucao' ? 'active' : ''; ?>">
             <i class="fas fa-rotate-left"></i> Devoluções
         </a>
         <?php if (!empty($filtros['tipo'])): ?>
-            <a href="<?php echo URL_BASE; ?>/transacoes/index" class="filtro-rapido limpar">
+            <a href="<?php echo URL_BASE; ?>/transacoes" class="filtro-rapido limpar">
                 <i class="fas fa-times"></i> Limpar filtro
             </a>
         <?php endif; ?>
@@ -171,7 +171,7 @@
 
         <div class="filter-actions">
             <button type="submit" class="btn btn-secondary"><i class="fas fa-search"></i> Filtrar</button>
-            <a href="<?php echo URL_BASE; ?>/transacoes/index" class="btn btn-outline"><i class="fas fa-undo"></i> Limpar</a>
+            <a href="<?php echo URL_BASE; ?>/transacoes" class="btn btn-outline"><i class="fas fa-undo"></i> Limpar</a>
         </div>
     </form>
 </div>

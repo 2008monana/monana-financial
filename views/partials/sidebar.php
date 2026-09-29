@@ -20,29 +20,29 @@ $temAcessoMenu = static function (string $modulo) use ($acessoTotal, $perfil, $m
 };
 $itens = [
     'principal' => [
-        ['dashboard/index', 'fa-house', 'Dashboard', 'dashboard'],
-        ['transacoes/index', 'fa-list-ul', 'Movimentos', 'movimentos'],
+        ['dashboard', 'fa-house', 'Dashboard', 'dashboard'],
+        ['transacoes', 'fa-list-ul', 'Movimentos', 'movimentos'],
         ['transacoes/fechoDiario', 'fa-calendar-check', 'Fecho Diário', 'fecho_diario'],
     ],
     'relatorios' => [
-        ['relatorios/index', 'fa-chart-column', 'Relatórios', 'relatorios'],
+        ['relatorios', 'fa-chart-column', 'Relatórios', 'relatorios'],
         ['relatorios/diario-planilha', 'fa-table', 'Planilha', 'planilha'],
-        ['categorias/index', 'fa-tags', 'Categorias', 'categorias'],
+        ['categorias', 'fa-tags', 'Categorias', 'categorias'],
     ],
     'gestao' => [
-        ['empresas/index', 'fa-building', 'Empresas', 'empresas'],
-        ['filiais/index', 'fa-code-branch', 'Filiais', 'filiais'],
-        ['usuarios/index', 'fa-users', 'Utilizadores', 'usuarios'],
-        ['metodos-pagamento/index', 'fa-money-bill-wave', 'Métodos de Pagamento', 'metodos_pagamento'],
+        ['empresas', 'fa-building', 'Empresas', 'empresas'],
+        ['filiais', 'fa-code-branch', 'Filiais', 'filiais'],
+        ['usuarios', 'fa-users', 'Utilizadores', 'usuarios'],
+        ['metodos-pagamento', 'fa-money-bill-wave', 'Métodos de Pagamento', 'metodos_pagamento'],
     ],
     'administracao' => [
-        ['backups/index', 'fa-database', 'Backups', 'backups'],
-        ['logs/index', 'fa-clipboard-list', 'Logs Auditoria', 'logs'],
-        ['configuracoes/index', 'fa-gear', 'Configurações', 'configuracoes'],
+        ['backups', 'fa-database', 'Backups', 'backups'],
+        ['logs', 'fa-clipboard-list', 'Logs Auditoria', 'logs'],
+        ['configuracoes', 'fa-gear', 'Configurações', 'configuracoes'],
     ],
     'conta' => [
-        ['perfil/index', 'fa-user-cog', 'Meu Perfil', 'perfil'],
-        ['notificacoes/index', 'fa-bell', 'Notificações', 'notificacoes'],
+        ['perfil', 'fa-user-cog', 'Meu Perfil', 'perfil'],
+        ['notificacoes', 'fa-bell', 'Notificações', 'notificacoes'],
     ],
 ];
 function exibirGrupoMenu(array $itens, string $paginaAtiva, string $titulo, callable $temAcessoMenu): string {

@@ -5,7 +5,7 @@
 </div>
 
 <section class="filtros-logs">
-    <form method="get" action="<?=URL_BASE?>/logs/index">
+    <form method="get" action="<?=URL_BASE?>/logs">
         <label>Utilizador
             <select name="usuario_id"><option value="">Todos</option><?php foreach($usuarios as $u):?><option value="<?=$u['id']?>" <?=$filtros['usuario_id']==$u['id']?'selected':''?>><?=htmlspecialchars($u['nome'])?></option><?php endforeach?></select>
         </label>
@@ -19,7 +19,7 @@
         <label>Até<input type="date" name="fim" value="<?=htmlspecialchars($filtros['fim'])?>"></label>
         <div class="filtros-acoes">
             <button class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filtrar</button>
-            <?php if(array_filter($filtros)):?><a class="btn btn-outline" href="<?=URL_BASE?>/logs/index">Limpar</a><?php endif;?>
+            <?php if(array_filter($filtros)):?><a class="btn btn-outline" href="<?=URL_BASE?>/logs">Limpar</a><?php endif;?>
         </div>
     </form>
 </section>
@@ -45,7 +45,7 @@
         </table>
     </div>
     <?php if(($paginacao['paginas']??1)>1):?>
-        <nav class="paginacao"><?php for($p=1;$p<=$paginacao['paginas'];$p++):?><a class="<?=((int)($_GET['pagina']??1)===$p)?'ativo':''?>" href="<?=URL_BASE?>/logs/index?<?=htmlspecialchars(http_build_query(array_merge($filtros,['pagina'=>$p])))?>"><?=$p?></a><?php endfor?></nav>
+        <nav class="paginacao"><?php for($p=1;$p<=$paginacao['paginas'];$p++):?><a class="<?=((int)($_GET['pagina']??1)===$p)?'ativo':''?>" href="<?=URL_BASE?>/logs?<?=htmlspecialchars(http_build_query(array_merge($filtros,['pagina'=>$p])))?>"><?=$p?></a><?php endfor?></nav>
     <?php endif?>
 </section>
 

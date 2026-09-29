@@ -123,5 +123,5 @@ class ImportacaoController extends Controller {
   $v=strtr($v,['á'=>'a','à'=>'a','â'=>'a','ã'=>'a','é'=>'e','ê'=>'e','í'=>'i','ó'=>'o','ô'=>'o','õ'=>'o','ú'=>'u','ç'=>'c','Á'=>'a','À'=>'a','Â'=>'a','Ã'=>'a','É'=>'e','Ê'=>'e','Í'=>'i','Ó'=>'o','Ô'=>'o','Õ'=>'o','Ú'=>'u','Ç'=>'c']);
   return in_array($v,$opcoes,true)?$v:'';
  }
- private function falhar(string $m):void{definirFlash('erro',$m);$this->redirecionar('importacao/index');}
+ private function falhar(string $m):void{definirFlash('erro',$m);$this->redirecionar('importacao');}
 }
