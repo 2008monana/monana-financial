@@ -1,0 +1,5 @@
+# Bloqueia qualquer ficheiro PHP colocado em /public/uploads (segurança)
+<FilesMatch "\.php[0-9]?$">
+    Require all denied
+</FilesMatch>
+php_flag engine off

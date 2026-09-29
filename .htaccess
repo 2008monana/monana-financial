@@ -1,39 +1,35 @@
 # =====================================================
 # MonanaFinancial - Encaminhamento para /public (URLs limpas)
-# Coloque este ficheiro na RAIZ do projeto
-# (C:\xampp\htdocs\monana-financial\.htaccess)
+# Ficheiro na RAIZ do projeto (C:\xampp\htdocs\monana-financial\.htaccess)
 # =====================================================
 
 RewriteEngine On
 
 # =============================================
-# URLs LIMPAS: qualquer pedido com nome de ficheiro
-# (index.php, algo.html, etc.) fora da estrutura
-# dominio/modulo/acao -> resposta 404
-# EXCEÇÕES: ficheiros estáticos em /public (css, js, images, uploads)
-# e a pasta /public/logs (acesso via router interno)
+# 1) FICHEIROS ESTÁTICOS REAIS em /public
+#    (css, js, images, fonts, uploads) são SERVIDOS diretamente.
+#    Isto corrige o erro "Forbidden" no logotipo, favicon e CSS.
 # =============================================
-RewriteCond %{REQUEST_URI} !^/?public/(css|js|images|uploads|fonts)/
-RewriteCond %{REQUEST_URI} !^/?public/logs(/|$)
-RewriteCond %{REQUEST_URI} (\.[a-zA-Z0-9]{1,6})(/|$)
+RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+RewriteRule ^(css|js|images|fonts|uploads)/(.+)$ public/$1/$2 [L]
+
+# =============================================
+# 2) PEDIDOS COM NOME DE FICHEIRO (.php, .html, etc.)
+#    que não são estáticos -> 404
+#    (impede acesso direto a index.php, config.php, etc.)
+# =============================================
+RewriteCond %{REQUEST_URI} !^/(css|js|images|fonts|uploads)/
+RewriteCond %{REQUEST_URI} \.[a-zA-Z0-9]{1,6}(/|$)
 RewriteRule .* - [R=404,L]
 
-# Bloqueia acesso direto a pastas sensíveis do código-fonte
-# (logs NÃO é mais bloqueado aqui — o controlador trata a segurança)
-RewriteRule ^(config|controllers|core|database|exports|helpers|middleware|models|storage|vendor|views)(/|$) - [F,L]|controllers|core|database|exports|helpers|middleware|models|storage|vendor|views)(/|$) - [F,L]
+# =============================================
+# 3) BLOQUEIO de pastas sensíveis do código-fonte
+# =============================================
+RewriteRule ^(config|controllers|core|database|exports|helpers|middleware|models|storage|vendor|views)(/|$) - [F,L]
 
-# Impede o acesso direto via /public/... no navegador (redireciona para URL limpa)
-RewriteCond %{THE_REQUEST} \s/public/(index\.php)?[?\s]
-RewriteRule ^public/?$ / [R=301,L]
-RewriteCond %{THE_REQUEST} \s/public/(\S+?)\.php[?\s]
-RewriteRule ^ - [R=404,L]
-
-# Se o pedido não apontar para /public, encaminha para public/index.php
-RewriteCond %{REQUEST_URI} !^/?public/
-RewriteRule ^(.*)$ public/index.php?url=$1 [QSA,L]
-
-# Se apontar para /public/algum-ficheiro-inexistente, também cai no index
-RewriteCond %{REQUEST_URI} ^/?public/
+# =============================================
+# 4) URLs LIMPAS: tudo o resto cai em public/index.php
+# =============================================
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^public/(.*)$ public/index.php?url=$1 [QSA,L]
+RewriteRule ^(.*)$ public/index.php?url=$1 [QSA,L]

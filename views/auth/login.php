@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MonanaFinancial — Iniciar Sessão</title>
-<link rel="icon" href="<?= URL_BASE ?>/public/images/favicon.png">
-<link rel="stylesheet" href="<?= URL_BASE ?>/public/css/login.css">
+<link rel="icon" href="<?= URL_BASE ?>/images/favicon.png">
+<link rel="stylesheet" href="<?= URL_BASE ?>/css/login.css">
 </head>
 <body>
 
@@ -13,10 +13,10 @@
 
   <!-- Lado esquerdo: marca -->
   <div class="brand-side">
-    <img class="brand-photo" src="<?= URL_BASE ?>/public/images/login-bg.jpg" alt="">
+    <img class="brand-photo" src="<?= URL_BASE ?>/images/login-bg.jpg" alt="">
 
     <div class="brand-mark">
-      <img src="<?= URL_BASE ?>/public/images/logo.png" alt="MonanaFinancial" class="brand-logo">
+      <img src="<?= URL_BASE ?>/images/logo.png" alt="MonanaFinancial" class="brand-logo">
       <div>
         <div class="brand-name">Monana<span>Financial</span></div>
         <div class="brand-tagline-small">GESTÃO FINANCEIRA INTELIGENTE</div>
@@ -107,6 +107,6 @@
 <script>
 const URL_BASE = "<?= URL_BASE ?>";
 </script>
-<script src="<?= URL_BASE ?>/public/js/login.js"></script>
+<script src="<?= URL_BASE ?>/js/login.js"></script>
 </body>
 </html>
