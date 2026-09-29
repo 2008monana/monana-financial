@@ -61,6 +61,17 @@ abstract class Controller
     }
 
     /**
+     * Redireciona definindo previamente uma mensagem flash de erro.
+     */
+    protected function redirecionarComErro(string $rota, string $mensagem)
+    {
+        if (function_exists('definirFlash')) {
+            definirFlash('erro', $mensagem);
+        }
+        $this->redirecionar($rota);
+    }
+
+    /**
      * Responde em JSON
      */
     protected function json(array $dados, int $status = 200)

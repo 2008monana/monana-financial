@@ -22,19 +22,29 @@ $__scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     ? 'https' : 'http';
 $__host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 // SCRIPT_NAME ex.: /monana-financial/public/index.php ou /public/index.php
-$__dir    = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
-// Remove um eventual "/public" final ( URLs limpas não mostram a pasta public )
-$__dir = preg_replace('#(/public)?$#', '', rtrim($__dir, '/'));
+$ru       = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$__script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+
+if ($__script !== '' && strpos($ru, $__script) === 0) {
+    // Caso normal: o pedido aponta para o index.php — a base é o diretório
+    // do script sem o sufixo "/public" (URLs limpas não mostram /public).
+    $__dir = preg_replace('#(/public)?/?index\.php$#i', '', $__script);
+} else {
+    // Fallback (URLs antigas em cache, reescritas internas): remove o
+    // segmento "/public" e tudo o que vier depois da pasta do projeto.
+    $__dir = preg_replace('#/public.*$#', '', $ru);
+    $__dir = preg_replace('#^(\.[\\/]+)+#', '', $__dir);
+    if ($__dir === '.' || $__dir === './') {
+        $__dir = '';
+    }
+}
+$__dir = rtrim($__dir, '/');
 // Garante o prefixo "/" inicial quando existe subpasta (ex.: "/monana-financial").
 // Se $__dir for '' ou '/', a aplicação está na raiz do DocumentRoot.
-if ($__dir !== '' && $__dir !== '/') {
-    if ($__dir[0] !== '/') {
-        // dirname devolveu caminho relativo (raro); reconstrói via REQUEST_URI
-        $ru = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-        $pos = stripos($ru, '/public/');
-        $__dir = $pos !== false ? substr($ru, 0, $pos) : '';
-    }
-} else {
+if ($__dir !== '' && $__dir !== '/' && $__dir[0] !== '/') {
+    $__dir = '/' . $__dir;
+}
+if ($__dir === '/') {
     $__dir = '';
 }
 define('URL_BASE', $__scheme . '://' . $__host . $__dir);
@@ -67,8 +77,11 @@ if (AMBIENTE === 'desenvolvimento') {
 // PASTAS DE ESCRITA (logs / ficheiros temporários)
 // Criadas automaticamente se não existirem, para evitar
 // erros de escrita e conflitos com rotas do sistema.
+// NOTA: a pasta de logs está DENTRO de /storage — nunca na
+// raiz do projeto, porque uma pasta física "/logs" na raiz
+// conflituava com a rota /logs e gerava "403 Forbidden".
 // =====================================================
-foreach (['logs', 'storage/logs', 'storage/cache', 'storage/exports'] as $__pasta) {
+foreach (['storage/app_logs', 'storage/logs', 'storage/cache', 'storage/exports'] as $__pasta) {
     $__caminhoPasta = CAMINHO_RAIZ . '/' . $__pasta;
     if (!is_dir($__caminhoPasta)) {
         @mkdir($__caminhoPasta, 0775, true);

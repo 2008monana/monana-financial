@@ -43,7 +43,22 @@ $isViewer = $usuario_perfil === 'visualizador';
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?php echo htmlspecialchars($tituloPagina ?? 'Dashboard'); ?> — MonanaFinancial</title>
     
-    <link rel="icon" href="<?php echo URL_BASE; ?>/images/favicon.png?v=<?php echo time(); ?>" type="image/png">
+    <?php
+    // Favicon em data URI: é servido dentro do próprio HTML, por isso aparece
+    // sempre — mesmo que a pasta /images esteja inacessível no servidor.
+    $uriFaviconLayout = '';
+    $caminhoFaviconLayout = CAMINHO_RAIZ . '/public/images/favicon.png';
+    if (is_file($caminhoFaviconLayout)) {
+        $dadosFaviconLayout = @file_get_contents($caminhoFaviconLayout);
+        if ($dadosFaviconLayout !== false) {
+            $uriFaviconLayout = 'data:image/png;base64,' . base64_encode($dadosFaviconLayout);
+        }
+    }
+    ?>
+    <link rel="icon" type="image/png" href="<?= $uriFaviconLayout !== '' ? $uriFaviconLayout : URL_BASE . '/images/favicon.png' ?>">
+    <link rel="apple-touch-icon" href="<?= $uriFaviconLayout !== '' ? $uriFaviconLayout : URL_BASE . '/images/favicon.png' ?>">
+    <!-- Logotipo padrão em data URI (fallback do sidebar, ver js no fim da página) -->
+    <script>window.MONANA_LOGO_URI = <?= json_encode(is_file(CAMINHO_RAIZ . '/public/images/logo.png') ? 'data:image/png;base64,' . base64_encode((string) @file_get_contents(CAMINHO_RAIZ . '/public/images/logo.png')) : '') ?>;</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>/css/formularios.css">
@@ -2392,15 +2407,15 @@ $isViewer = $usuario_perfil === 'visualizador';
                     if ($existeFisico) {
                         $logoSrc = URL_BASE . '/' . $caminhoRel . '?v=' . (@filemtime(CAMINHO_RAIZ . '/public/' . $caminhoRel) ?: time());
                     } else {
-                        // Ficheiro não existe — cai no logo padrão
-                        $logoSrc = URL_BASE . '/images/logo.png';
+                        // Ficheiro não existe — cai no logo padrão (embebido em data URI)
+                        $logoSrc = 'data:image/png;base64,' . base64_encode((string) @file_get_contents(CAMINHO_RAIZ . '/public/images/logo.png'));
                     }
                 }
             } else {
-                $logoSrc = URL_BASE . '/images/logo.png';
+                $logoSrc = 'data:image/png;base64,' . base64_encode((string) @file_get_contents(CAMINHO_RAIZ . '/public/images/logo.png'));
             }
         ?>
-        <img src="<?php echo htmlspecialchars($logoSrc); ?>" alt="MonanaFinancial" class="side-logo" onerror="this.src='<?php echo URL_BASE; ?>/images/logo.png';">
+        <img src="<?php echo htmlspecialchars($logoSrc); ?>" alt="MonanaFinancial" class="side-logo" onerror="if(window.MONANA_LOGO_URI&&this.src!==window.MONANA_LOGO_URI){this.src=window.MONANA_LOGO_URI;}">
         <div class="side-brand-text">
             <div class="name">Monana<span>Financial</span></div>
             <div class="sub">GESTÃO FINANCEIRA</div>

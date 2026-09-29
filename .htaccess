@@ -15,9 +15,15 @@ RewriteEngine On
 # 0) PASTAS DE CÓDIGO-FONTE: bloqueio apenas para ACESSO DIRETO.
 #    O teste %{REQUEST_FILENAME} -f/-d garante que só pedidos que
 #    apontam fisicamente para estas pastas são bloqueados. Assim,
-#    a rota "/logs" do sistema NÃO gera mais "403 Forbidden"
-#    (antes a pasta física /logs da raiz conflituava com a rota).
+#    a rota "/logs" do sistema NÃO gera mais "403 Forbidden".
+#    EXTRA: se ainda existir uma pasta física /logs na raiz (versões
+#    antigas), ela é ignorada e o pedido segue para o index.php —
+#    a rota /logs do sistema nunca mais devolve "Forbidden".
 # =============================================
+RewriteCond %{REQUEST_URI} (^|/)logs(/|$|\?)
+RewriteRule .* - [S=1]
+RewriteRule ^ - [L]
+
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^(config|controllers|core|helpers|middleware|models|views|exports|sql|vendor|storage)(/|$) - [F,L]
@@ -65,6 +71,15 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond public%{REQUEST_URI} -f [OR]
 RewriteCond public%{REQUEST_URI} -d
 RewriteRule ^(.+)$ public/$1 [L]
+
+# =============================================
+# 2c) AUTO-CURA: se um pedido de ficheiro estático (css/js/images/
+#     uploads) ainda chegar ao index.php com "/public/" no caminho
+#     (URLs antigas em cache), serve o ficheiro real diretamente.
+#     Ex.: /monana-financial/public/css/login.css -> public/css/login.css
+# =============================================
+RewriteCond public$2 -f
+RewriteRule ^(.*/)?public/(css|js|images|uploads)(/.+)$ public/$2$3 [L]
 
 # =============================================
 # 3) PEDIDOS COM EXTENSÃO DE FICHEIRO (.php, .html, etc.)

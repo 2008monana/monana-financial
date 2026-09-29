@@ -93,9 +93,7 @@ $subtitulo = $ehEdicao ? 'Atualize os dados da categoria' : 'Registe uma nova ca
     </form>
 </div>
 
-<script>
-// (Removido: sincronização do color picker — já não existe seleção de cor no formulário)
-</script>
+
 
 <style>
 /* ============================================
@@ -238,44 +236,6 @@ $subtitulo = $ehEdicao ? 'Atualize os dados da categoria' : 'Registe uma nova ca
 
 .error-text i {
     margin-right: 4px;
-}
-
-/* ============================================
-   INPUT DE COR
-   ============================================ */
-
-.cor-input-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.cor-input-group input[type="color"] {
-    width: 48px;
-    height: 48px;
-    padding: 2px;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.cor-input-group input[type="text"] {
-    flex: 1;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    padding: 11px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    color: var(--ink);
-    background: var(--white);
-    transition: all 0.3s ease;
-}
-
-.cor-input-group input[type="text"]:focus {
-    outline: none;
-    border-color: var(--green);
-    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.10);
 }
 
 /* ============================================
