@@ -264,7 +264,6 @@ class CategoriasController extends Controller
         $erros = [];
         $nome = trim($dados['nome'] ?? '');
         $tipo = $dados['tipo'] ?? '';
-        $cor = trim($dados['cor'] ?? '');
 
         if ($nome === '') {
             $erros['nome'] = 'O nome da categoria é obrigatório.';
@@ -274,17 +273,16 @@ class CategoriasController extends Controller
             $erros['tipo'] = 'Selecione um tipo válido.';
         }
 
-        // Validar cor (hexadecimal simples)
-        if ($cor !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $cor)) {
-            $erros['cor'] = 'Cor inválida. Use o formato #RRGGBB.';
-        }
+        // Cor não é mais escolhida pelo utilizador: atribuída automaticamente
+        // (verde para entradas, vermelho para saídas)
+        $corAutomatica = $tipo === 'entrada' ? '#16a34a' : '#dc2626';
 
         return [
             'erros' => $erros,
             'campos' => [
                 'nome' => $nome,
                 'tipo' => $tipo,
-                'cor' => $cor ?: '#64748b',
+                'cor' => $corAutomatica,
                 'ativa' => isset($dados['ativa']) ? 1 : 0,
             ],
         ];

@@ -43,10 +43,10 @@ $isViewer = $usuario_perfil === 'visualizador';
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?php echo htmlspecialchars($tituloPagina ?? 'Dashboard'); ?> — MonanaFinancial</title>
     
-    <link rel="icon" href="<?php echo URL_BASE; ?>/images/favicon.png" type="image/png">
+    <link rel="icon" href="<?php echo URL_BASE; ?>/public/images/favicon.png?v=<?php echo time(); ?>" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo URL_BASE; ?>/css/formularios.css">
+    <link rel="stylesheet" href="<?php echo URL_BASE; ?>/public/css/formularios.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     
     <style>
@@ -2368,7 +2368,26 @@ $isViewer = $usuario_perfil === 'visualizador';
                 $logoEmpresa = $logoCache['logotipo'] ?? '';
             }
         ?>
-        <img src="<?php echo URL_BASE . '/' . htmlspecialchars($logoEmpresa !== '' ? $logoEmpresa : 'images/logo.png'); ?>" alt="MonanaFinancial" class="side-logo">
+        <?php
+            // Normaliza o caminho do logotipo: garante prefixo "public/" quando for caminho relativo local
+            $logoSrc = '';
+            if ($logoEmpresa !== '') {
+                if (preg_match('#^https?://#i', $logoEmpresa) || strpos($logoEmpresa, 'data:image') === 0) {
+                    $logoSrc = $logoEmpresa; // URL externa ou base64: usa como está
+                } else {
+                    $caminhoRel = ltrim($logoEmpresa, '/');
+                    if (strpos($caminhoRel, 'public/') !== 0 && strpos($caminhoRel, 'uploads/') === 0) {
+                        $caminhoRel = 'public/' . $caminhoRel;
+                    } elseif (strpos($caminhoRel, 'uploads/') === 0) {
+                        $caminhoRel = 'public/uploads/' . $caminhoRel;
+                    }
+                    $logoSrc = URL_BASE . '/' . $caminhoRel;
+                }
+            } else {
+                $logoSrc = URL_BASE . '/public/images/logo.png';
+            }
+        ?>
+        <img src="<?php echo htmlspecialchars($logoSrc); ?>" alt="MonanaFinancial" class="side-logo" onerror="this.src='<?php echo URL_BASE; ?>/public/images/logo.png';">
         <div class="side-brand-text">
             <div class="name">Monana<span>Financial</span></div>
             <div class="sub">GESTÃO FINANCEIRA</div>

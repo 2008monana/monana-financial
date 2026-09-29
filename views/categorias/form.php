@@ -64,21 +64,7 @@ $subtitulo = $ehEdicao ? 'Atualize os dados da categoria' : 'Registe uma nova ca
                         <?php endif; ?>
                     </div>
 
-                    <div class="form-group">
-                        <label for="cor">
-                            <i class="fas fa-palette"></i> Cor
-                        </label>
-                        <div class="cor-input-group">
-                            <input type="color" id="cor" name="cor" 
-                                   value="<?php echo htmlspecialchars($categoria['cor'] ?? '#64748b'); ?>">
-                            <input type="text" id="cor_hex" 
-                                   value="<?php echo htmlspecialchars($categoria['cor'] ?? '#64748b'); ?>" 
-                                   placeholder="#RRGGBB">
-                        </div>
-                        <?php if (!empty($erros['cor'])): ?>
-                            <span class="error-text"><i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($erros['cor']); ?></span>
-                        <?php endif; ?>
-                    </div>
+                    <!-- Seleção de cor removida: a cor é atribuída automaticamente pelo sistema -->
                 </div>
 
                 <div class="form-group">
@@ -108,23 +94,7 @@ $subtitulo = $ehEdicao ? 'Atualize os dados da categoria' : 'Registe uma nova ca
 </div>
 
 <script>
-// Sincronizar color picker com input hex
-document.addEventListener('DOMContentLoaded', function() {
-    const colorPicker = document.getElementById('cor');
-    const colorHex = document.getElementById('cor_hex');
-    
-    if (colorPicker && colorHex) {
-        colorPicker.addEventListener('input', function() {
-            colorHex.value = this.value;
-        });
-        
-        colorHex.addEventListener('input', function() {
-            if (/^#[0-9a-f]{6}$/i.test(this.value)) {
-                colorPicker.value = this.value;
-            }
-        });
-    }
-});
+// (Removido: sincronização do color picker — já não existe seleção de cor no formulário)
 </script>
 
 <style>
