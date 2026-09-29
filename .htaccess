@@ -2,39 +2,61 @@
 # MonanaFinancial - Encaminhamento para /public (URLs limpas)
 # Ficheiro na RAIZ do projeto (C:\xampp\htdocs\monana-financial\.htaccess)
 #
-# ESTRATEGIA:
-#   - Os ficheiros ESTATICOS reais vivem em public/ e sao servidos por
-#     reescrita INTERNA directa (sem testes de existencia com capturas
-#     vazias %1/%2, sem redirecionamentos externos em cadeia e sem
-#     regras que possam provocar ciclos). As capturas $1/$2 da propria
-#     RewriteRule sao usadas no destino - o que e sempre valido.
-#   - As ROTAS dinamicas (/auth, /dashboard, ...) caem no front
-#     controller public/index.php.
-#   - Funciona instalado em htdocs/monana-financial OU em dominio proprio.
-# Para aplicar: substitua este ficheiro, REINICIE o Apache e faca
-# hard refresh no navegador (Ctrl+Shift+R).
+# CORRECAO DEFINITIVA DO "403 FORBIDDEN" EM /logs (Auditoria):
+#   O modulo de Auditoria usa a rota dinamica /logs, que tem o MESMO
+#   nome da pasta fisica logs/ criada por instalacoes antigas (tanto na
+#   raiz como dentro de public/). Nessas situacoes o Apache entrava na
+#   directoria ANTES de correr as regras mod_rewrite e devolvia
+#   "403 Forbidden" ao clicar no link do sidebar.
+#   SOLUCAO ADOPTADA:
+#     1) As rotas com colisão de nomes (/logs e /backups) são SEMPRE
+#        reencaminhadas para o front controller logo no inicio deste
+#        ficheiro — nunca chegam a ser resolvidas como pastas físicas.
+#     2) Os registos reais de log passaram a ser gravados em
+#        storage/logs/ (fora do alcance das rotas), protegida pelo seu
+#        proprio .htaccess ("Require all denied").
+#     3) Qualquer pedido directo a uma PASTA de codigo-fonte existente
+#        (logs/, config/, views/, ...) recebe agora a pagina 404 do
+#        sistema em vez de "403 Forbidden" — nem um ambiente antigo
+#        com pastas residuais volta a mostrar esse erro.
+#
+# Para aplicar: substitua ESTE ficheiro e tambem public/.htaccess,
+# REINICIE o Apache e faca hard refresh (Ctrl+Shift+R).
 # =====================================================
 
-Options -Indexes +FollowSymLinks
+Options +FollowSymLinks
 RewriteEngine On
 
 # =============================================
-# 1) PASTAS DE CODIGO-FONTE: acesso directo proibido
-#    (apenas quando o pedido aponta fisicamente para elas).
-#    IMPORTANTE: a pasta "logs" NAO e bloqueada aqui porque o
-#    modulo de Auditoria usa a rota dinamica /logs — que tambem
-#    corresponde ao nome da pasta fisica logs/ na raiz. Sem esta
-#    excepcao, o Apache devolvia "403 Forbidden" ao clicar no link
-#    do sidebar. O bloqueio do conteudo real de logs/ e feito por
-#    um ficheiro logs/.htaccess proprio (Require all denied), que
-#    so se aplica a pedidos directos a ficheiros dentro da pasta.
+# 1) ROTAS DINAMICAS QUE COLIDEM COM PASTAS FISICAS:
+#    /logs (Auditoria) => LogsController e /backups => BackupsController.
+#    Estas regras correm ANTES de qualquer resolucao de directoria e
+#    enviam o pedido diretamente ao front controller, com ou sem
+#    prefixo de subpasta (funciona em htdocs/monana-financial/logs
+#    e em dominio/logs).
 # =============================================
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^(config|controllers|core|helpers|middleware|models|views|database|sql|exports|storage)(/|$) - [F,L]
+RewriteRule ^(?:[^/]+/)?logs(/.*)?$ public/index.php?url=logs$1 [QSA,L]
+RewriteRule ^(?:[^/]+/)?backups(/.*)?$ public/index.php?url=backups$1 [QSA,L]
 
 # =============================================
-# 2) URLS DESACTUALIZADAS COM /public/ NA BARRA DE ENDERECO
+# 2) QUALQUER PEDIDO A UMA PASTA FISICA DE CODIGO-FONTE OU DE DADOS
+#    (existentes ou legados: logs/, config/, views/, core/, storage/...)
+#    vai para o front controller, que responde com a pagina 404 do
+#    sistema. Isto elimina definitivamente o "403 Forbidden" mesmo em
+#    instalacoes com pastas residuais de versoes anteriores.
+# =============================================
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^(config|controllers|core|helpers|middleware|models|views|database|sql|cron|exports|storage|vendor|logs)(/|$) public/index.php?url=$1$2 [QSA,L]
+
+# =============================================
+# 2b) FICHEIROS SENSIVEIS DAS PASTAS ACIMA (.php, .sql, .log...):
+#     tambem viram 404 em vez de 403/execucao directa.
+# =============================================
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(config|controllers|core|helpers|middleware|models|views|database|sql|cron|logs|storage|vendor)(/|$) public/index.php?url=$1$2 [QSA,L]
+
+# =============================================
+# 3) URLS DESACTUALIZADAS COM /public/ NA BARRA DE ENDERECO
 #    voltam a estrutura limpa (dominio/modulo).
 #    Ex.: /monana-financial/public/dashboard -> /monana-financial/dashboard
 # =============================================
@@ -44,37 +66,23 @@ RewriteCond %{THE_REQUEST} ^[A-Z]+\s\S*/public/?[\s?]
 RewriteRule ^(.*)public/?$ $1/ [R=302,L]
 
 # =============================================
-# 3) CREDENCIAIS NUNCA NA URL: se o formulario for enviado por
+# 4) CREDENCIAIS NUNCA NA URL: se o formulario for enviado por
 #    GET (?email=...&senha=...), limpa a URL e volta ao login.
 # =============================================
 RewriteCond %{QUERY_STRING} (^|&)(email|senha)= [NC]
 RewriteRule ^auth(/login)?$ auth? [R=302,L,QSD]
 
 # =============================================
-# 4) ROTAS DE APLICACAO COM NOME DE PASTA FISICA:
-#    o modulo de Auditoria usa a rota dinamica /logs, que colide com
-#    a pasta fisica logs/ na raiz. Sem esta regra, o Apache entrava
-#    na pasta e devolvia "403 Forbidden" ao clicar no link do sidebar.
-#    O pedido e enviado diretamente ao front controller, sem passar
-#    pela pasta fisica nem ser bloqueado por logs/.htaccess.
-# =============================================
-RewriteCond %{REQUEST_URI} (?:^|/)(monana[-_]?financial/)?logs(/|\?|$) [NC]
-RewriteRule ^(?:[^/]+/)?logs(/.*)?$ public/index.php?url=logs$1 [QSA,L]
-
-# =============================================
 # 5) FICHEIROS ESTATICOS (css, js, images, uploads, favicon):
 #    reescrita INTERNA para dentro de public/, usando as capturas
-#    da propria regra. A excepcao (?!) garante que nunca reescreve
-#    caminhos que colidem com rotas (ex.: imagens/logs).
-#    Se o ficheiro nao existir, a seccao 6 ainda o envia para o
-#    front controller (que devolve 404 HTML normal).
+#    da propria regra. Se o ficheiro nao existir, a seccao 6 ainda
+#    o envia para o front controller (404 HTML normal).
 # =============================================
-RewriteRule ^(?:[^/]+/)?(css|js|images|uploads)/(?!logs(/|$)).+$ public/$1/$2 [L]
+RewriteRule ^(?:[^/]+/)?(css|js|images|uploads)/(.+)$ public/$1/$2 [L]
 RewriteRule ^(?:[^/]+/)?favicon\.ico$ public/favicon.ico [L]
 
 # =============================================
 # 6) TUDO O RESTO -> front controller (URLs limpas).
 # =============================================
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php?url=$1 [QSA,L]

@@ -1,7 +1,20 @@
 # MonanaFinancial - pasta /public (defesa em profundidade)
+#
+# IMPORTANTE (403 em /logs): se existir uma pasta fisica "logs" aqui
+# dentro (criada por instalacoes antigas), o Apache resolvia o pedido
+# como directoria e devolvia "403 Forbidden" antes das regras.
+# Options +Indexes elimina essa possibilidade; a regra 0c garante que
+# /logs chega SEMPRE ao LogsController, mesmo com a pasta presente.
 
-Options -Indexes -MultiViews +FollowSymLinks
+Options +Indexes -MultiViews +FollowSymLinks
 RewriteEngine On
+
+# =========================================================
+# 0c) ROTA /logs: encaminhada SEMPRE para o front controller
+#     (primeira regra do ficheiro, para nunca ser apanhada
+#     pela resolucao fisica de directorias).
+# =========================================================
+RewriteRule ^logs(/.*)?$ index.php?url=logs$1 [QSA,L]
 
 # =========================================================
 # 0a) AUTO-REPARACAO DE URL:
@@ -27,13 +40,13 @@ RewriteCond $0 ^[^/]+/(auth|dashboard|transacoes|relatorios|categorias|filiais|e
 RewriteRule ^[^/]+/(.*)$ index.php?url=$1 [QSA,L]
 
 # =========================================================
-# 0c) ROTA /logs DENTRO DE public/: se existir uma pasta
-#     publica "logs" (criada por instalacoes antigas ou pelo
-#     proprio sistema), o Apache entraria nela e devolvia
-#     "403 Forbidden" em vez de correr o LogsController.
-#     Esta regra encaminha SEMPRE /logs para o front controller.
+# 0d) PASTAS DE CODIGO-FONTE DA RAIZ (se alguem aceder a
+#     /views, /config, /core... por URL): vao para o front
+#     controller, que devolve 404 — nunca "403 Forbidden".
 # =========================================================
-RewriteRule ^logs(/.*)?$ index.php?url=logs$1 [QSA,L]
+RewriteCond %{REQUEST_FILENAME} -d [OR]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(config|controllers|core|helpers|middleware|models|views|database|sql|cron|exports|storage|vendor)(/|$) index.php?url=$1$2 [QSA,L]
 
 # =========================================================
 # 1) FICHEIROS ESTATICOS REAIS (css, js, images, uploads):
