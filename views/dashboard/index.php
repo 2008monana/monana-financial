@@ -80,10 +80,10 @@ $titulo = 'Dashboard';
             O sistema está pronto para uso. Comece a adicionar os seus lançamentos financeiros.
         </p>
         <div style="margin-top:16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-            <a href="/transacoes/criar" class="btn btn-success">
+            <a href="<?= URL_BASE ?>/transacoes/criar" class="btn btn-success">
                 <i class="fas fa-plus"></i> Novo Lançamento
             </a>
-            <a href="/relatorios/diario" class="btn btn-primary">
+            <a href="<?= URL_BASE ?>/relatorios/diario" class="btn btn-primary">
                 <i class="fas fa-file-alt"></i> Ver Relatórios
             </a>
         </div>

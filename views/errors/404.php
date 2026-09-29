@@ -172,7 +172,7 @@ $titulo = 'Página não encontrada';
         </p>
         
         <div class="links">
-            <a href="/dashboard" class="btn">
+            <a href="<?= URL_BASE ?>/dashboard" class="btn">
                 <i class="fas fa-home"></i> Ir para o Dashboard
             </a>
             <a href="javascript:history.back()" class="btn btn-outline">
