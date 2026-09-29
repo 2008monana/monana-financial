@@ -50,36 +50,49 @@ RewriteRule ^public/(css|js|images|uploads)/(.*)$ %1$1/$2 [R=302,L]
 # =============================================
 # 2b) FICHEIROS ESTÁTICOS REAIS (css, js, images, uploads)
 #     Ex.: /monana-financial/css/login.css -> /public/css/login.css
-#     IMPORTANTE: as regras NÃO dependem de %{DOCUMENT_ROOT}. O teste de
-#     existencia usa $0 (o caminho RELATIVO ao diretório deste .htaccess),
-#     prefixado fisicamente com "public/". Nas versões anteriores a regra
-#     usava %1%2 (capturas vazias neste contexto), o teste falhava e os
-#     pedidos caíam em index.php — devolvendo HTML em vez de CSS/PNG, o
-#     que fazia o navegador recusar a folha de estilos ("page lost its
-#     style") e desaparecer o favicon e a imagem de fundo do login.
-#     Tambem e aceite um nivel extra opcional de pasta (ex.: quando o
-#     pedido chega com o prefixo do projeto ainda no caminho).
+#     IMPORTANTE: esta versao NAO depende de capturas (%1/%2 nem $1/$2)
+#     nos testes de existencia. Nas versoes anteriores esses testes
+#     recebiam strings vazias, falhavam, e os pedidos caian em
+#     index.php — o navegador recebia HTML em vez de CSS/PNG e recusava
+#     aplicar a folha de estilos ("estilo quebrado"), alem de perder o
+#     favicon e a imagem de fundo do login.
+#     Cada regra testa diretamente o caminho do pedido ({REQUEST_URI})
+#     contra o ficheiro fisico em public/, servido com o MIME type
+#     correto. Aceita tambem pedidos que cheguem com o prefixo do
+#     projeto ainda no caminho (ex.: /monana-financial/css/login.css).
 # =============================================
-# IMPORTANTE: so reescreve se o ficheiro fisico existir (teste -f), para
-# nunca "engolir" rotas do sistema que comecem por estes nomes (ex.: a
-# rota /js ...). Sem o teste, qualquer caminho era reescrito e dava 404.
-RewriteCond public$1/$2 -f
-RewriteRule ^(?:[^/]+/)?(css|js|images|uploads)/(.+)$ public/$1/$2 [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f
+RewriteRule ^(css|js|images|uploads)/(.*)$ public/$1/$2 [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI} -f
+RewriteRule ^[^/]+/(css|js|images|uploads)/(.*)$ public/$1/$2 [L]
 
-# Fallback generico: qualquer outro ficheiro/pasta real dentro de /public
-# (ex.: favicon.ico na raiz do projeto -> public/favicon.ico)
+# Favicon na raiz da URL (ex.: http://localhost/favicon.ico), muito
+# usado pelo navegador sem passar pela view — serve public/favicon.ico.
+RewriteCond %{DOCUMENT_ROOT}/public/favicon.ico -f
+RewriteRule ^favicon\.ico$ public/favicon.ico [L]
+
+# Fallback generico: qualquer outro ficheiro/pasta REAL dentro de
+# /public (robusto: testa o caminho absoluto do documento).
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond public$1 -f [OR]
-RewriteCond public$1 -d
+RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f [OR]
+RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -d
 RewriteRule ^(.+)$ public/$1 [L]
 
 # =============================================
 # 3) PEDIDOS COM EXTENSÃO DE FICHEIRO (.php, .html, etc.)
 #    que não são ficheiros estáticos reais -> 404
 #    (impede acesso direto a index.php, config.php, etc.)
+#    IMPORTANTE: o teste de existencia faz-se contra o caminho FISICO
+#    em public/ (%{DOCUMENT_ROOT}/public%{REQUEST_URI}), porque os
+#    estaticos reais (favicon.ico, robots.txt, imagens na raiz de
+#    /public) ainda nao foram reescritos nesta altura e, sem este
+#    teste, receberiam um 404 falso.
 # =============================================
 RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} !-f
 RewriteCond %{REQUEST_URI} \.[a-zA-Z0-9]{1,6}(/|$)
 RewriteRule .* - [R=404,L]
 

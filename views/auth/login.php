@@ -4,9 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MonanaFinancial — Iniciar Sessão</title>
-<link rel="icon" href="<?= URL_BASE ?>/images/favicon.png?v=<?= @filemtime(CAMINHO_RAIZ . '/public/images/favicon.png') ?: time ?>">
+<link rel="icon" type="image/x-icon" href="<?= URL_BASE ?>/favicon.ico?v=<?= @filemtime(CAMINHO_RAIZ . '/public/favicon.ico') ?: time ?>">
 <link rel="shortcut icon" type="image/x-icon" href="<?= URL_BASE ?>/favicon.ico">
+<link rel="apple-touch-icon" href="<?= URL_BASE ?>/images/favicon-48.png">
 <link rel="stylesheet" href="<?= URL_BASE ?>/css/login.css?v=<?= @filemtime(CAMINHO_RAIZ . '/public/css/login.css') ?: time ?>">
+<?php
+// =============================================
+// GARANTIA DE ESTILO (à prova de falhas do Apache/MIME):
+// o CSS do login e injectado directamente na pagina.
+// Assim, mesmo que o ficheiro externo nao seja servido com o
+// Content-Type correcto (o que fazia o navegador recusar a folha
+// de estilos e "quebrar" o layout), a pagina fica SEMPRE estilizada.
+// =============================================
+$caminhoCssLogin = CAMINHO_RAIZ . '/public/css/login.css';
+if (is_readable($caminhoCssLogin)) {
+    echo "<style>\n" . file_get_contents($caminhoCssLogin) . "\n</style>";
+}
+?>
 </head>
 <body>
 
@@ -155,9 +169,12 @@ window.addEventListener('load', function () {
 // Rede de seguranca do CSS: se a folha de estilos externa nao for aplicada
 // (ex.: MIME type recusado pelo navegador), injecta um minimo de estilos
 // para a pagina de login nunca ficar sem formatacao.
+// IMPORTANTE: so corre quando o CSS NAO esta activo — com o estilo
+// embutido acima, nao deve fazer nada; e apenas um ultimo recurso.
 (function () {
   const cssOk = getComputedStyle(document.body).display !== 'inline' &&
-                getComputedStyle(document.body).fontFamily.indexOf('Inter') !== -1;
+                getComputedStyle(document.querySelector('.panel') || document.body)
+                  .getPropertyValue('max-width') !== 'none';
   if (cssOk) return;
   const s = document.createElement('style');
   s.textContent = 'body{font-family:system-ui,sans-serif;background:#f6f8fb;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}.panel{display:grid;grid-template-columns:1fr 1fr;max-width:1180px;width:100%;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(10,25,48,.15)}form input{display:block;width:100%;padding:10px 12px;margin:6px 0;border:1px solid #e2e8f0;border-radius:8px}button.submit{padding:12px 20px;background:#16a34a;color:#fff;border:0;border-radius:8px;cursor:pointer}';

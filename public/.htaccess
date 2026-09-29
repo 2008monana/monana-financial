@@ -39,10 +39,17 @@ AddType image/png .png
 AddType image/jpeg .jpg .jpeg
 AddType image/svg+xml .svg
 AddType image/x-icon .ico
+<IfModule mod_mime_module>
+    # Reforco: garante o Content-Type mesmo se AddType for ignorado
+    AddHandler text/css .css
+    AddHandler application/javascript .js
+</IfModule>
 <IfModule mod_headers.c>
     <FilesMatch "\.(css|js|png|jpe?g|svg|ico|woff2?)$">
         Header set X-Content-Type-Options "nosniff"
         Header unset Content-Security-Policy
+        # Cache curto: evita ficar preso a versoes antigas/partidas
+        Header set Cache-Control "public, max-age=600"
     </FilesMatch>
 </IfModule>
 
