@@ -2379,12 +2379,21 @@ $isViewer = $usuario_perfil === 'visualizador';
                     if (strpos($caminhoRel, 'uploads/') !== 0) {
                         $caminhoRel = 'uploads/' . $caminhoRel;
                     }
-                    // Se o ficheiro não existir fisicamente, cai no logo padrão
-                    if (!is_file(CAMINHO_RAIZ . '/public/' . $caminhoRel)) {
-                        $caminhoRel = 'images/logo.png';
-                        $logoSrc = URL_BASE . '/' . $caminhoRel;
+                    // Verifica se o ficheiro existe em /public/uploads ou /uploads (raiz)
+                    $existeFisico = is_file(CAMINHO_RAIZ . '/public/' . $caminhoRel);
+                    if (!$existeFisico && is_file(CAMINHO_RAIZ . '/' . $caminhoRel)) {
+                        // Logotipo gravado na raiz por versão antiga do sistema:
+                        // copia para /public/uploads para poder ser servido.
+                        $origem = CAMINHO_RAIZ . '/' . $caminhoRel;
+                        $destino = CAMINHO_RAIZ . '/public/' . $caminhoRel;
+                        @mkdir(dirname($destino), 0775, true);
+                        $existeFisico = @copy($origem, $destino);
+                    }
+                    if ($existeFisico) {
+                        $logoSrc = URL_BASE . '/' . $caminhoRel . '?v=' . (@filemtime(CAMINHO_RAIZ . '/public/' . $caminhoRel) ?: time());
                     } else {
-                        $logoSrc = URL_BASE . '/' . $caminhoRel;
+                        // Ficheiro não existe — cai no logo padrão
+                        $logoSrc = URL_BASE . '/images/logo.png';
                     }
                 }
             } else {
