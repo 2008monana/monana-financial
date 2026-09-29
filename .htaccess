@@ -25,10 +25,13 @@ RewriteRule ^public/?$ ./ [R=302,L]
 # 2) FICHEIROS ESTÁTICOS REAIS em /public
 #    (css, js, images, uploads) são servidos via rewrite interno.
 #    Ex.: /monana-financial/css/login.css -> /public/css/login.css
+#    IMPORTANTE: a regra NÃO pode depender de %{DOCUMENT_ROOT}, porque o
+#    DOCUMENT_ROOT do Apache aponta para htdocs/ e não inclui a subpasta
+#    do projeto. Usamos apenas caminhos relativos + REQUEST_FILENAME.
 # =============================================
-RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} !-f [OR]
-RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} !-d
-RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond public%{REQUEST_URI} -f
 RewriteRule ^(.+)$ public/$1 [L]
 
 # =============================================
