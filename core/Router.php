@@ -11,13 +11,34 @@ if (!defined('CAMINHO_RAIZ')) {
 class Router
 {
     private array $rotasPublicas = [
+        'auth',
+        'auth/index',
         'auth/login',
         'auth/autenticar',
+        'auth/logout',
         'auth/esqueciSenha',
         'auth/enviarLinkRedefinicao',
         'auth/redefinirSenha',
         'auth/salvarNovaSenha',
+        'auth/processarEsqueciSenha',
+        'auth/atualizarSenha',
     ];
+
+    /**
+     * Normaliza a rota para as chaves de $rotaParaModulo.
+     * Ex: 'dashboard' => 'dashboard/index'; 'metodos-pagamento' => 'metodos-pagamento/index'
+     */
+    private function normalizarRota(string $modulo, string $acao): string
+    {
+        $rota = $modulo . '/' . $acao;
+        if ($acao === 'index' || !isset($this->rotaParaModulo[$rota])) {
+            $rotaIndex = $modulo . '/index';
+            if (isset($this->rotaParaModulo[$rotaIndex])) {
+                return $rotaIndex;
+            }
+        }
+        return $rota;
+    }
 
     // Mapeamento de rotas para módulos (para verificação de permissão)
     private array $rotaParaModulo = [
@@ -54,6 +75,7 @@ class Router
         'relatorios/mensal' => 'relatorios',
         'relatorios/anual' => 'relatorios',
         'relatorios/filial' => 'relatorios',
+        'relatorios/pesquisa' => 'relatorios',
         'relatorios/diario-planilha' => 'planilha',
 
         // =============================================
@@ -151,17 +173,6 @@ class Router
         'configuracoes/guardar' => 'configuracoes',
 
         // =============================================
-        // FUNCIONÁRIOS
-        // =============================================
-        'funcionarios' => 'funcionarios',
-        'funcionarios/index' => 'funcionarios',
-        'funcionarios/criar' => 'funcionarios',
-        'funcionarios/salvar' => 'funcionarios',
-        'funcionarios/editar' => 'funcionarios',
-        'funcionarios/atualizar' => 'funcionarios',
-        'funcionarios/excluir' => 'funcionarios',
-
-        // =============================================
         // MÉTODOS DE PAGAMENTO
         // =============================================
         'metodos-pagamento' => 'metodos_pagamento',
@@ -191,11 +202,104 @@ class Router
         return $resultado;
     }
 
+    /**
+     * Estrutura valida de URL: apenas "dominio/modulo" ou "dominio/modulo/acao[/parametro]".
+     * Qualquer coisa fora desta estrutura (nomes de ficheiros como index.php,
+     * extensoes .php/.html, caminhos com /public/, etc.) deve resultar em 404.
+     */
+    private function caminhoInvalido(string $caminho): bool
+    {
+        if ($caminho === '') {
+            return false; // raiz -> dashboard
+        }
+        // Apenas letras, numeros, hifen, underscore e barras - nada de pontos!
+        if (!preg_match('#^[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+){0,2}$#', $caminho)) {
+            return true;
+        }
+        // Bloqueio explicito de nomes de ficheiros / extensoes conhecidas
+        if (preg_match('#\.(php[0-9]?|phtml|html?|js|css|json|xml|zip|tar|gz|bak|sql|log|swp|env|ini)$#i', $caminho)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Pastas de codigo-fonte que NUNCA devem ser acessiveis por URL.
+     * Em vez de "Forbidden" (403), devolvem 404 — nenhuma informacao
+     * e revelada sobre a estrutura interna do sistema.
+     */
+    private function caminhoFonte(string $caminho): bool
+    {
+        $pastas = ['config', 'controllers', 'core', 'database', 'exports',
+                   'helpers', 'middleware', 'models', 'storage', 'vendor', 'views'];
+        $primeiro = strtolower(explode('/', $caminho)[0]);
+        return in_array($primeiro, $pastas, true);
+    }
+
+    /**
+     * Resposta padrao 404 para URLs fora da estrutura permitida
+     */
+    private function responder404(): void
+    {
+        http_response_code(404);
+        $caminhoErro = CAMINHO_RAIZ . '/views/errors/404.php';
+        if (file_exists($caminhoErro)) {
+            require_once $caminhoErro;
+            return;
+        }
+        echo '<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8"><title>404 - Pagina nao encontrada</title>'
+           . '<style>body{font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;'
+           . 'min-height:100vh;margin:0;background:#f3f4f6}.box{text-align:center;padding:40px}'
+           . 'h1{color:#1e3a8a;font-size:72px;margin:0}p{color:#6b7280}a{color:#2563eb;text-decoration:none'
+           . ';font-weight:bold}</style></head><body><div class="box"><h1>404</h1>'
+           . '<p>A pagina que procura nao existe ou o endereco esta incorreto.</p>'
+           . '<p><a href="' . URL_BASE . '/dashboard">Voltar ao Dashboard</a></p></div></body></html>';
+    }
+
     public function despachar(string $caminho): void
     {
         // Limpar o caminho
         $caminho = trim($caminho, '/');
-        
+
+        // =============================================
+        // REGRA DE URLs LIMPAS: so dominio + modulo (+ acao + parametro).
+        // Qualquer link fora desta estrutura vai para a pagina 404.
+        // =============================================
+        if ($this->caminhoInvalido($caminho) || $this->caminhoFonte($caminho)) {
+            $this->responder404();
+            return;
+        }
+
+        // =============================================
+        // AUTO-REPARACAO DE URL: se o pedido chegou com prefixos internos
+        // (ex.: /public/monana-financial/logs, por cache de links antigos),
+        // remove-os ate sobrar apenas "modulo/acao" e redireciona
+        // permanentemente para a estrutura limpa dominio/modulo.
+        // =============================================
+        $partesUrl = $caminho !== '' ? explode('/', $caminho) : [];
+        $primeiro = strtolower($partesUrl[0] ?? '');
+        if ($primeiro === 'public' || (!empty($partesUrl) && !isset($this->rotaParaModulo[$partesUrl[0]]) && $partesUrl[0] !== '')) {
+            $modulosConhecidos = array_unique(array_values($this->rotaParaModulo));
+            $controladoresValidos = [
+                'dashboard', 'transacoes', 'relatorios', 'categorias', 'filiais',
+                'empresas', 'usuarios', 'perfil', 'notificacoes', 'backups',
+                'logs', 'configuracoes', 'metodos-pagamento', 'auth', 'importacao',
+            ];
+            for ($i = 0, $n = count($partesUrl); $i < $n; $i++) {
+                $seg = $partesUrl[$i];
+                if (in_array($seg, $controladoresValidos, true)
+                    || in_array(strtolower($seg), $modulosConhecidos, true)) {
+                    $reconstruido = implode('/', array_slice($partesUrl, $i));
+                    if ($reconstruido !== $caminho) {
+                        $qs = $_SERVER['QUERY_STRING'] ?? '';
+                        header('Location: ' . URL_BASE . '/' . $reconstruido . ($qs !== '' ? '?' . $qs : ''), true, 302);
+                        exit;
+                    }
+                    break;
+                }
+            }
+        }
+
         // Se estiver vazio, vai para o dashboard
         if ($caminho === '') {
             $caminho = 'dashboard/index';
@@ -232,7 +336,24 @@ class Router
         
         $parametro = $partes[2] ?? null;
 
-        $rotaAtual = ($partes[0] ?? '') . '/' . $acaoOriginal;
+        // =============================================
+        // CORREÇÃO: URLs limpas (ex: /dashboard em vez de /dashboard/index)
+        // Se o "método" não existir no controlador, é na verdade o index
+        // Ex: /relatorios/pesquisa → método 'pesquisa'; /categorias → método 'index'
+        // =============================================
+        if ($parametro === null && $acao !== 'index') {
+            $caminhoTmp = CAMINHO_RAIZ . '/controllers/' . $nomeControlador . '.php';
+            if (file_exists($caminhoTmp)) {
+                require_once $caminhoTmp;
+                if (class_exists($nomeControlador) && !method_exists($nomeControlador, $acao)) {
+                    $acaoOriginal = 'index';
+                    $acao = 'index';
+                }
+            }
+        }
+
+        // Rota normalizada para verificação de permissões
+        $rotaAtual = $this->normalizarRota($partes[0] ?? '', $acaoOriginal);
 
         // =============================================
         // MIDDLEWARE DE AUTENTICAÇÃO
@@ -272,8 +393,7 @@ class Router
         }
 
         if (!file_exists($caminhoControlador)) {
-            http_response_code(404);
-            echo "Página não encontrada. Controlador: " . $nomeControlador;
+            $this->responder404();
             return;
         }
 
@@ -294,8 +414,7 @@ class Router
         }
 
         if (!method_exists($nomeControlador, $acao)) {
-            http_response_code(404);
-            echo "Ação não encontrada: " . $acao . " (URL original: " . $acaoOriginal . ")";
+            $this->responder404();
             return;
         }
 

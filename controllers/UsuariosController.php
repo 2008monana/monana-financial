@@ -95,7 +95,7 @@ class UsuariosController extends Controller
     {
         $empresaId = $this->empresaAtualId();
         if ($empresaId === null) {
-            $this->redirecionar('usuarios/index');
+            $this->redirecionar('usuarios');
         }
 
         $modulos = $this->moduloModel->todosAtivos();
@@ -171,7 +171,7 @@ class UsuariosController extends Controller
 
         if (!$usuario) {
             definirFlash('erro', 'Utilizador não encontrado.');
-            $this->redirecionar('usuarios/index');
+            $this->redirecionar('usuarios');
         }
 
         $modulos = $this->moduloModel->todosAtivos();

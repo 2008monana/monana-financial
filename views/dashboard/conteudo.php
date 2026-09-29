@@ -129,7 +129,7 @@ $coresMetodo = ['numerario' => '#22c55e', 'tpa' => '#2563eb', 'transferencia' =>
       </tr>
     </tbody>
   </table>
-  <a class="see-more" href="<?= URL_BASE ?>/relatorios/index">Ver relatório completo →</a>
+  <a class="see-more" href="<?= URL_BASE ?>/relatorios">Ver relatório completo →</a>
   <?php endif; ?>
 </div>
 
@@ -189,7 +189,7 @@ $coresMetodo = ['numerario' => '#22c55e', 'tpa' => '#2563eb', 'transferencia' =>
       $iconesAlerta = ['alerta' => 'fa-circle-exclamation', 'aviso' => 'fa-triangle-exclamation', 'sucesso' => 'fa-circle-check', 'erro' => 'fa-circle-xmark'];
       foreach ($alertas as $a):
       ?>
-      <a class="alert-item" href="<?= URL_BASE ?>/notificacoes/index">
+      <a class="alert-item" href="<?= URL_BASE ?>/notificacoes">
         <div class="alert-dot <?= $a['tipo'] ?>"><i class="fa-solid <?= $iconesAlerta[$a['tipo']] ?? 'fa-bell' ?>"></i></div>
         <div class="alert-text">
           <div class="t"><?= htmlspecialchars($a['titulo']) ?></div>

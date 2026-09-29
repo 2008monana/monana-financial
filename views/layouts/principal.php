@@ -43,7 +43,7 @@ $isViewer = $usuario_perfil === 'visualizador';
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?php echo htmlspecialchars($tituloPagina ?? 'Dashboard'); ?> — MonanaFinancial</title>
     
-    <link rel="icon" href="<?php echo URL_BASE; ?>/images/favicon.png" type="image/png">
+    <link rel="icon" href="<?php echo URL_BASE; ?>/images/favicon.png?v=<?php echo time(); ?>" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>/css/formularios.css">
@@ -2368,7 +2368,39 @@ $isViewer = $usuario_perfil === 'visualizador';
                 $logoEmpresa = $logoCache['logotipo'] ?? '';
             }
         ?>
-        <img src="<?php echo URL_BASE . '/' . htmlspecialchars($logoEmpresa !== '' ? $logoEmpresa : 'images/logo.png'); ?>" alt="MonanaFinancial" class="side-logo">
+        <?php
+            // Normaliza o caminho do logotipo para URL limpa (sem /public)
+            $logoSrc = '';
+            if ($logoEmpresa !== '') {
+                if (preg_match('#^(https?://|data:image)#i', $logoEmpresa)) {
+                    $logoSrc = $logoEmpresa; // URL externa ou base64: usa como está
+                } else {
+                    $caminhoRel = preg_replace('#^(/?(public/)?uploads/)#i', 'uploads/', ltrim($logoEmpresa, '/'));
+                    if (strpos($caminhoRel, 'uploads/') !== 0) {
+                        $caminhoRel = 'uploads/' . $caminhoRel;
+                    }
+                    // Verifica se o ficheiro existe em /public/uploads ou /uploads (raiz)
+                    $existeFisico = is_file(CAMINHO_RAIZ . '/public/' . $caminhoRel);
+                    if (!$existeFisico && is_file(CAMINHO_RAIZ . '/' . $caminhoRel)) {
+                        // Logotipo gravado na raiz por versão antiga do sistema:
+                        // copia para /public/uploads para poder ser servido.
+                        $origem = CAMINHO_RAIZ . '/' . $caminhoRel;
+                        $destino = CAMINHO_RAIZ . '/public/' . $caminhoRel;
+                        @mkdir(dirname($destino), 0775, true);
+                        $existeFisico = @copy($origem, $destino);
+                    }
+                    if ($existeFisico) {
+                        $logoSrc = URL_BASE . '/' . $caminhoRel . '?v=' . (@filemtime(CAMINHO_RAIZ . '/public/' . $caminhoRel) ?: time());
+                    } else {
+                        // Ficheiro não existe — cai no logo padrão
+                        $logoSrc = URL_BASE . '/images/logo.png';
+                    }
+                }
+            } else {
+                $logoSrc = URL_BASE . '/images/logo.png';
+            }
+        ?>
+        <img src="<?php echo htmlspecialchars($logoSrc); ?>" alt="MonanaFinancial" class="side-logo" onerror="this.src='<?php echo URL_BASE; ?>/images/logo.png';">
         <div class="side-brand-text">
             <div class="name">Monana<span>Financial</span></div>
             <div class="sub">GESTÃO FINANCEIRA</div>
@@ -2378,22 +2410,25 @@ $isViewer = $usuario_perfil === 'visualizador';
     <nav class="side-nav">
         <!-- GRUPO 1: PRINCIPAL -->
         <div class="menu-grupo-label">PRINCIPAL</div>
-        <a class="nav-item <?php echo $paginaAtiva === 'dashboard' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/dashboard/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'dashboard' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/dashboard">
             <i class="fa-solid fa-house"></i> Dashboard
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'transacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'transacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes">
             <i class="fa-solid fa-list-ul"></i> Movimentos
         </a>
 
         <!-- GRUPO 2: RELATÓRIOS -->
         <div class="menu-grupo-label">RELATÓRIOS</div>
-        <a class="nav-item <?php echo $paginaAtiva === 'relatorios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'relatorios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios">
             <i class="fa-solid fa-chart-column"></i> Relatórios
         </a>
         <a class="nav-item <?php echo $paginaAtiva === 'planilha' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/diario-planilha">
             <i class="fa-solid fa-table"></i> Planilha
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'categorias' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/categorias/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'pesquisa' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/relatorios/pesquisa">
+            <i class="fa-solid fa-magnifying-glass"></i> Pesquisa de Movimentos
+        </a>
+        <a class="nav-item <?php echo $paginaAtiva === 'categorias' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/categorias">
             <i class="fa-solid fa-tags"></i> Categorias
         </a>
 
@@ -2403,22 +2438,19 @@ $isViewer = $usuario_perfil === 'visualizador';
         <?php endif; ?>
 
         <?php if ($isSuperAdmin): ?>
-        <a class="nav-item <?php echo $paginaAtiva === 'empresas' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/empresas/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'empresas' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/empresas">
             <i class="fa-solid fa-building"></i> Empresas
         </a>
         <?php endif; ?>
 
         <?php if ($isAdminEmpresa || $isSuperAdmin): ?>
-        <a class="nav-item <?php echo $paginaAtiva === 'filiais' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/filiais/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'filiais' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/filiais">
             <i class="fa-solid fa-code-branch"></i> Filiais
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'usuarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/usuarios/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'usuarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/usuarios">
             <i class="fa-solid fa-users"></i> Utilizadores
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'funcionarios' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/funcionarios/index">
-            <i class="fa-solid fa-user-tie"></i> Funcionários
-        </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'metodos_pagamento' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/metodos-pagamento/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'metodos_pagamento' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/metodos-pagamento">
             <i class="fa-solid fa-money-bill-wave"></i> Métodos de Pagamento
         </a>
         <?php endif; ?>
@@ -2429,7 +2461,7 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'fecho-diario' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/transacoes/fechoDiario">
             <i class="fa-solid fa-file-invoice-day"></i> Fecho Diário
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'backups' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/backups/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'backups' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/backups">
             <i class="fa-solid fa-database"></i> Backups
         </a>
         <?php endif; ?>
@@ -2438,11 +2470,11 @@ $isViewer = $usuario_perfil === 'visualizador';
         <?php if ($isSuperAdmin || $isAdminEmpresa): ?>
         <div class="menu-grupo-label">ADMINISTRAÇÃO</div>
         <?php if ($isSuperAdmin || $isAdminEmpresa): ?>
-        <a class="nav-item <?php echo $paginaAtiva === 'logs' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/logs/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'logs' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/logs">
             <i class="fa-solid fa-clipboard-list"></i> Logs Auditoria
         </a>
         <?php endif; ?>
-        <a class="nav-item <?php echo $paginaAtiva === 'configuracoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/configuracoes/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'configuracoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/configuracoes">
             <i class="fa-solid fa-gear"></i> Configurações
         </a>
         <?php endif; ?>
@@ -2451,14 +2483,14 @@ $isViewer = $usuario_perfil === 'visualizador';
 
         <!-- GRUPO 6: CONTA -->
         <div class="menu-grupo-label">CONTA</div>
-        <a class="nav-item <?php echo $paginaAtiva === 'perfil' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/perfil/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'perfil' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/perfil">
             <i class="fa-solid fa-user-cog"></i> Meu Perfil
         </a>
-        <a class="nav-item <?php echo $paginaAtiva === 'notificacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/notificacoes/index">
+        <a class="nav-item <?php echo $paginaAtiva === 'notificacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/notificacoes">
             <i class="fa-solid fa-bell"></i> Notificações
         </a>
 
-        <a class="nav-item logout-item" href="<?php echo URL_BASE; ?>/auth/logout">
+        <a class="nav-item logout-item" href="#" onclick="confirmarLogout(event)">
             <i class="fa-solid fa-right-from-bracket"></i> Sair
         </a>
     </nav>
@@ -2492,15 +2524,15 @@ $isViewer = $usuario_perfil === 'visualizador';
                 <i class="fa-regular fa-calendar"></i>
                 <?php echo date('d/m/Y'); ?>
             </div>
-            <a class="bell-wrap" href="<?php echo URL_BASE; ?>/notificacoes/index" title="Notificações">
+            <a class="bell-wrap" href="<?php echo URL_BASE; ?>/notificacoes" title="Notificações">
                 <i class="fa-regular fa-bell"></i>
                 <div class="bell-dot">0</div>
             </a>
-            <a class="profile" href="<?php echo URL_BASE; ?>/perfil/index">
+            <a class="profile" href="<?php echo URL_BASE; ?>/perfil">
                 <div class="avatar"><?php echo strtoupper(substr($usuario_nome, 0, 2)); ?></div>
                 <div class="profile-name"><?php echo htmlspecialchars($usuario_nome); ?></div>
             </a>
-            <a href="<?php echo URL_BASE; ?>/auth/logout" class="logout-btn" title="Sair">
+            <a href="#" onclick="confirmarLogout(event)" class="logout-btn" title="Sair">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </a>
         </div>
@@ -2641,6 +2673,64 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+/* ===== MODAL DE CONFIRMAÇÃO DE LOGOUT ===== */
+function confirmarLogout(e) {
+    if (e) e.preventDefault();
+    const modal = document.getElementById('modalLogout');
+    if (modal) modal.classList.add('aberto');
+}
+
+function fecharModalLogout() {
+    const modal = document.getElementById('modalLogout');
+    if (modal) modal.classList.remove('aberto');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('modalLogout');
+    if (modal) {
+        // Fechar ao clicar fora do cartão
+        modal.addEventListener('click', function(ev) {
+            if (ev.target === modal) fecharModalLogout();
+        });
+        // Fechar com a tecla ESC
+        document.addEventListener('keydown', function(ev) {
+            if (ev.key === 'Escape') fecharModalLogout();
+        });
+        // Botão "Sim, sair"
+        const btnSim = document.getElementById('btnLogoutSim');
+        if (btnSim) {
+            btnSim.addEventListener('click', function() {
+                window.location.href = '<?php echo URL_BASE; ?>/auth/logout';
+            });
+        }
+        // Botão "Não, permanecer"
+        const btnNao = document.getElementById('btnLogoutNao');
+        if (btnNao) {
+            btnNao.addEventListener('click', fecharModalLogout);
+        }
+    }
+});
 </script>
+
+<!-- MODAL CONFIRMAÇÃO LOGOUT -->
+<div id="modalLogout" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:99999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:16px; padding:32px 28px; max-width:400px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center;">
+        <div style="width:64px; height:64px; margin:0 auto 16px; border-radius:50%; background:#fef2f2; display:flex; align-items:center; justify-content:center;">
+            <i class="fa-solid fa-right-from-bracket" style="font-size:26px; color:#dc2626;"></i>
+        </div>
+        <h3 style="margin:0 0 8px; font-size:18px; color:#0f172a;">Terminar sessão?</h3>
+        <p style="margin:0 0 24px; font-size:14px; color:#64748b;">Tem a certeza que deseja sair do sistema? Terá de voltar a iniciar sessão para aceder novamente.</p>
+        <div style="display:flex; gap:12px; justify-content:center;">
+            <button id="btnLogoutNao" style="flex:1; padding:11px 16px; border:1px solid #e2e8f0; background:#f8fafc; color:#334155; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">Não, permanecer</button>
+            <button id="btnLogoutSim" style="flex:1; padding:11px 16px; border:none; background:#dc2626; color:#fff; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">Sim, sair</button>
+        </div>
+    </div>
+</div>
+
+<style>
+#modalLogout.aberto { display: flex !important; animation: fadeInModal .2s ease; }
+@keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+</style>
 </body>
 </html>

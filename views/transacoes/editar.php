@@ -12,7 +12,7 @@ unset($_SESSION['erros']);
         <p class="page-subtitle">Altere os dados da transação #<?php echo $transacao['id']; ?></p>
     </div>
     <div class="page-header-right">
-        <a href="<?php echo URL_BASE; ?>/transacoes/index" class="btn btn-outline">
+        <a href="<?php echo URL_BASE; ?>/transacoes" class="btn btn-outline">
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
     </div>
@@ -139,7 +139,7 @@ unset($_SESSION['erros']);
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save"></i> Atualizar Lançamento
             </button>
-            <a href="<?php echo URL_BASE; ?>/transacoes/index" class="btn btn-outline">
+            <a href="<?php echo URL_BASE; ?>/transacoes" class="btn btn-outline">
                 <i class="fas fa-times"></i> Cancelar
             </a>
         </div>

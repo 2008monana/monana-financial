@@ -34,6 +34,15 @@ class RelatorioPdfBuilder
     private const COR_MUTED      = '#64748b';
     private const COR_BORDER     = '#e6eaf0';
     private const COR_BG         = '#f4f6fa';
+    private const COR_AZUL       = '#3b82f6'; // "Monana" na marca (visível sobre o fundo navy)
+
+    /**
+     * Extensões raster que o Dompdf consegue embutir no PDF.
+     * NOTA: WebP NÃO é suportado pelo Dompdf (a imagem simplesmente não
+     * aparece). Quando o logotipo está em WebP/SVG, convertemos para PNG.
+     */
+    private const EXT_DOMPDF = ['png', 'jpg', 'jpeg', 'gif'];
+    private const EXT_CONVERSAO = ['svg', 'webp'];
 
     private string $titulo = 'Relatório';
     private string $subtitulo = '';
@@ -45,6 +54,12 @@ class RelatorioPdfBuilder
     private string $orientacao = 'landscape';
     private string $nomeFicheiro;
     private string $rodapeExtra = '';
+
+    /**
+     * Colunas com mesclagem vertical no cabeçalho (relatório tipo planilha).
+     * Cada entrada: ['rotulo' => 'Dia', 'colspan' => 1, 'rowspan' => 2]
+     */
+    private array $agrupamentosCabecalho = [];
 
     public function __construct(string $titulo, string $nomeFicheiro = 'relatorio')
     {
@@ -73,27 +88,151 @@ class RelatorioPdfBuilder
      */
     private function resolverLogotipo(): ?string
     {
-        $logo = trim((string) ($this->empresa['logotipo'] ?? ''));
-        if ($logo === '') {
+        static $resolvido = false;
+        static $cache = null;
+        if ($resolvido) {
+            return $cache;
+        }
+        $resolvido = true;
+        $candidatos = $this->candidatosLogotipo();
+        return $cache = $candidatos[0] ?? null;
+    }
+
+    /**
+     * @return array<int, string|null> Lista (no máximo um elemento útil) com o caminho resolvido.
+     */
+    private function candidatosLogotipo(): array
+    {
+        $valores = [];
+        $principal = trim((string) ($this->empresa['logotipo'] ?? ''));
+        if ($principal !== '') {
+            // tolera valores gravados como URL completa (http(s)://host/uploads/...)
+            if (preg_match('#^https?://#i', $principal)) {
+                $principal = '/' . ltrim((string) parse_url($principal, PHP_URL_PATH), '/');
+            }
+            $valores[] = $principal;
+        }
+        // Chaves extras: logotipo_123 etc.
+        foreach ($this->empresa as $chave => $valor) {
+            if (is_string($valor) && preg_match('/^logotipo(_\d+)?$/', (string) $chave) && trim($valor) !== '') {
+                $valores[] = trim($valor);
+            }
+        }
+
+        $raiz = rtrim(str_replace('\\', '/', defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2)), '/');
+
+        foreach ($valores as $logo) {
+            // normaliza separadores (o upload é gravado com "/" mesmo no Windows)
+            $logo = str_replace('\\', '/', $logo);
+
+            // URLs de base absolutas do tipo "/monana-financial/uploads/logos/x.png"
+            // (XAMPP): remover o prefixo do projecto para ficar "uploads/logos/x.png".
+            $relativo = ltrim($logo, '/');
+            if (preg_match('#^([A-Za-z]:[\\\\/])#', $logo)) {
+                $caminhos = [$logo]; // caminho absoluto Windows (C:\...\x.png)
+            } else {
+                $partes = explode('/', $relativo);
+                $variantes = [$relativo];
+                if (count($partes) > 1) {
+                    // remove primeiro segmento (ex.: "monana-financial/uploads/..." -> "uploads/...")
+                    $variantes[] = implode('/', array_slice($partes, 1));
+                }
+                $caminhos = [];
+                foreach ($variantes as $v) {
+                    $semPublic = preg_replace('#^public/#', '', $v);
+                    $comPublic = 'public/' . $semPublic;
+                    foreach (array_unique([$comPublic, $semPublic]) as $rel) {
+                        $caminhos[] = $raiz . '/' . $rel;
+                    }
+                }
+            }
+
+            foreach (array_unique($caminhos) as $cand) {
+                if (!is_file($cand)) {
+                    continue;
+                }
+
+                $extensao = strtolower(pathinfo($cand, PATHINFO_EXTENSION));
+                if (in_array($extensao, self::EXT_DOMPDF, true)) {
+                    return [realpath($cand) ?: $cand];
+                }
+                if (in_array($extensao, self::EXT_CONVERSAO, true)) {
+                    // Dompdf não suporta SVG nem WebP: converter para PNG temporário.
+                    $png = $this->converterParaPng($cand, $extensao);
+                    if ($png !== null) {
+                        return [$png];
+                    }
+                }
+            }
+        }
+        return [];
+    }
+
+    /**
+     * Converte SVG/WebP para PNG temporário (via Imagick/Gmagick c/ fallback GD).
+     * Devolve null quando não for possível — nesse caso o relatório usa a marca textual.
+     */
+    private function converterParaPng(string $caminho, string $extensao): ?string
+    {
+        $destino = sys_get_temp_dir() . '/monana_logo_' . md5($caminho . filemtime($caminho)) . '.png';
+        if (is_file($destino)) {
+            return $destino;
+        }
+
+        try {
+            if ($extensao === 'webp' && function_exists('imagecreatefromwebp')) {
+                $img = @imagecreatefromwebp($caminho);
+                if ($img) {
+                    imagealphablending($img, false);
+                    imagesavealpha($img, true);
+                    $ok = imagepng($img, $destino);
+                    imagedestroy($img);
+                    if ($ok && is_file($destino)) {
+                        return $destino;
+                    }
+                }
+            }
+            if ($extensao === 'svg' && extension_loaded('imagick')) {
+                $imagick = new \Imagick();
+                $imagick->setResolution(150, 150);
+                $imagick->readImage($caminho);
+                $imagick->setImageBackgroundColor('white');
+                if (method_exists($imagick, 'flattenImages')) {
+                    $imagick = $imagick->flattenImages();
+                }
+                $imagick->setImageFormat('png');
+                $imagick->writeImage($destino);
+                $imagick->destroy();
+                return is_file($destino) ? $destino : null;
+            }
+        } catch (\Throwable $e) {
+            // conversão falhou: seguir sem logotipo (marca textual assume o destaque)
             return null;
         }
 
-        $raiz = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
-        $caminho = $raiz . '/public/' . ltrim($logo, '/');
+        return null;
+    }
 
-        if (!is_file($caminho)) {
-            // tolera caminhos gravados com "public/" na frente
-            $alternativo = $raiz . '/' . ltrim($logo, '/');
-            $caminho = is_file($alternativo) ? $alternativo : $caminho;
-        }
-
-        if (!is_file($caminho)) {
+    /**
+     * Data URI base64 para embutir a imagem directamente no HTML. Garante que
+     * o Dompdf encontra a imagem independentemente de chroot, caminhos
+     * relativos ou restrições de leitura de ficheiros locais.
+     */
+    private function logoDataUri(?string $caminho): ?string
+    {
+        if ($caminho === null || !is_file($caminho)) {
             return null;
         }
-
-        $extensao = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
-        // SVG pode falhar no Dompdf; só aceitar raster
-        return in_array($extensao, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true) ? $caminho : null;
+        $binario = @file_get_contents($caminho);
+        if ($binario === false || $binario === '') {
+            return null;
+        }
+        $mime = match (strtolower(pathinfo($caminho, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif'         => 'image/gif',
+            default       => 'image/png',
+        };
+        return 'data:' . $mime . ';base64,' . base64_encode($binario);
     }
 
     /**
@@ -102,6 +241,23 @@ class RelatorioPdfBuilder
     public function definirColunas(array $colunas): static
     {
         $this->colunas = $colunas;
+        return $this;
+    }
+
+    /**
+     * Cabeçalho em dois níveis com mesclagem (estilo planilha).
+     * Ex.: definirCabecalhoAgrupado([
+     *        ['rotulo' => 'Dia', 'colspan' => 1, 'rowspan' => 2],
+     *        ['rotulo' => 'Entradas', 'colspan' => 3, 'classe' => 'grupo-entrada'],
+     *        ['rotulo' => 'Saídas',   'colspan' => 2, 'classe' => 'grupo-saida'],
+     *        ['rotulo' => 'Saldo', 'colspan' => 1, 'rowspan' => 2],
+     *      ], $subColunas)
+     * $subColunas: rótulos da segunda linha do cabeçalho (uma por coluna real).
+     */
+    public function definirCabecalhoAgrupado(array $agrupamentos, array $subColunas): static
+    {
+        $this->agrupamentosCabecalho = $agrupamentos;
+        $this->colunas = $subColunas;
         return $this;
     }
 
@@ -238,7 +394,8 @@ class RelatorioPdfBuilder
             }
             .cabecalho .linha-topo { width: 100%; }
             .cabecalho .logotipo { max-height: 55px; max-width: 110px; background: #ffffff; border-radius: 8px; padding: 4px; }
-            .cabecalho .marca { font-family: "DejaVu Sans", sans-serif; font-weight: bold; font-size: 15pt; letter-spacing: 0.3px; }
+            .cabecalho .marca { font-family: "DejaVu Sans", sans-serif; font-weight: bold; font-size: 15pt; letter-spacing: 0.3px; color: #ffffff; }
+            .cabecalho .marca .monana { color: ' . self::COR_AZUL . '; }
             .cabecalho .marca .destaque { color: ' . self::COR_GREEN . '; }
             .cabecalho .empresa-nome { font-size: 11pt; font-weight: bold; margin-top: 6px; }
             .cabecalho .empresa-info { font-size: 8pt; color: #cbd5e1; margin-top: 2px; }
@@ -262,6 +419,8 @@ class RelatorioPdfBuilder
             }
             table.dados thead th:first-child { border-radius: 4px 0 0 0; }
             table.dados thead th:last-child { border-radius: 0 4px 0 0; }
+            table.dados thead th.grupo-entrada { background: #166534; text-align: center; }
+            table.dados thead th.grupo-saida { background: #991b1b; text-align: center; }
             table.dados tbody td {
                 padding: 6px 8px;
                 font-size: 9pt;
@@ -327,12 +486,19 @@ class RelatorioPdfBuilder
         }
         $infoLinha = implode(' &nbsp;•&nbsp; ', $infoPartes);
 
-        // Logotipo da empresa (upload em Configurações). Dompdf aceita caminho absoluto local.
+        // Logotipo da empresa (upload em Configurações). Embutido como data URI
+        // base64: é a forma mais fiável de o Dompdf renderizar a imagem, pois
+        // não depende de caminhos absolutos, chroot nem permissões de leitura.
         $logoCaminho = $this->resolverLogotipo();
-        $blocoLogo = '';
-        if ($logoCaminho !== null) {
-            $blocoLogo = '<img src="' . htmlspecialchars($logoCaminho, ENT_QUOTES) . '" alt="Logotipo" class="logotipo" />';
+        $logoSrc = $this->logoDataUri($logoCaminho);
+        if ($logoSrc === null && $logoCaminho !== null) {
+            $logoSrc = str_replace('\\', '/', $logoCaminho); // fallback: caminho absoluto
         }
+        $blocoLogo = '';
+        if ($logoSrc !== null) {
+            $blocoLogo = '<img src="' . htmlspecialchars($logoSrc, ENT_QUOTES) . '" alt="Logotipo" class="logotipo" />';
+        }
+        $temLogo = $logoSrc !== null;
 
         $blocoEmpresa = '';
         if ($empresaNome !== '') {
@@ -348,9 +514,9 @@ class RelatorioPdfBuilder
             <div class="cabecalho">
                 <table class="linha-topo" style="border-collapse:collapse;">
                     <tr>
-                        <td style="width:8%; vertical-align:middle;">' . $blocoLogo . '</td>
-                        <td style="width:52%; vertical-align:middle;">
-                            <div class="marca">Monana<span class="destaque">Financial</span></div>
+                        <td style="width:' . ($temLogo ? '18' : '0') . '%; vertical-align:middle;">' . $blocoLogo . '</td>
+                        <td style="width:' . ($temLogo ? '42' : '60') . '%; vertical-align:middle;">
+                            <div class="marca"><span class="monana">Monana</span><span class="destaque">Financial</span></div>
                             ' . $blocoEmpresa . '
                         </td>
                         <td style="width:40%; vertical-align:middle;">
@@ -374,11 +540,37 @@ class RelatorioPdfBuilder
             return '<div class="sem-dados">Nenhum registo encontrado para os filtros selecionados.</div>';
         }
 
-        $html = '<table class="dados"><thead><tr>';
-        foreach ($this->colunas as $col) {
-            $html .= '<th>' . htmlspecialchars($col) . '</th>';
+        $html = '<table class="dados"><thead>';
+
+        if (!empty($this->agrupamentosCabecalho)) {
+            // Linha 1: grupos com colspan/rowspan (estilo planilha)
+            $html .= '<tr>';
+            foreach ($this->agrupamentosCabecalho as $grupo) {
+                $attrs = '';
+                if (($grupo['colspan'] ?? 1) > 1) {
+                    $attrs .= ' colspan="' . (int) $grupo['colspan'] . '"';
+                }
+                if (($grupo['rowspan'] ?? 1) > 1) {
+                    $attrs .= ' rowspan="' . (int) $grupo['rowspan'] . '"';
+                }
+                $classe = !empty($grupo['classe']) ? ' class="' . htmlspecialchars($grupo['classe']) . '"' : '';
+                $html .= '<th' . $attrs . $classe . '>' . htmlspecialchars($grupo['rotulo'] ?? '') . '</th>';
+            }
+            $html .= '</tr><tr>';
+            // Linha 2: sub-colunas (apenas as colunas individuais, sem as de rowspan=2)
+            foreach ($this->colunas as $col) {
+                $html .= '<th>' . htmlspecialchars($col) . '</th>';
+            }
+            $html .= '</tr>';
+        } else {
+            $html .= '<tr>';
+            foreach ($this->colunas as $col) {
+                $html .= '<th>' . htmlspecialchars($col) . '</th>';
+            }
+            $html .= '</tr>';
         }
-        $html .= '</tr></thead><tbody>';
+
+        $html .= '</thead><tbody>';
 
         foreach ($this->linhas as $linha) {
             $html .= '<tr>';

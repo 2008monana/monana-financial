@@ -49,10 +49,10 @@ class NotificacaoController extends Controller
         if ($resultado) {
             AuditoriaHelper::registar('notificacao_lida', 'notificacoes', (int) $id, null, null, 'baixa');
             // Redirecionar para a página de notificações
-            $this->redirecionar('notificacoes/index');
+            $this->redirecionar('notificacoes');
         } else {
             definirFlash('erro', 'Erro ao marcar notificação como lida.');
-            $this->redirecionar('notificacoes/index');
+            $this->redirecionar('notificacoes');
         }
     }
 
@@ -76,7 +76,7 @@ class NotificacaoController extends Controller
 
         if ($count > 0) AuditoriaHelper::registar('notificacao_lida', 'notificacoes', null, null, ['quantidade'=>$count], 'baixa');
         definirFlash('sucesso', $count . ' notificações marcadas como lidas.');
-        $this->redirecionar('notificacoes/index');
+        $this->redirecionar('notificacoes');
     }
 
     /**

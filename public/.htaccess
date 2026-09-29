@@ -1,7 +1,12 @@
+# MonanaFinancial - pasta /public (defesa em profundidade)
+
+Options -Indexes -MultiViews +FollowSymLinks
 RewriteEngine On
 
-# Se o ficheiro ou pasta pedido não existir fisicamente,
-# encaminha tudo para index.php como parâmetro "url"
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+# Ficheiros e pastas reais (css, js, images, uploads) sao servidos diretamente
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Qualquer outro pedido e encaminhado para index.php como parametro "url"
 RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]

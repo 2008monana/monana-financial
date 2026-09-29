@@ -71,19 +71,19 @@ if (isset($_SESSION['usuario_id'])) {
                     </form>
                 </div>
                 <div id="dropdown-notificacoes-lista" class="dropdown-notificacoes-lista"><div class="dropdown-carregar">A carregar notificações…</div></div>
-                <a class="dropdown-ver-todas" href="<?php echo URL_BASE; ?>/notificacoes/index">Ver todas as notificações <i class="fa-solid fa-arrow-right"></i></a>
+                <a class="dropdown-ver-todas" href="<?php echo URL_BASE; ?>/notificacoes">Ver todas as notificações <i class="fa-solid fa-arrow-right"></i></a>
             </div>
         </div>
 
         <!-- PERFIL -->
-        <a class="profile" href="<?php echo URL_BASE; ?>/perfil/index">
+        <a class="profile" href="<?php echo URL_BASE; ?>/perfil">
             <div class="avatar"><?php echo $iniciais; ?></div>
             <div class="profile-name"><?php echo htmlspecialchars($usuarioNome); ?></div>
             <i class="fas fa-chevron-down" style="font-size:10px; color:var(--muted);"></i>
         </a>
 
         <!-- SAIR -->
-        <a href="<?php echo URL_BASE; ?>/auth/logout" class="logout-btn" title="Sair">
+        <a href="#" onclick="confirmarLogout(event)" class="logout-btn" title="Sair">
             <i class="fas fa-sign-out-alt"></i>
         </a>
     </div>
@@ -368,7 +368,7 @@ if (isset($_SESSION['usuario_id'])) {
  const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
  const tempo=data=>{const s=Math.max(0,Math.floor((Date.now()-new Date(data.replace(' ','T')).getTime())/1000));if(s<60)return 'agora mesmo';if(s<3600)return 'há '+Math.floor(s/60)+' min';if(s<86400)return 'há '+Math.floor(s/3600)+' hora(s)';return 'há '+Math.floor(s/86400)+' dia(s)';};
  function atualizarBadge(n){badge.textContent=n>99?'99+':n;badge.style.display=n>0?'flex':'none';}
- function carregar(){fetch('<?php echo URL_BASE; ?>/notificacoes/recentes',{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.json()).then(d=>{atualizarBadge(d.nao_lidas||0);if(!d.notificacoes||!d.notificacoes.length){lista.innerHTML='<div class="dropdown-vazia">Não tem notificações.</div>';return;}lista.innerHTML=d.notificacoes.map(n=>'<a class="dropdown-notificacao '+(n.lida?'':'nao-lida')+'" href="'+esc(n.link||'<?php echo URL_BASE; ?>/notificacoes/index')+'"><span class="dropdown-notificacao-icone tipo-'+esc(n.tipo)+'"><i class="fa-solid '+({sucesso:'fa-circle-check',alerta:'fa-bell',aviso:'fa-triangle-exclamation',erro:'fa-circle-xmark'}[n.tipo]||'fa-bell')+'"></i></span><span class="dropdown-notificacao-corpo"><span class="dropdown-notificacao-titulo">'+esc(n.titulo)+'</span><span class="dropdown-notificacao-mensagem">'+esc(n.mensagem)+'</span><span class="dropdown-notificacao-tempo">'+tempo(n.criado_em)+'</span></span></a>').join('');}).catch(()=>{lista.innerHTML='<div class="dropdown-vazia">Não foi possível carregar as notificações.</div>';});}
+ function carregar(){fetch('<?php echo URL_BASE; ?>/notificacoes/recentes',{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.json()).then(d=>{atualizarBadge(d.nao_lidas||0);if(!d.notificacoes||!d.notificacoes.length){lista.innerHTML='<div class="dropdown-vazia">Não tem notificações.</div>';return;}lista.innerHTML=d.notificacoes.map(n=>'<a class="dropdown-notificacao '+(n.lida?'':'nao-lida')+'" href="'+esc(n.link||'<?php echo URL_BASE; ?>/notificacoes')+'"><span class="dropdown-notificacao-icone tipo-'+esc(n.tipo)+'"><i class="fa-solid '+({sucesso:'fa-circle-check',alerta:'fa-bell',aviso:'fa-triangle-exclamation',erro:'fa-circle-xmark'}[n.tipo]||'fa-bell')+'"></i></span><span class="dropdown-notificacao-corpo"><span class="dropdown-notificacao-titulo">'+esc(n.titulo)+'</span><span class="dropdown-notificacao-mensagem">'+esc(n.mensagem)+'</span><span class="dropdown-notificacao-tempo">'+tempo(n.criado_em)+'</span></span></a>').join('');}).catch(()=>{lista.innerHTML='<div class="dropdown-vazia">Não foi possível carregar as notificações.</div>';});}
  botao.addEventListener('click',()=>{const aberto=!painel.hidden;painel.hidden=aberto;botao.setAttribute('aria-expanded',String(!aberto));if(!aberto)carregar();});document.addEventListener('click',e=>{if(!e.target.closest('.notificacoes-topbar'))painel.hidden=true;});setInterval(()=>fetch('<?php echo URL_BASE; ?>/notificacoes/contagem').then(r=>r.json()).then(d=>atualizarBadge(d.nao_lidas||0)).catch(()=>{}),60000);
 }());
 </script>

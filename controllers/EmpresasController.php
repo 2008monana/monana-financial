@@ -72,7 +72,7 @@ class EmpresasController extends Controller
             URL_BASE . '/empresas/editar/' . $id
         );
         definirFlash('sucesso', 'Empresa criada com sucesso.');
-        $this->redirecionar('empresas/index');
+        $this->redirecionar('empresas');
     }
 
     public function editar(string $id): void
@@ -81,7 +81,7 @@ class EmpresasController extends Controller
 
         if (!$empresa) {
             definirFlash('erro', 'Empresa não encontrada.');
-            $this->redirecionar('empresas/index');
+            $this->redirecionar('empresas');
         }
 
         $this->renderizar('empresas/form', [
@@ -110,7 +110,7 @@ class EmpresasController extends Controller
         $this->empresaModel->atualizar((int) $id, $dados['campos']);
         AuditoriaHelper::registar('empresa_editada', 'empresas', (int) $id, $antes ?: null, $dados['campos']);
         definirFlash('sucesso', 'Empresa atualizada com sucesso.');
-        $this->redirecionar('empresas/index');
+        $this->redirecionar('empresas');
     }
 
     /** Alterna activa/inactiva (eliminação lógica, para preservar histórico financeiro) */
@@ -125,7 +125,7 @@ class EmpresasController extends Controller
             definirFlash('sucesso', $empresa['ativa'] ? 'Empresa desativada.' : 'Empresa reativada.');
         }
 
-        $this->redirecionar('empresas/index');
+        $this->redirecionar('empresas');
     }
 
     private function dadosValidados(): array

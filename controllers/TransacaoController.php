@@ -261,7 +261,7 @@ class TransacoesController extends Controller
         // Verificar permissão
         if ($perfil === 'visualizador') {
             $this->setFlash('erro', 'Não tem permissão para criar lançamentos.');
-            $this->redirecionar('transacoes/index');
+            $this->redirecionar('transacoes');
             return;
         }
 
@@ -352,7 +352,7 @@ class TransacoesController extends Controller
             $this->setFlash('erro', 'Erro ao criar lançamento. Tente novamente.');
         }
 
-        $this->redirecionar('transacoes/index');
+        $this->redirecionar('transacoes');
     }
 
     /**
@@ -368,7 +368,7 @@ class TransacoesController extends Controller
 
         if (!$transacao) {
             $this->setFlash('erro', 'Transação não encontrada.');
-            $this->redirecionar('transacoes/index');
+            $this->redirecionar('transacoes');
             return;
         }
 
@@ -376,7 +376,7 @@ class TransacoesController extends Controller
         if ($perfil !== 'super_admin' && $perfil !== 'admin_empresa') {
             if ((int) $transacao['usuario_id'] !== $usuarioId) {
                 $this->setFlash('erro', 'Não tem permissão para editar este lançamento.');
-                $this->redirecionar('transacoes/index');
+                $this->redirecionar('transacoes');
                 return;
             }
         }
@@ -427,7 +427,7 @@ class TransacoesController extends Controller
 
         if (!$transacao) {
             $this->setFlash('erro', 'Transação não encontrada.');
-            $this->redirecionar('transacoes/index');
+            $this->redirecionar('transacoes');
             return;
         }
 
@@ -435,7 +435,7 @@ class TransacoesController extends Controller
         if ($perfil !== 'super_admin' && $perfil !== 'admin_empresa') {
             if ((int) $transacao['usuario_id'] !== $usuarioId) {
                 $this->setFlash('erro', 'Não tem permissão para editar este lançamento.');
-                $this->redirecionar('transacoes/index');
+                $this->redirecionar('transacoes');
                 return;
             }
         }
@@ -483,7 +483,7 @@ class TransacoesController extends Controller
             $this->setFlash('erro', 'Erro ao atualizar lançamento.');
         }
 
-        $this->redirecionar('transacoes/index');
+        $this->redirecionar('transacoes');
     }
 
     /**
@@ -499,7 +499,7 @@ class TransacoesController extends Controller
 
         if (!$transacao) {
             $this->setFlash('erro', 'Transação não encontrada.');
-            $this->redirecionar('transacoes/index');
+            $this->redirecionar('transacoes');
             return;
         }
 
@@ -507,7 +507,7 @@ class TransacoesController extends Controller
         if ($perfil !== 'super_admin' && $perfil !== 'admin_empresa') {
             if ((int) $transacao['usuario_id'] !== $usuarioId) {
                 $this->setFlash('erro', 'Não tem permissão para eliminar este lançamento.');
-                $this->redirecionar('transacoes/index');
+                $this->redirecionar('transacoes');
                 return;
             }
         }
@@ -528,7 +528,7 @@ class TransacoesController extends Controller
             $this->setFlash('erro', 'Erro ao eliminar lançamento.');
         }
 
-        $this->redirecionar('transacoes/index');
+        $this->redirecionar('transacoes');
     }
 
     // =============================================
@@ -800,7 +800,7 @@ class TransacoesController extends Controller
         // Verificar permissão
         if ($perfil === 'visualizador') {
             $this->setFlash('erro', 'Não tem permissão para aceder a esta página.');
-            $this->redirecionar('dashboard/index');
+            $this->redirecionar('dashboard');
             return;
         }
 

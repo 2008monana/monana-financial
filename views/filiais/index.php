@@ -21,7 +21,7 @@ $semEmpresaNaSessao = empty($_SESSION['empresa_id']);
     </div>
     <div class="page-header-right">
         <?php if ($semEmpresaNaSessao): ?>
-            <a href="<?php echo URL_BASE; ?>/filiais/index" class="btn btn-secondary">
+            <a href="<?php echo URL_BASE; ?>/filiais" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Trocar Empresa
             </a>
         <?php endif; ?>

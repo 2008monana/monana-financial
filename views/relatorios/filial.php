@@ -34,7 +34,7 @@
         </p>
     </div>
     <div class="relatorio-header-right">
-        <a href="<?php echo URL_BASE; ?>/relatorios/index" class="btn btn-secondary">
+        <a href="<?php echo URL_BASE; ?>/relatorios" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
     </div>

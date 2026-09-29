@@ -19,7 +19,7 @@
 
 <div class="lado-formulario lado-formulario-central">
     <div class="boas-vindas">
-        <p class="saudacao"><i class="fas fa-arrow-left"></i> <a href="/login" style="color:var(--muted);text-decoration:none;">Voltar ao login</a></p>
+        <p class="saudacao"><i class="fas fa-arrow-left"></i> <a href="<?= rtrim(URL_BASE, "/") ?>/auth" style="color:var(--muted);text-decoration:none;">Voltar ao login</a></p>
         <h2>Nova <span>Senha</span></h2>
         <p class="subtitulo">A senha deve ter pelo menos 8 caracteres.</p>
     </div>
@@ -30,7 +30,7 @@
         </div>
     <?php endif; ?>
 
-    <form method="POST" action="/redefinir-senha">
+    <form method="POST" action="<?= rtrim(URL_BASE, "/") ?>/auth/salvarNovaSenha">
         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
         <input type="hidden" name="token" value="<?php echo $token; ?>">
         

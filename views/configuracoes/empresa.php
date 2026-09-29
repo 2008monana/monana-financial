@@ -9,7 +9,15 @@
             <label>Logotipo actual
                 <div style="display:flex;align-items:center;gap:12px;">
                     <?php if (!empty($configuracoes['logotipo'])): ?>
-                        <img src="<?php echo URL_BASE . '/' . htmlspecialchars($configuracoes['logotipo']); ?>" alt="Logotipo" style="max-height:60px;max-width:180px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:4px;">
+                        <?php
+                            $logoCfg = (string)($configuracoes['logotipo'] ?? '');
+                            if ($logoCfg !== '' && !preg_match('#^(https?://|data:image)#i', $logoCfg)) {
+                                $logoCfg = preg_replace('#^(/?(public/)?uploads/)#i', 'uploads/', ltrim($logoCfg, '/'));
+                                if (strpos($logoCfg, 'uploads/') !== 0) $logoCfg = 'uploads/' . $logoCfg;
+                                $logoCfg = URL_BASE . '/' . $logoCfg;
+                            }
+                        ?>
+                        <img src="<?php echo htmlspecialchars($logoCfg); ?>" alt="Logotipo" style="max-height:60px;max-width:180px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:4px;">
                     <?php else: ?>
                         <span style="color:#888;">Sem logotipo definido.</span>
                     <?php endif; ?>

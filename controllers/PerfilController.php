@@ -37,7 +37,7 @@ class PerfilController extends Controller
         
         if (!$usuario) {
             definirFlash('erro', 'Utilizador não encontrado.');
-            $this->redirecionar('dashboard/index');
+            $this->redirecionar('dashboard');
             return;
         }
 
@@ -70,7 +70,7 @@ class PerfilController extends Controller
 
         if (!SegurancaHelper::validarTokenCSRF($_POST['csrf_token'] ?? '')) {
             definirFlash('erro', 'Token de segurança inválido.');
-            $this->redirecionar('perfil/index');
+            $this->redirecionar('perfil');
             return;
         }
 
@@ -80,7 +80,7 @@ class PerfilController extends Controller
 
         if ($nome === '') {
             definirFlash('erro', 'O nome é obrigatório.');
-            $this->redirecionar('perfil/index');
+            $this->redirecionar('perfil');
             return;
         }
 
@@ -98,7 +98,7 @@ class PerfilController extends Controller
             definirFlash('erro', 'Erro ao atualizar perfil.');
         }
 
-        $this->redirecionar('perfil/index');
+        $this->redirecionar('perfil');
     }
 
     /**
@@ -110,7 +110,7 @@ class PerfilController extends Controller
 
         if (!SegurancaHelper::validarTokenCSRF($_POST['csrf_token'] ?? '')) {
             definirFlash('erro', 'Token de segurança inválido.');
-            $this->redirecionar('perfil/index');
+            $this->redirecionar('perfil');
             return;
         }
 
@@ -122,27 +122,27 @@ class PerfilController extends Controller
         $usuario = $this->usuarioModel->encontrarPorId($usuarioId);
         if (!$usuario) {
             definirFlash('erro', 'Utilizador não encontrado.');
-            $this->redirecionar('perfil/index');
+            $this->redirecionar('perfil');
             return;
         }
 
         // Validar senha atual
         if (!$this->usuarioModel->verificarSenha($senhaAtual, $usuario['senha_hash'])) {
             definirFlash('erro', 'Senha atual incorreta.');
-            $this->redirecionar('perfil/index');
+            $this->redirecionar('perfil');
             return;
         }
 
         // Validar nova senha
         if (strlen($novaSenha) < 8) {
             definirFlash('erro', 'A nova senha deve ter pelo menos 8 caracteres.');
-            $this->redirecionar('perfil/index');
+            $this->redirecionar('perfil');
             return;
         }
 
         if ($novaSenha !== $confirmarSenha) {
             definirFlash('erro', 'As senhas não coincidem.');
-            $this->redirecionar('perfil/index');
+            $this->redirecionar('perfil');
             return;
         }
 
@@ -159,6 +159,6 @@ class PerfilController extends Controller
             definirFlash('erro', 'Erro ao alterar senha.');
         }
 
-        $this->redirecionar('perfil/index');
+        $this->redirecionar('perfil');
     }
 }

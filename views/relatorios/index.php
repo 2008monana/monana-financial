@@ -62,6 +62,17 @@
      CARDS DE ACESSO RÁPIDO - SEM COMPARATIVO
      ============================================ -->
 <div class="relatorios-grid">
+    <a href="<?php echo URL_BASE; ?>/relatorios/pesquisa" class="relatorio-card">
+        <div class="relatorio-icon" style="background:linear-gradient(135deg, var(--orange, #e67e22), #d35400);">
+            <i class="fas fa-magnifying-glass"></i>
+        </div>
+        <div class="relatorio-info">
+            <h3>Pesquisa de Movimentos</h3>
+            <p>Procure por descrição e tipo (diário, mensal, anual, filial)</p>
+            <span class="relatorio-link">Pesquisar <i class="fas fa-arrow-right"></i></span>
+        </div>
+    </a>
+
     <a href="<?php echo URL_BASE; ?>/relatorios/diario" class="relatorio-card">
         <div class="relatorio-icon" style="background:linear-gradient(135deg, var(--blue), var(--blue-dark));">
             <i class="fas fa-calendar-day"></i>

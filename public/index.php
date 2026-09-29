@@ -63,4 +63,16 @@ $roteador = new Router();
 // EXECUTA
 // =====================================================
 $url = $_GET['url'] ?? '';
+
+// Compatibilidade: se o .htaccess da raiz encaminhar com o prefixo da subpasta
+// incluido (ex.: url=/monana-financial/dashboard), remove-o para que o Router
+// veja apenas a rota interna (dashboard).
+$baseDir = trim(preg_replace('#^https?://[^/]+#i', '', URL_BASE), '/');
+if ($baseDir !== '' && $url !== '') {
+    $u = ltrim($url, '/');
+    if ($u === $baseDir || strpos($u, $baseDir . '/') === 0) {
+        $url = substr($u, strlen($baseDir));
+    }
+}
+
 $roteador->despachar($url);

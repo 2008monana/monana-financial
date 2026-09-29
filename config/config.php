@@ -11,8 +11,42 @@ if (!defined('CAMINHO_RAIZ')) {
 // Ambiente: 'desenvolvimento' ou 'producao'
 define('AMBIENTE', 'desenvolvimento');
 
-// URL base do sistema
-define('URL_BASE', 'http://localhost/monana-financial/public');
+// =====================================================
+// URL BASE DO SISTEMA (URLs "limpas", sem /public)
+// Detecta automaticamente o prefixo da aplicação:
+// - Local (XAMPP): http://localhost/monana-financial
+// - Domínio próprio: http://seudominio.ao  (ou https)
+// =====================================================
+$__scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+    ? 'https' : 'http';
+$__host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+// SCRIPT_NAME ex.: /monana-financial/public/index.php ou /public/index.php
+$__dir    = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
+// Remove um eventual "/public" final ( URLs limpas não mostram a pasta public )
+$__dir = preg_replace('#(/public)?$#', '', rtrim($__dir, '/'));
+// Garante o prefixo "/" inicial quando existe subpasta (ex.: "/monana-financial").
+// Se $__dir for '' ou '/', a aplicação está na raiz do DocumentRoot.
+if ($__dir !== '' && $__dir !== '/') {
+    if ($__dir[0] !== '/') {
+        // dirname devolveu caminho relativo (raro); reconstrói via REQUEST_URI
+        $ru = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $pos = stripos($ru, '/public/');
+        $__dir = $pos !== false ? substr($ru, 0, $pos) : '';
+    }
+} else {
+    $__dir = '';
+}
+define('URL_BASE', $__scheme . '://' . $__host . $__dir);
+unset($__scheme, $__host, $__dir);
+
+// Alias usados por alguns layouts/views antigas
+if (!defined('APP_URL')) {
+    define('APP_URL', URL_BASE);
+}
+if (!defined('APP_NOME')) {
+    define('APP_NOME', 'MonanaFinancial');
+}
 
 // Nome do sistema
 define('NOME_SISTEMA', 'MonanaFinancial');
@@ -28,6 +62,19 @@ if (AMBIENTE === 'desenvolvimento') {
     ini_set('display_errors', 0);
     error_reporting(0);
 }
+
+// =====================================================
+// PASTAS DE ESCRITA (logs / ficheiros temporários)
+// Criadas automaticamente se não existirem, para evitar
+// erros de escrita e conflitos com rotas do sistema.
+// =====================================================
+foreach (['logs', 'storage/logs', 'storage/cache', 'storage/exports'] as $__pasta) {
+    $__caminhoPasta = CAMINHO_RAIZ . '/' . $__pasta;
+    if (!is_dir($__caminhoPasta)) {
+        @mkdir($__caminhoPasta, 0775, true);
+    }
+}
+unset($__pasta, $__caminhoPasta);
 
 // =====================================================
 // CORREÇÃO: Só inicia a sessão se ainda não estiver ativa

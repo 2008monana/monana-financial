@@ -36,7 +36,7 @@
             <a href="<?php echo URL_BASE; ?>/relatorios/mensal?mes=<?php echo $mes; ?>&ano=<?php echo $ano; ?>&exportar=pdf" class="btn btn-danger">
                 <i class="fas fa-file-pdf"></i> PDF
             </a>
-            <a href="<?php echo URL_BASE; ?>/relatorios/index" class="btn btn-secondary">
+            <a href="<?php echo URL_BASE; ?>/relatorios" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
         </div>

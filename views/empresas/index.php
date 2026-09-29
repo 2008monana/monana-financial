@@ -101,7 +101,7 @@
                 </div>
 
                 <div class="empresa-card-footer">
-                    <a href="<?php echo URL_BASE; ?>/filiais/index?empresa_id=<?php echo $empresa['id']; ?>" class="btn btn-sm btn-secondary" title="Ver Filiais">
+                    <a href="<?php echo URL_BASE; ?>/filiais?empresa_id=<?php echo $empresa['id']; ?>" class="btn btn-sm btn-secondary" title="Ver Filiais">
                         <i class="fas fa-store-alt"></i> Filiais
                     </a>
                     <a href="<?php echo URL_BASE; ?>/empresas/editar/<?php echo $empresa['id']; ?>" class="btn btn-sm btn-primary" title="Editar">

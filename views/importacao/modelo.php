@@ -1,6 +1,6 @@
 <div class="modulo-cabecalho">
     <div><h1><i class="fa-solid fa-table-list"></i> Importar Relatório Diário</h1><p>Para planilhas com várias folhas (uma por mês/filial) e colunas de receita e despesa lado a lado, como o modelo "Relatório Diário de Finanças".</p></div>
-    <a class="btn btn-outline" href="<?php echo URL_BASE; ?>/importacao/index"><i class="fa-solid fa-arrow-left"></i> Importador simples</a>
+    <a class="btn btn-outline" href="<?php echo URL_BASE; ?>/importacao"><i class="fa-solid fa-arrow-left"></i> Importador simples</a>
 </div>
 <div class="importacao-grid">
     <section class="cartao-importacao">

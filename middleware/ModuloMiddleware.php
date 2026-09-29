@@ -20,7 +20,6 @@ class ModuloMiddleware
         'perfil',
         'notificacoes',
         'logs',
-        'funcionarios',
         'metodos_pagamento',
         'configuracoes',
     ];

@@ -49,9 +49,13 @@ class Transacao extends Model
 
         // Filtrar por filiais (utilizador interno)
         if (!empty($filiaisIds)) {
-            $placeholders = implode(',', array_fill(0, count($filiaisIds), '?'));
-            $sql .= " AND t.filial_id IN ({$placeholders})";
-            $params = array_merge($params, $filiaisIds);
+            $placeholders = [];
+            foreach (array_values($filiaisIds) as $i => $fid) {
+                $chave = 'filial_in_' . $i;
+                $placeholders[] = ':' . $chave;
+                $params[$chave] = (int) $fid;
+            }
+            $sql .= " AND t.filial_id IN (" . implode(',', $placeholders) . ")";
         }
 
         // Filtrar por tipo
@@ -72,10 +76,17 @@ class Transacao extends Model
             $params['filial_id'] = $filialId;
         }
 
-        // Busca por descrição
+        // Busca por descrição / utilizador / empresa
+        // IMPORTANTE: com PDO::ATTR_EMULATE_PREPARES = false (MySQL nativo),
+        // repetir o mesmo placeholder (:busca) no SQL provoca o erro
+        // "SQLSTATE[HY093]: Invalid parameter number". Por isso usamos
+        // placeholders DISTINTOS para cada ocorrência do termo pesquisado.
         if (!empty($busca)) {
-            $sql .= " AND (t.descricao LIKE :busca OR u.nome LIKE :busca OR e.nome LIKE :busca)";
-            $params['busca'] = "%{$busca}%";
+            $sql .= " AND (t.descricao LIKE :busca_desc OR u.nome LIKE :busca_user OR e.nome LIKE :busca_empresa)";
+            $termo = '%' . trim($busca) . '%';
+            $params['busca_desc'] = $termo;
+            $params['busca_user'] = $termo;
+            $params['busca_empresa'] = $termo;
         }
 
         $sql .= " ORDER BY t.data_transacao DESC, t.id DESC";
@@ -83,6 +94,82 @@ class Transacao extends Model
         $stmt = $this->bd->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Pesquisar transações por descrição e/ou tipo (para o relatório de Pesquisa)
+     * $tipos pode ser um tipo único ('venda') ou vários separados por vírgula
+     * ($empresaId = null para super admin ver todas as empresas)
+     */
+    public function pesquisar(
+        ?int $empresaId,
+        string $descricao = '',
+        string $tipos = '',
+        int $limite = 1000
+    ): array {
+        $sql = "SELECT t.*,
+                       f.nome as filial_nome,
+                       f.empresa_id,
+                       e.nome as empresa_nome,
+                       c.nome as categoria_nome,
+                       u.nome as usuario_nome
+                FROM transacoes t
+                LEFT JOIN filiais f ON t.filial_id = f.id
+                LEFT JOIN empresas e ON t.empresa_id = e.id
+                LEFT JOIN categorias c ON t.categoria_id = c.id
+                LEFT JOIN usuarios u ON t.usuario_id = u.id
+                WHERE 1=1";
+
+        $params = [];
+
+        if ($empresaId !== null && $empresaId > 0) {
+            $sql .= " AND t.empresa_id = :empresa_id";
+            $params['empresa_id'] = $empresaId;
+        }
+
+        if (trim($descricao) !== '') {
+            // Placeholders distintos: necessário pois EMULATE_PREPARES = false
+            $sql .= " AND (t.descricao LIKE :busca_desc OR c.nome LIKE :busca_cat)";
+            $termo = '%' . trim($descricao) . '%';
+            $params['busca_desc'] = $termo;
+            $params['busca_cat'] = $termo;
+        }
+
+        if (trim($tipos) !== '') {
+            $listaTipos = array_filter(array_map('trim', explode(',', $tipos)), fn($v) => $v !== 'todos');
+            if (!empty($listaTipos)) {
+                $placeholders = [];
+                foreach (array_values($listaTipos) as $i => $tp) {
+                    $chave = 'tipo_' . $i;
+                    $placeholders[] = ':' . $chave;
+                    $params[$chave] = $tp;
+                }
+                $sql .= ' AND t.tipo IN (' . implode(',', $placeholders) . ')';
+            }
+        }
+
+        $sql .= " ORDER BY t.data_transacao DESC, t.id DESC LIMIT " . (int) $limite;
+
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Listar descrições distintas (top valores usados) para o select do formulário
+     */
+    public function descricoesDistintas(?int $empresaId, int $limite = 300): array
+    {
+        $sql = "SELECT DISTINCT descricao FROM transacoes WHERE descricao IS NOT NULL AND descricao <> ''";
+        $params = [];
+        if ($empresaId !== null && $empresaId > 0) {
+            $sql .= " AND empresa_id = :empresa_id";
+            $params['empresa_id'] = $empresaId;
+        }
+        $sql .= " ORDER BY descricao ASC LIMIT " . (int) $limite;
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
     /**

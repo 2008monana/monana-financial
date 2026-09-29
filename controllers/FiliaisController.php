@@ -70,7 +70,7 @@ class FiliaisController extends Controller
     {
         $empresaId = $this->empresaAtualId();
         if ($empresaId === null) {
-            $this->redirecionar('filiais/index');
+            $this->redirecionar('filiais');
         }
 
         $this->renderizar('filiais/form', [
@@ -111,7 +111,7 @@ class FiliaisController extends Controller
 
         if (!$filial) {
             definirFlash('erro', 'Filial não encontrada.');
-            $this->redirecionar('filiais/index');
+            $this->redirecionar('filiais');
         }
 
         $this->renderizar('filiais/form', [

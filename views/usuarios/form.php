@@ -13,7 +13,7 @@ $titulo = $ehEdicao ? 'Editar Utilizador' : 'Novo Utilizador';
             <?php echo $ehEdicao ? 'Atualize os dados do utilizador' : 'Registe um novo utilizador no sistema'; ?>
         </p>
     </div>
-    <a href="<?php echo URL_BASE; ?>/usuarios/index<?php echo empty($_SESSION['empresa_id']) && $empresaId ? '?empresa_id=' . (int) $empresaId : ''; ?>" class="btn btn-secondary">
+    <a href="<?php echo URL_BASE; ?>/usuarios<?php echo empty($_SESSION['empresa_id']) && $empresaId ? '?empresa_id=' . (int) $empresaId : ''; ?>" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Voltar
     </a>
 </div>
@@ -207,7 +207,7 @@ $titulo = $ehEdicao ? 'Editar Utilizador' : 'Novo Utilizador';
                 <i class="fas <?php echo $ehEdicao ? 'fa-save' : 'fa-plus'; ?>"></i>
                 <?php echo $ehEdicao ? 'Guardar Alterações' : 'Criar Utilizador'; ?>
             </button>
-            <a href="<?php echo URL_BASE; ?>/usuarios/index<?php echo empty($_SESSION['empresa_id']) && $empresaId ? '?empresa_id=' . (int) $empresaId : ''; ?>" class="btn btn-secondary">
+            <a href="<?php echo URL_BASE; ?>/usuarios<?php echo empty($_SESSION['empresa_id']) && $empresaId ? '?empresa_id=' . (int) $empresaId : ''; ?>" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Cancelar
             </a>
         </div>

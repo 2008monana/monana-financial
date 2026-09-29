@@ -12,7 +12,7 @@
         </h1>
         <p class="page-subtitle">Selecione uma empresa para gerir as suas filiais</p>
     </div>
-    <a href="<?php echo URL_BASE; ?>/empresas/index" class="btn btn-secondary">
+    <a href="<?php echo URL_BASE; ?>/empresas" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Voltar
     </a>
 </div>
@@ -77,7 +77,7 @@
             $nif = $empresa['nif'] ?? '';
             $ativa = isset($empresa['ativa']) ? (bool) $empresa['ativa'] : true;
         ?>
-            <a href="<?php echo URL_BASE; ?>/filiais/index?empresa_id=<?php echo (int) $empresa['id']; ?>" 
+            <a href="<?php echo URL_BASE; ?>/filiais?empresa_id=<?php echo (int) $empresa['id']; ?>" 
                class="selection-card" 
                style="--card-color: <?php echo $cor['bg']; ?>; --card-light: <?php echo $cor['light']; ?>;">
                 

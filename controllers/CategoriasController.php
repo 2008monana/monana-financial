@@ -25,7 +25,7 @@ class CategoriasController extends Controller
         $perfil = $_SESSION['usuario_perfil'] ?? 'visualizador';
         if ($perfil === 'visualizador' || $perfil === 'usuario_interno') {
             definirFlash('erro', 'Não tem permissão para aceder a esta página.');
-            $this->redirecionar('dashboard/index');
+            $this->redirecionar('dashboard');
         }
 
         $this->categoriaModel = new Categoria();
@@ -95,7 +95,7 @@ class CategoriasController extends Controller
 
         if (!$empresaId) {
             definirFlash('erro', 'Selecione uma empresa primeiro.');
-            $this->redirecionar('categorias/index');
+            $this->redirecionar('categorias');
             return;
         }
 
@@ -163,7 +163,7 @@ class CategoriasController extends Controller
 
         if (!$categoria) {
             definirFlash('erro', 'Categoria não encontrada.');
-            $this->redirecionar('categorias/index');
+            $this->redirecionar('categorias');
             return;
         }
 
@@ -212,7 +212,7 @@ class CategoriasController extends Controller
             definirFlash('erro', 'Erro ao atualizar categoria.');
         }
 
-        $this->redirecionar('categorias/index');
+        $this->redirecionar('categorias');
     }
 
     /**
@@ -229,7 +229,7 @@ class CategoriasController extends Controller
             definirFlash('sucesso', $categoria['ativa'] ? 'Categoria desativada.' : 'Categoria reativada.');
         }
 
-        $this->redirecionar('categorias/index');
+        $this->redirecionar('categorias');
     }
 
     /**
@@ -241,7 +241,7 @@ class CategoriasController extends Controller
 
         if ($perfil !== 'super_admin') {
             definirFlash('erro', 'Apenas o Super Administrador pode eliminar categorias.');
-            $this->redirecionar('categorias/index');
+            $this->redirecionar('categorias');
             return;
         }
 
@@ -253,7 +253,7 @@ class CategoriasController extends Controller
             definirFlash('sucesso', 'Categoria eliminada com sucesso.');
         }
 
-        $this->redirecionar('categorias/index');
+        $this->redirecionar('categorias');
     }
 
     /**
@@ -264,7 +264,6 @@ class CategoriasController extends Controller
         $erros = [];
         $nome = trim($dados['nome'] ?? '');
         $tipo = $dados['tipo'] ?? '';
-        $cor = trim($dados['cor'] ?? '');
 
         if ($nome === '') {
             $erros['nome'] = 'O nome da categoria é obrigatório.';
@@ -274,17 +273,16 @@ class CategoriasController extends Controller
             $erros['tipo'] = 'Selecione um tipo válido.';
         }
 
-        // Validar cor (hexadecimal simples)
-        if ($cor !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $cor)) {
-            $erros['cor'] = 'Cor inválida. Use o formato #RRGGBB.';
-        }
+        // Cor não é mais escolhida pelo utilizador: atribuída automaticamente
+        // (verde para entradas, vermelho para saídas)
+        $corAutomatica = $tipo === 'entrada' ? '#16a34a' : '#dc2626';
 
         return [
             'erros' => $erros,
             'campos' => [
                 'nome' => $nome,
                 'tipo' => $tipo,
-                'cor' => $cor ?: '#64748b',
+                'cor' => $corAutomatica,
                 'ativa' => isset($dados['ativa']) ? 1 : 0,
             ],
         ];

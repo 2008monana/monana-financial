@@ -13,7 +13,7 @@ unset($_SESSION['dados_antigos'], $_SESSION['erros']);
         <p class="page-subtitle">Registe uma nova transação financeira</p>
     </div>
     <div class="page-header-right">
-        <a href="<?php echo URL_BASE; ?>/transacoes/index" class="btn btn-outline">
+        <a href="<?php echo URL_BASE; ?>/transacoes" class="btn btn-outline">
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
     </div>
@@ -138,7 +138,7 @@ unset($_SESSION['dados_antigos'], $_SESSION['erros']);
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save"></i> Salvar Lançamento
             </button>
-            <a href="<?php echo URL_BASE; ?>/transacoes/index" class="btn btn-outline">
+            <a href="<?php echo URL_BASE; ?>/transacoes" class="btn btn-outline">
                 <i class="fas fa-times"></i> Cancelar
             </a>
         </div>

@@ -17,7 +17,7 @@
     <div class="page-header-right">
         <?php if ($perfil === 'super_admin' && !empty($empresas)): ?>
         <div class="filter-group" style="display:inline-block; margin-right:10px;">
-            <select name="empresa_id" onchange="window.location.href='<?php echo URL_BASE; ?>/categorias/index?empresa_id='+this.value" style="padding:8px 12px; border-radius:8px; border:1.5px solid var(--border); font-size:13px;">
+            <select name="empresa_id" onchange="window.location.href='<?php echo URL_BASE; ?>/categorias?empresa_id='+this.value" style="padding:8px 12px; border-radius:8px; border:1.5px solid var(--border); font-size:13px;">
                 <option value="">Todas as Empresas</option>
                 <?php foreach ($empresas as $emp): ?>
                 <option value="<?php echo $emp['id']; ?>" <?php echo ($empresaId ?? 0) == $emp['id'] ? 'selected' : ''; ?>>
