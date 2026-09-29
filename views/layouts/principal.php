@@ -43,8 +43,12 @@ $isViewer = $usuario_perfil === 'visualizador';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($tituloPagina ?? 'Dashboard'); ?> — MonanaFinancial</title>
     
-    <link rel="icon" href="<?php echo URL_BASE; ?>/favicon.ico?v=<?php echo file_exists(CAMINHO_RAIZ . '/public/favicon.ico') ? filemtime(CAMINHO_RAIZ . '/public/favicon.ico') : time(); ?>">
-    <link rel="apple-touch-icon" href="<?php echo URL_BASE; ?>/images/favicon.png">
+    <?php $__fbv = file_exists(CAMINHO_RAIZ . '/public/favicon.ico') ? filemtime(CAMINHO_RAIZ . '/public/favicon.ico') : time(); ?>
+    <link rel="icon" type="image/x-icon" href="<?php echo URL_BASE; ?>/favicon.ico?v=<?php echo $__fbv; ?>">
+    <link rel="shortcut icon" type="image/x-icon" href="<?php echo URL_BASE; ?>/favicon.ico?v=<?php echo $__fbv; ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo URL_BASE; ?>/images/favicon-32.png?v=<?php echo $__fbv; ?>">
+    <link rel="icon" type="image/png" sizes="48x48" href="<?php echo URL_BASE; ?>/images/favicon-48.png?v=<?php echo $__fbv; ?>">
+    <link rel="apple-touch-icon" href="<?php echo URL_BASE; ?>/images/apple-touch-icon.png?v=<?php echo $__fbv; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo URL_BASE; ?>/css/formularios.css">
