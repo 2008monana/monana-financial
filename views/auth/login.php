@@ -4,8 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MonanaFinancial — Iniciar Sessão</title>
-<link rel="icon" href="<?= URL_BASE ?>/images/favicon.png?v=<?= time() ?>" type="image/png">
-<link rel="stylesheet" href="<?= URL_BASE ?>/css/login.css?v=<?= @filemtime(CAMINHO_RAIZ . '/public/css/login.css') ?: time() ?>">
+<?php
+// Favicon e CSS "à prova de falhas": o conteúdo é lido do disco e servido
+// diretamente na página (data URI / <style>), por isso funciona mesmo se a
+// pasta /images ou /css estiver inacessível no servidor (permissões, .htaccess).
+$uriFavicon = '';
+$caminhoFavicon = CAMINHO_RAIZ . '/public/images/favicon.png';
+if (is_file($caminhoFavicon)) {
+    $dadosFavicon = @file_get_contents($caminhoFavicon);
+    if ($dadosFavicon !== false) {
+        $uriFavicon = 'data:image/png;base64,' . base64_encode($dadosFavicon);
+    }
+}
+// Logotipo da marca: embebido na página para nunca depender do acesso à pasta /images
+$uriLogo = '';
+$caminhoLogo = CAMINHO_RAIZ . '/public/images/logo.png';
+if (is_file($caminhoLogo)) {
+    $dadosLogo = @file_get_contents($caminhoLogo);
+    if ($dadosLogo !== false) {
+        $uriLogo = 'data:image/png;base64,' . base64_encode($dadosLogo);
+    }
+}
+$caminhoCssLogin = CAMINHO_RAIZ . '/public/css/login.css';
+$cssLogin = is_file($caminhoCssLogin) ? (@file_get_contents($caminhoCssLogin) ?: '') : '';
+?>
+<link rel="icon" type="image/png" href="<?= $uriFavicon !== '' ? $uriFavicon : URL_BASE . '/images/favicon.png' ?>">
+<link rel="apple-touch-icon" href="<?= $uriFavicon !== '' ? $uriFavicon : URL_BASE . '/images/favicon.png' ?>">
+<link rel="stylesheet" href="<?= URL_BASE ?>/css/login.css?v=<?= (int) (@filemtime($caminhoCssLogin) ?: time()) ?>">
+<style><?= $cssLogin /* fallback: garante o estilo mesmo se o link externo falhar */ ?></style>
 </head>
 <body>
 
@@ -16,11 +42,11 @@
     <img class="brand-photo" src="<?= URL_BASE ?>/images/login-bg.jpg" alt="">
 
     <div class="brand-mark">
-      <img src="<?= URL_BASE ?>/images/logo.png" alt="MonanaFinancial" class="brand-logo">
-      <div>
-        <div class="brand-name">Monana<span>Financial</span></div>
-        <div class="brand-tagline-small">GESTÃO FINANCEIRA INTELIGENTE</div>
-      </div>
+        <img src="<?= $uriLogo !== '' ? $uriLogo : URL_BASE . '/images/logo.png' ?>" alt="MonanaFinancial" class="brand-logo">
+        <div>
+            <div class="brand-name">Monana<span>Financial</span></div>
+            <div class="brand-tagline-small">GESTÃO FINANCEIRA INTELIGENTE</div>
+        </div>
     </div>
 
     <div class="brand-hero">

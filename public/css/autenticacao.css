@@ -1,0 +1,81 @@
+/* =====================================================
+   Autenticação — páginas "Esqueci a senha" e "Redefinir senha"
+   Complementa o estilo-login.css com os componentes usados
+   por essas views (lado-marca, boas-vindas, campos simples).
+   ===================================================== */
+
+.lado-imagem-menor { min-height: 100vh; }
+
+/* Coluna de marca usada em /auth/redefinirSenha */
+.lado-marca {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 48px;
+    background: linear-gradient(135deg, var(--navy-deep, #0a1930), var(--navy, #0e2748));
+    color: #fff;
+}
+.lado-marca-menor { max-width: 480px; }
+
+.lado-marca .marca {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+}
+.icone-marca {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #22c55e;
+}
+.nome-marca { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 700; }
+.nome-marca span { color: #22c55e; }
+.subtitulo-marca { font-size: 11px; letter-spacing: 2px; opacity: 0.7; }
+
+.hero-marca h1 { font-family: 'Sora', sans-serif; font-size: 26px; line-height: 1.3; margin-bottom: 10px; }
+.hero-marca p { opacity: 0.8; font-size: 14px; line-height: 1.6; }
+
+/* Coluna do formulário — versão centralizada (redefinir senha) */
+.lado-formulario-central {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.boas-vindas { margin-bottom: 28px; }
+.boas-vindas .saudacao { font-size: 13px; color: #64748b; margin-bottom: 12px; }
+.boas-vindas h2 { font-family: 'Sora', sans-serif; font-size: 26px; color: #101828; }
+.boas-vindas h2 span { color: #16a34a; }
+.boas-vindas .subtitulo { margin-top: 6px; font-size: 14px; color: #64748b; }
+
+/* Campos sem wrapper .input-com-icone (usados na redefinição de senha) */
+.lado-formulario .campo input:not(.input-com-icone input),
+.lado-formulario-central .campo input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 15px;
+    background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.lado-formulario-central .campo input:focus {
+    outline: none;
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+/* Botão desativado durante o envio */
+.btn-submit:disabled { opacity: 0.6; cursor: wait; }
+
+/* Responsivo */
+@media (max-width: 900px) {
+    .lado-marca { display: none; }
+}
