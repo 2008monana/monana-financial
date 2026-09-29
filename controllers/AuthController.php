@@ -35,7 +35,16 @@ class AuthController extends Controller
             $this->redirecionar('dashboard');
         }
 
-        $this->renderizarSemLayout('auth/login');
+        // Credenciais nunca devem transitar pela URL (método GET).
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && (isset($_GET['email']) || isset($_GET['senha']))) {
+            $this->redirecionar('auth');
+        }
+
+        $this->renderizarSemLayout('auth/login', [
+            'erro'    => $_SESSION['flash_auth_erro'] ?? null,
+            'sucesso' => $_SESSION['flash_auth_sucesso'] ?? null,
+        ]);
+        unset($_SESSION['flash_auth_erro'], $_SESSION['flash_auth_sucesso']);
     }
 
     /**
@@ -52,8 +61,25 @@ class AuthController extends Controller
      */
     public function autenticar(): void
     {
+        // Aceita apenas POST; pedidos GET nunca devem transportar credenciais.
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            $this->redirecionar('auth');
+        }
+
         $email = trim($_POST['email'] ?? '');
         $senha = trim($_POST['senha'] ?? '');
+
+        // Fallback do envio nativo do formulario (sem AJAX): devolve a
+        // pagina de login com o aviso em vez de responder JSON cru.
+        $pedidoAjax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+        $responderLoginComErro = function (string $mensagem) use ($pedidoAjax): void {
+            if ($pedidoAjax) {
+                $this->json(['sucesso' => false, 'mensagem' => $mensagem], 401);
+                return; // não chega a executar quando é AJAX
+            }
+            $_SESSION['flash_auth_erro'] = $mensagem;
+            $this->redirecionar('auth');
+        };
 
         // ---- Controlo de tentativas por email + dispositivo ----
         $dispositivo = TentativaLogin::identificadorDispositivo();
@@ -66,20 +92,12 @@ class AuthController extends Controller
 
         if ($bloqueio) {
             AuditoriaHelper::registar('login_bloqueado', 'usuarios', null, null, ['email_tentado' => $email], 'alta', 'Dispositivo bloqueado por excesso de tentativas');
-            $this->json([
-                'sucesso'  => false,
-                'bloqueado' => true,
-                'minutos_restantes' => $bloqueio['minutos_restantes'],
-                'mensagem' => 'Demasiadas tentativas falhadas a partir deste dispositivo. Por favor tente novamente mais tarde (dentro de aproximadamente ' . $bloqueio['minutos_restantes'] . ' minuto(s)).',
-            ], 429);
+            $responderLoginComErro('Demasiadas tentativas falhadas a partir deste dispositivo. Por favor tente novamente mais tarde (dentro de aproximadamente ' . $bloqueio['minutos_restantes'] . ' minuto(s)).');
         }
 
         if ($email === '' || $senha === '') {
             AuditoriaHelper::registar('login_falhado', 'usuarios', null, null, ['email_tentado' => $email], 'alta', 'Credenciais incompletas');
-            $this->json([
-                'sucesso' => false,
-                'mensagem' => 'Preencha o utilizador e a palavra-passe.',
-            ], 422);
+            $responderLoginComErro('Preencha o utilizador e a palavra-passe.');
         }
 
         $usuario = $this->usuarioModel->encontrarPorEmail($email);
@@ -87,23 +105,13 @@ class AuthController extends Controller
         if (!$usuario || !$usuario['ativo']) {
             $tentativas = $this->registarTentativaFalhada($email, $dispositivo);
             AuditoriaHelper::registar('login_falhado', 'usuarios', null, null, ['email_tentado' => $email], 'alta', 'Utilizador inexistente ou inativo');
-            $this->json([
-                'sucesso'    => false,
-                'tentativas' => $tentativas,
-                'restam'     => max(0, self::MAX_TENTATIVAS - $tentativas),
-                'mensagem'   => 'Credenciais inválidas. Tente novamente.',
-            ], 401);
+            $responderLoginComErro('Credenciais inválidas. Tente novamente.');
         }
 
         if (!$this->usuarioModel->verificarSenha($senha, $usuario['senha_hash'])) {
             $tentativas = $this->registarTentativaFalhada($email, $dispositivo);
             AuditoriaHelper::registar('login_falhado', 'usuarios', (int) $usuario['id'], null, ['email_tentado' => $email], 'alta', 'Palavra-passe inválida');
-            $this->json([
-                'sucesso'    => false,
-                'tentativas' => $tentativas,
-                'restam'     => max(0, self::MAX_TENTATIVAS - $tentativas),
-                'mensagem'   => 'Credenciais inválidas. Tente novamente.',
-            ], 401);
+            $responderLoginComErro('Credenciais inválidas. Tente novamente.');
         }
 
         // Autenticação bem-sucedida — inicia uma sessão nova para evitar fixação.
@@ -134,6 +142,12 @@ class AuthController extends Controller
 
         $this->usuarioModel->atualizarUltimoLogin((int) $usuario['id']);
         AuditoriaHelper::registar('login_sucesso', 'usuarios', (int) $usuario['id'], null, ['email' => $usuario['email']], 'alta');
+
+        // Fallback sem AJAX (envio nativo do formulário por POST):
+        // redireciona directamente para o dashboard.
+        if (!$pedidoAjax) {
+            $this->redirecionar('dashboard/index');
+        }
 
         $this->json([
             'sucesso'    => true,

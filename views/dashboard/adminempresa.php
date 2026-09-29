@@ -143,7 +143,7 @@
 <div class="table-card">
     <div class="table-header">
         <h3><i class="fas fa-list-ul"></i> Resumo por Filial</h3>
-        <a href="#" class="btn-link">Ver todas <i class="fas fa-arrow-right"></i></a>
+        
     </div>
     <div class="table-responsive">
         <table class="table-modern">
@@ -245,15 +245,6 @@
             <?php endforeach; ?>
         </div>
     </div>
-</div>
-
-<!-- AÇÕES RÁPIDAS -->
-<div class="quick-actions">
-    <a href="#" class="quick-btn primary"><i class="fas fa-plus-circle"></i> Novo Lançamento</a>
-    <a href="#" class="quick-btn success"><i class="fas fa-store"></i> Nova Filial</a>
-    <a href="#" class="quick-btn purple"><i class="fas fa-user-plus"></i> Novo Utilizador</a>
-    <a href="<?php echo URL_BASE; ?>/backups" class="quick-btn orange"><i class="fas fa-database"></i> Backups</a>
-    <a href="#" class="quick-btn blue"><i class="fas fa-file-alt"></i> Gerar Relatório</a>
 </div>
 
 <!-- SCRIPTS DOS GRÁFICOS -->

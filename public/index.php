@@ -64,14 +64,27 @@ $roteador = new Router();
 // =====================================================
 $url = $_GET['url'] ?? '';
 
-// Compatibilidade: se o .htaccess da raiz encaminhar com o prefixo da subpasta
-// incluido (ex.: url=/monana-financial/dashboard), remove-o para que o Router
-// veja apenas a rota interna (dashboard).
+// Compatibilidade: remove QUALQUER prefixo de subpasta do projecto
+// (ex.: url=/monana-financial/logs ou /htdocs/monana-financial/logs)
+// para que o Router veja apenas a rota interna (logs). Sao testados:
+//  - o prefixo detectado via URL_BASE;
+//  - os primeiros segmentos do REQUEST_URI ate ao front controller.
+$prefixos = [];
 $baseDir = trim(preg_replace('#^https?://[^/]+#i', '', URL_BASE), '/');
-if ($baseDir !== '' && $url !== '') {
+if ($baseDir !== '') $prefixos[] = $baseDir;
+$ruPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$posPub = stripos($ruPath, '/public/');
+if ($posPub !== false) {
+    $pre = trim(substr($ruPath, 0, $posPub), '/');
+    if ($pre !== '') $prefixos[] = $pre;
+}
+if ($url !== '' && !empty($prefixos)) {
     $u = ltrim($url, '/');
-    if ($u === $baseDir || strpos($u, $baseDir . '/') === 0) {
-        $url = substr($u, strlen($baseDir));
+    foreach ($prefixos as $p) {
+        if ($u === $p || strpos($u, $p . '/') === 0) {
+            $url = substr($u, strlen($p));
+            break;
+        }
     }
 }
 

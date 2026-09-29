@@ -129,7 +129,6 @@ $coresMetodo = ['numerario' => '#22c55e', 'tpa' => '#2563eb', 'transferencia' =>
       </tr>
     </tbody>
   </table>
-  <a class="see-more" href="<?= URL_BASE ?>/relatorios">Ver relatório completo →</a>
   <?php endif; ?>
 </div>
 

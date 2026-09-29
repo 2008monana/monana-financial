@@ -1,9 +1,85 @@
 # MonanaFinancial - pasta /public (defesa em profundidade)
+#
+# IMPORTANTE (403 em /logs): se existir uma pasta fisica "logs" aqui
+# dentro (criada por instalacoes antigas), o Apache resolvia o pedido
+# como directoria e devolvia "403 Forbidden" antes das regras.
+# Options +Indexes elimina essa possibilidade; a regra 0c garante que
+# /logs chega SEMPRE ao LogsController, mesmo com a pasta presente.
 
-Options -Indexes -MultiViews +FollowSymLinks
+Options +Indexes -MultiViews +FollowSymLinks
 RewriteEngine On
 
-# Ficheiros e pastas reais (css, js, images, uploads) sao servidos diretamente
+# =========================================================
+# 0c) ROTA /logs: encaminhada SEMPRE para o front controller
+#     (primeira regra do ficheiro, para nunca ser apanhada
+#     pela resolucao fisica de directorias).
+# =========================================================
+RewriteRule ^logs(/.*)?$ index.php?url=logs$1 [QSA,L]
+
+# =========================================================
+# 0a) AUTO-REPARACAO DE URL:
+#     se o formulario de login for enviado por GET (JS bloqueado),
+#     as credenciais acabam na barra de enderecos. Remove-as e
+#     redireciona para a pagina de login limpa.
+# =========================================================
+RewriteCond %{QUERY_STRING} (^|&)(email|senha)=.* [NC]
+RewriteRule ^(auth|auth/login)/?$ auth? [R=302,L,QSD]
+
+# =========================================================
+# 0b) AUTO-REPARACAO DE PREFIXO DO PROJECTO:
+#     pedidos que cheguem a esta pasta ainda com o prefixo do
+#     projeto no caminho (ex.: /monana-financial/css/login.css ou
+#     /monana-financial/auth/login) sao reencaminhados internamente
+#     para o recurso real (css/js/images/uploads) ou para o
+#     index.php com a rota correta — SEM redirecionamento externo,
+#     para nunca partir os caminhos relativos dos ficheiros.
+# =========================================================
+RewriteCond $0 ^[^/]+/(css|js|images|uploads)(/.*)?$
+RewriteRule ^[^/]+/(css|js|images|uploads)/(.*)$ $1/$2 [L]
+RewriteCond $0 ^[^/]+/(auth|dashboard|transacoes|relatorios|categorias|filiais|empresas|usuarios|perfil|notificacoes|backups|logs|configuracoes|metodos-pagamento|importacao)(/.*|)$
+RewriteRule ^[^/]+/(.*)$ index.php?url=$1 [QSA,L]
+
+# =========================================================
+# 0d) PASTAS DE CODIGO-FONTE DA RAIZ (se alguem aceder a
+#     /views, /config, /core... por URL): vao para o front
+#     controller, que devolve 404 — nunca "403 Forbidden".
+# =========================================================
+RewriteCond %{REQUEST_FILENAME} -d [OR]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(config|controllers|core|helpers|middleware|models|views|database|sql|cron|exports|storage|vendor)(/|$) index.php?url=$1$2 [QSA,L]
+
+# =========================================================
+# 1) FICHEIROS ESTATICOS REAIS (css, js, images, uploads):
+#     servidos diretamente com MIME types forcados, para que o
+#     navegador NUNCA recuse aplicar uma folha de estilos
+#     ("Strict MIME type checking") nem falhe ao carregar o
+#     favicon ou a imagem de fundo da pagina de login.
+# =========================================================
+AddType text/css .css
+AddType application/javascript; charset=utf-8 .js
+AddType image/png .png
+AddType image/jpeg .jpg .jpeg
+AddType image/svg+xml .svg
+AddType image/x-icon .ico
+<IfModule mod_mime_module>
+    # Nota: AddHandler com tipos MIME e invalido e pode provocar erro
+    # 500 no Apache — por isso NAO e usado aqui. O AddType acima ja
+    # garante o Content-Type correcto.
+    DefaultType None
+</IfModule>
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|png|jpe?g|svg|ico|woff2?)$">
+        # Nota: "nosniff" com MIME errado partia o layout; como os
+        # MIME types estao garantidos via AddType, removemos o header
+        # para maximo de compatibilidade com instalacoes antigas.
+        Header unset X-Content-Type-Options
+        Header unset Content-Security-Policy
+        # Cache curto: evita ficar preso a versoes antigas/partidas
+        Header set Cache-Control "public, max-age=600"
+    </FilesMatch>
+</IfModule>
+
+# Ficheiros e pastas reais sao servidos diretamente
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]

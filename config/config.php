@@ -64,6 +64,39 @@ if (AMBIENTE === 'desenvolvimento') {
 }
 
 // =====================================================
+// NUNCA FICAR EM TELA BRANCA: regista qualquer erro
+// fatal em logs/php_errors.log e mostra uma mensagem
+// amigável em vez de uma página completamente vazia.
+// =====================================================
+ini_set('log_errors', 1);
+$__logErr = (defined('CAMINHO_LOGS') ? CAMINHO_LOGS : dirname(__DIR__) . '/logs');
+$__logErrReal = dirname(__DIR__) . '/storage/logs'; // fora da raiz web: evita colisao com a rota dinamica /logs
+if (!is_dir($__logErrReal)) { @mkdir($__logErrReal, 0775, true); }
+ini_set('error_log', $__logErrReal . '/php_errors.log');
+unset($__logErr);
+
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (PHP_SAPI !== 'cli' && !headers_sent()) {
+            http_response_code(500);
+            echo '<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8">'
+               . '<title>Erro no sistema</title></head>'
+               . '<body style="font-family:system-ui,sans-serif;background:#f6f8fb;display:flex;'
+               . 'align-items:center;justify-content:center;min-height:100vh;margin:0">'
+               . '<div style="background:#fff;border-radius:14px;padding:32px 40px;max-width:640px;'
+               . 'box-shadow:0 10px 40px rgba(10,25,48,.12);border-left:6px solid #dc2626">'
+               . '<h2 style="margin:0 0 10px;color:#991b1b">Ocorreu um erro ao carregar esta página</h2>'
+               . '<p style="color:#475569;margin:0 0 12px">Detalhe técnico (também registado em <code>storage/logs/php_errors.log</code>):</p>'
+               . '<pre style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;'
+               . 'white-space:pre-wrap;word-break:break-all;font-size:13px;color:#7f1d1d;margin:0">'
+               . htmlspecialchars($e['message'] . ' — ' . $e['file'] . ':' . $e['line'])
+               . '</pre></div></body></html>';
+        }
+    }
+});
+
+// =====================================================
 // PASTAS DE ESCRITA (logs / ficheiros temporários)
 // Criadas automaticamente se não existirem, para evitar
 // erros de escrita e conflitos com rotas do sistema.

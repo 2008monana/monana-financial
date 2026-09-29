@@ -278,17 +278,27 @@ class Router
         // =============================================
         $partesUrl = $caminho !== '' ? explode('/', $caminho) : [];
         $primeiro = strtolower($partesUrl[0] ?? '');
+        // NOTA: o prefixo do projecto (ex.: "monana-financial") NUNCA deve
+        // ser tratado como pasta interna a remover — ele ja e removido em
+        // public/index.php. Se aqui fosse removido, a rota /logs (Auditoria)
+        // poderia ser reconstruida como "/monana-financial/logs" e cair em
+        // loops ou pedidos incorrectos. Por isso a auto-reparacao so aceita
+        // segmentos que sejam MODULOS/ACCES validos ("logs", "index"...).
+        $modulosValidosAuto = array_unique(array_merge(
+            array_keys($this->rotaParaModulo),
+            ['dashboard', 'transacoes', 'relatorios', 'categorias', 'filiais',
+             'empresas', 'usuarios', 'perfil', 'notificacoes', 'backups',
+             'logs', 'configuracoes', 'metodos-pagamento', 'auth', 'importacao']
+        ));
         if ($primeiro === 'public' || (!empty($partesUrl) && !isset($this->rotaParaModulo[$partesUrl[0]]) && $partesUrl[0] !== '')) {
-            $modulosConhecidos = array_unique(array_values($this->rotaParaModulo));
-            $controladoresValidos = [
-                'dashboard', 'transacoes', 'relatorios', 'categorias', 'filiais',
-                'empresas', 'usuarios', 'perfil', 'notificacoes', 'backups',
-                'logs', 'configuracoes', 'metodos-pagamento', 'auth', 'importacao',
-            ];
             for ($i = 0, $n = count($partesUrl); $i < $n; $i++) {
                 $seg = $partesUrl[$i];
-                if (in_array($seg, $controladoresValidos, true)
-                    || in_array(strtolower($seg), $modulosConhecidos, true)) {
+                $ehModuloValido = in_array($seg, $modulosValidosAuto, true)
+                    || in_array(strtolower($seg), $modulosValidosAuto, true);
+                // accoes/parametros so sao aceites depois de um modulo valido
+                $ehAcaoDepoisDeModulo = $i > 0
+                    && in_array($partesUrl[$i - 1], $modulosValidosAuto, true);
+                if ($ehModuloValido || $ehAcaoDepoisDeModulo) {
                     $reconstruido = implode('/', array_slice($partesUrl, $i));
                     if ($reconstruido !== $caminho) {
                         $qs = $_SERVER['QUERY_STRING'] ?? '';
