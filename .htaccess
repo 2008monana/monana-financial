@@ -50,19 +50,21 @@ RewriteRule ^public/(css|js|images|uploads)/(.*)$ %1$1/$2 [R=302,L]
 # =============================================
 # 2b) FICHEIROS ESTÁTICOS REAIS (css, js, images, uploads)
 #     Ex.: /monana-financial/css/login.css -> /public/css/login.css
-#     IMPORTANTE: as regras NÃO dependem de %{DOCUMENT_ROOT}, porque no
-#     XAMPP o DOCUMENT_ROOT aponta para htdocs/ e não inclui a subpasta
-#     do projeto. Testes de ficheiro usam caminhos RELATIVOS ao diretório
-#     deste .htaccess (prefixados com "public"), o que é compatível com
-#     qualquer versão do Apache.
+#     IMPORTANTE: as regras NÃO dependem de %{DOCUMENT_ROOT}. O teste de
+#     existencia usa $0 (o caminho RELATIVO ao diretório deste .htaccess),
+#     prefixado fisicamente com "public/". Nas versões anteriores a regra
+#     usava %1%2 (capturas vazias neste contexto), o teste falhava e os
+#     pedidos caíam em index.php — devolvendo HTML em vez de CSS/PNG, o
+#     que fazia o navegador recusar a folha de estilos ("page lost its
+#     style") e desaparecer o favicon e a imagem de fundo do login.
+#     Tambem e aceite um nivel extra opcional de pasta (ex.: quando o
+#     pedido chega com o prefixo do projeto ainda no caminho).
 # =============================================
-#    Regra compacta e sem dependencia de %{DOCUMENT_ROOT}: o caminho do
-#    RewriteCond e construido com o prefixo fisico (public) + o URI SEM a
-#    barra inicial ( %1%2 ), testando directamente a existencia do ficheiro.
-RewriteCond $0 ^(css|js|images|uploads)(/.*)?$
-RewriteCond public%1%2 -f [OR]
-RewriteCond public%1%2 -d
-RewriteRule ^(css|js|images|uploads)(/.*)?$ public/$1$2 [L]
+# IMPORTANTE: so reescreve se o ficheiro fisico existir (teste -f), para
+# nunca "engolir" rotas do sistema que comecem por estes nomes (ex.: a
+# rota /js ...). Sem o teste, qualquer caminho era reescrito e dava 404.
+RewriteCond public$1/$2 -f
+RewriteRule ^(?:[^/]+/)?(css|js|images|uploads)/(.+)$ public/$1/$2 [L]
 
 # Fallback generico: qualquer outro ficheiro/pasta real dentro de /public
 # (ex.: favicon.ico na raiz do projeto -> public/favicon.ico)

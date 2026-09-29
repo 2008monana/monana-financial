@@ -4,18 +4,49 @@ Options -Indexes -MultiViews +FollowSymLinks
 RewriteEngine On
 
 # =========================================================
-# 0) AUTO-REPARACAO DE URL (independente do .htaccess da raiz):
-#    se o pedido chegar a esta pasta ainda com o prefixo do
-#    projeto no caminho (ex.: /monana-financial/auth/login ou
-#    /auth/login?email=...&senha=...), remove o prefixo e
-#    redireciona para a URL limpa. Sem isto, o formulario de
-#    login era enviado por GET como caminho relativo e as
-#    credenciais acabavam por aparecer na barra de enderecos.
+# 0a) AUTO-REPARACAO DE URL:
+#     se o formulario de login for enviado por GET (JS bloqueado),
+#     as credenciais acabam na barra de enderecos. Remove-as e
+#     redireciona para a pagina de login limpa.
 # =========================================================
-RewriteCond %{REQUEST_URI} ^/(?:[^/]+/)+(css|js|images|uploads|auth|dashboard|transacoes|relatorios|categorias|filiais|empresas|usuarios|perfil|notificacoes|backups|logs|configuracoes|metodos-pagamento|importacao)(/[^?]*)?($|\?)
-RewriteRule .* /%1%2 [R=302,L]
+RewriteCond %{QUERY_STRING} (^|&)(email|senha)=.* [NC]
+RewriteRule ^(auth|auth/login)/?$ auth? [R=302,L,QSD]
 
-# Ficheiros e pastas reais (css, js, images, uploads) sao servidos diretamente
+# =========================================================
+# 0b) AUTO-REPARACAO DE PREFIXO DO PROJECTO:
+#     pedidos que cheguem a esta pasta ainda com o prefixo do
+#     projeto no caminho (ex.: /monana-financial/css/login.css ou
+#     /monana-financial/auth/login) sao reencaminhados internamente
+#     para o recurso real (css/js/images/uploads) ou para o
+#     index.php com a rota correta — SEM redirecionamento externo,
+#     para nunca partir os caminhos relativos dos ficheiros.
+# =========================================================
+RewriteCond $0 ^[^/]+/(css|js|images|uploads)(/.*)?$
+RewriteRule ^[^/]+/(css|js|images|uploads)/(.*)$ $1/$2 [L]
+RewriteCond $0 ^[^/]+/(auth|dashboard|transacoes|relatorios|categorias|filiais|empresas|usuarios|perfil|notificacoes|backups|logs|configuracoes|metodos-pagamento|importacao)(/.*|)$
+RewriteRule ^[^/]+/(.*)$ index.php?url=$1 [QSA,L]
+
+# =========================================================
+# 1) FICHEIROS ESTATICOS REAIS (css, js, images, uploads):
+#     servidos diretamente com MIME types forcados, para que o
+#     navegador NUNCA recuse aplicar uma folha de estilos
+#     ("Strict MIME type checking") nem falhe ao carregar o
+#     favicon ou a imagem de fundo da pagina de login.
+# =========================================================
+AddType text/css .css
+AddType application/javascript; charset=utf-8 .js
+AddType image/png .png
+AddType image/jpeg .jpg .jpeg
+AddType image/svg+xml .svg
+AddType image/x-icon .ico
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|png|jpe?g|svg|ico|woff2?)$">
+        Header set X-Content-Type-Options "nosniff"
+        Header unset Content-Security-Policy
+    </FilesMatch>
+</IfModule>
+
+# Ficheiros e pastas reais sao servidos diretamente
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
