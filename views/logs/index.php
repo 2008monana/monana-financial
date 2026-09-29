@@ -9,6 +9,9 @@
         <label>Utilizador
             <select name="usuario_id"><option value="">Todos</option><?php foreach($usuarios as $u):?><option value="<?=$u['id']?>" <?=$filtros['usuario_id']==$u['id']?'selected':''?>><?=htmlspecialchars($u['nome'])?></option><?php endforeach?></select>
         </label>
+        <label>Módulo
+            <select name="modulo"><option value="">Todos</option><?php foreach(($opcoesModulos ?? []) as $chave=>$rotulo):?><option value="<?=htmlspecialchars($chave)?>" <?=($filtros['modulo']??'')===$chave?'selected':''?>><?=htmlspecialchars($rotulo)?></option><?php endforeach?></select>
+        </label>
         <label>Ação
             <select name="acao"><option value="">Todas</option><?php foreach($opcoesAcoes as $chave=>$rotulo):?><option value="<?=htmlspecialchars($chave)?>" <?=$filtros['acao']===$chave?'selected':''?>><?=htmlspecialchars($rotulo)?></option><?php endforeach?></select>
         </label>
@@ -28,16 +31,17 @@
     <div class="tabela-logs-cabecalho"><span><?=(int)($paginacao['total']??0)?> registo(s) encontrado(s)</span></div>
     <div class="tabela-scroll">
         <table>
-            <thead><tr><th>Data e hora</th><th>Utilizador</th><th>Módulo</th><th>Descrição</th><th>IP</th></tr></thead>
+            <thead><tr><th>Data e hora</th><th>Utilizador</th><th>Módulo</th><th>Ação</th><th>Descrição</th><th>IP</th></tr></thead>
             <tbody>
             <?php if(empty($logs)):?>
-                <tr><td colspan="5" class="sem-logs"><i class="fa-solid fa-inbox"></i><span>Não foram encontrados logs para estes filtros.</span></td></tr>
+                <tr><td colspan="6" class="sem-logs"><i class="fa-solid fa-inbox"></i><span>Não foram encontrados logs para estes filtros.</span></td></tr>
             <?php endif; foreach($logs as $log): $tipo = AuditoriaHelper::tipoAcao($log['acao']); ?>
                 <tr>
-                    <td><?=htmlspecialchars(date('d/m/Y H:i',strtotime($log['criado_em'])))?></td>
-                    <td><?=htmlspecialchars($log['usuario_nome']??'Sistema')?></td>
+                    <td class="celula-data"><?=htmlspecialchars(date('d/m/Y H:i',strtotime($log['criado_em'])))?></td>
+                    <td class="celula-utilizador"><?=htmlspecialchars($log['usuario_nome']??'Sistema')?></td>
                     <td><span class="selo selo-modulo"><i class="fa-solid fa-cube"></i> <?=htmlspecialchars(AuditoriaHelper::moduloDeAcao($log['acao'],$log['tabela_afetada']??null))?></span></td>
-                    <td class="celula-descricao"><span class="selo selo-<?=$tipo?>"><?=htmlspecialchars(AuditoriaHelper::rotuloAcao($log['acao']))?></span><span class="descricao-extra"><?=htmlspecialchars(trim((string)preg_replace('/^'.preg_quote(AuditoriaHelper::rotuloAcao($log['acao']),'/').'( — )?/u','',AuditoriaHelper::descricaoEvento($log))))?></span></td>
+                    <td><span class="selo selo-<?=$tipo?>"><?=htmlspecialchars(AuditoriaHelper::rotuloAcao($log['acao']))?></span></td>
+                    <td class="celula-descricao"><span class="descricao-extra"><?=htmlspecialchars(trim((string)preg_replace('/^'.preg_quote(AuditoriaHelper::rotuloAcao($log['acao']),'/').'( — )?/u','',AuditoriaHelper::descricaoEvento($log))))?></span></td>
                     <td class="celula-ip"><?=htmlspecialchars($log['ip_origem']??'—')?></td>
                 </tr>
             <?php endforeach?>
@@ -55,13 +59,13 @@
 .modulo-cabecalho h1 i{color:var(--green);margin-right:8px}
 .modulo-cabecalho p{color:var(--muted);margin:6px 0 0;font-size:13px}
 .filtros-logs,.tabela-logs{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:18px;box-shadow:var(--shadow-sm,0 1px 3px rgba(16,24,40,.04))}
-.filtros-logs form{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:14px 16px;align-items:end}
+.filtros-logs form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 16px;align-items:end}
 .filtros-logs label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--ink)}
-.filtros-logs input,.filtros-logs select{padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;font:inherit}
+.filtros-logs input,.filtros-logs select{padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;font:inherit;min-width:0;width:100%}
 .filtros-logs select{cursor:pointer}
-.filtros-acoes{display:flex;gap:8px;grid-column:span 2}
+.filtros-acoes{display:flex;gap:8px}
 .tabela-logs-cabecalho{display:flex;justify-content:flex-end;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:10px}
-.tabela-scroll{overflow:auto}
+.tabela-scroll{overflow:auto;-webkit-overflow-scrolling:touch}
 .tabela-logs table{width:100%;border-collapse:collapse;font-size:13px}
 .tabela-logs th{background:var(--navy-deep);color:#fff;text-align:left;padding:11px;white-space:nowrap}
 .tabela-logs td{padding:12px 11px;border-bottom:1px solid var(--border);vertical-align:middle}
@@ -77,8 +81,28 @@
 .celula-ip{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--muted);white-space:nowrap}
 .sem-logs{text-align:center!important;color:var(--muted);padding:36px!important}
 .sem-logs i{display:block;font-size:26px;margin-bottom:8px;opacity:.5}
-.paginacao{display:flex;gap:6px;padding-top:15px}
+.paginacao{display:flex;gap:6px;padding-top:15px;flex-wrap:wrap}
 .paginacao a{border:1px solid var(--border);padding:6px 10px;border-radius:6px;text-decoration:none;color:var(--ink);font-size:13px}
 .paginacao .ativo{background:var(--green);border-color:var(--green);color:#fff}
-@media(max-width:900px){.filtros-logs form{grid-template-columns:repeat(2,1fr)}.filtros-acoes{grid-column:span 2}.logs-cabecalho{flex-direction:column}}
+@media(max-width:900px){.filtros-logs form{grid-template-columns:repeat(2,1fr)}.logs-cabecalho{flex-direction:column}}
+/* Responsivo para ecrãs muito pequenos (ex.: 277x667) */
+@media(max-width:600px){
+    .modulo-cabecalho h1{font-size:19px}
+    .modulo-cabecalho p{font-size:11px}
+    .logs-cabecalho .btn{width:100%;justify-content:center;text-align:center}
+    .filtros-logs,.tabela-logs{padding:12px 10px;border-radius:10px}
+    .filtros-logs form{grid-template-columns:1fr;gap:10px}
+    .filtros-acoes .btn{flex:1}
+    .tabela-logs table{font-size:11px}
+    .tabela-logs th,.tabela-logs td{padding:7px 6px}
+    .celula-descricao{max-width:180px}
+    .selo{font-size:9px;padding:3px 7px}
+    .paginacao a{padding:4px 8px;font-size:11px}
+}
+@media(max-width:320px){
+    .modulo-cabecalho h1{font-size:16px}
+    .tabela-logs table{font-size:10px}
+    .tabela-logs th,.tabela-logs td{padding:5px 4px}
+    .celula-descricao{max-width:120px}
+}
 </style>

@@ -129,7 +129,7 @@
 <div class="table-card">
     <div class="table-header">
         <h3><i class="fas fa-list-ul"></i> Resumo por Empresa</h3>
-        <a href="#" class="btn-link">Ver todas <i class="fas fa-arrow-right"></i></a>
+        
     </div>
     <div class="table-responsive">
         <table class="table-modern">

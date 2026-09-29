@@ -197,6 +197,33 @@ class AuditoriaHelper
         return $descricao;
     }
 
+    /** Lista de prefixos de acção => módulo (ex.: 'transacao' => 'Transações'). */
+    public static function prefixosModulos(): array
+    {
+        return [
+            'transacao' => 'Transações', 'categoria_saida' => 'Categorias de saída', 'categoria' => 'Categorias',
+            'metodo' => 'Métodos de pagamento', 'filial' => 'Filiais', 'empresa' => 'Empresas',
+            'usuario' => 'Utilizadores', 'perfil' => 'Perfil', 'senha' => 'Autenticação',
+            'login' => 'Autenticação', 'logout' => 'Autenticação', 'permissao' => 'Permissões',
+            'importacao' => 'Importação', 'configuracao' => 'Configurações', 'logs' => 'Logs de auditoria',
+            'notificacao' => 'Notificações', 'backup' => 'Backups',
+        ];
+    }
+
+    /** Opções [chave => rótulo] para o filtro de módulo, derivadas do catálogo de acções. */
+    public static function opcoesModulos(): array
+    {
+        $prefixos = self::prefixosModulos();
+        $modulos = [];
+        foreach (array_keys(self::CATALOGO_ACOES) as $acao) {
+            foreach ($prefixos as $prefixo => $rotulo) {
+                if (str_starts_with($acao, $prefixo . '_')) { $modulos[$prefixo] = $rotulo; break; }
+            }
+        }
+        asort($modulos);
+        return $modulos;
+    }
+
     /** Opções [chave => rótulo] para o filtro de acção, ordenadas alfabeticamente pelo rótulo. */
     public static function opcoesAcoes(): array
     {
@@ -204,6 +231,18 @@ class AuditoriaHelper
         foreach (self::CATALOGO_ACOES as $chave => [$rotulo, ]) $opcoes[$chave] = $rotulo;
         asort($opcoes);
         return $opcoes;
+    }
+
+    /** Tabela afetada => nome do módulo (ex.: 'transacoes' => 'Transações'). */
+    public static function catalogoTabelas(): array
+    {
+        return self::CATALOGO_TABELAS;
+    }
+
+    /** Tabelas cujo rótulo pertence a um dado módulo (ex.: 'Transações'). */
+    public static function tabelasPorModulo(string $modulo): array
+    {
+        return array_filter(self::CATALOGO_TABELAS, fn($rotulo) => $rotulo === $modulo);
     }
 
     /** Opções [chave => rótulo] para o filtro de tabela, ordenadas alfabeticamente pelo rótulo. */

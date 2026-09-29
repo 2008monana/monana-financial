@@ -2007,6 +2007,27 @@ $isViewer = $usuario_perfil === 'visualizador';
             .kpi-change { font-size: 6px; }
         }
 
+        /* ============================================
+           MICRO-ECRÃS (ex.: 277x667) — ajuste global
+           ============================================ */
+        @media (max-width: 320px) {
+            html, body { max-width: 100%; overflow-x: hidden; }
+            .content { padding: 8px 6px 24px; }
+            .topbar { padding: 6px; }
+            .sidebar { width: 240px; }
+            .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .table-modern { font-size: 8px; }
+            .table-modern thead th, .table-modern tbody td { padding: 3px; white-space: nowrap; }
+            .chart-body { height: 120px; }
+            .chart-card, .table-card { padding: 6px; }
+            .chart-header h3, .table-header h3 { font-size: 10px; }
+            .dash-header h2, .page-title { font-size: 14px; }
+            .period-btn { font-size: 8px; padding: 3px 5px; }
+            .btn, .btn-success, .btn-primary { font-size: 10px; padding: 6px 8px; }
+            input, select, textarea { font-size: 12px; max-width: 100%; }
+            .modal, .caixa { width: 96% !important; }
+        }
+
         .sidebar-overlay {
             display: none;
             position: fixed;

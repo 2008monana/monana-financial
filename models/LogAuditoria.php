@@ -1,5 +1,6 @@
 <?php
 require_once CAMINHO_RAIZ . '/core/Model.php';
+require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
 class LogAuditoria extends Model
 {
     protected string $tabela = 'logs_auditoria';
@@ -16,6 +17,22 @@ class LogAuditoria extends Model
         $sql=' FROM logs_auditoria l LEFT JOIN usuarios u ON u.id=l.usuario_id WHERE 1=1'; $p=[];
         if ($empresaId !== null) { $sql.=' AND u.empresa_id=:empresa_id'; $p['empresa_id']=$empresaId; }
         foreach (['usuario_id'=>'usuario_id','acao'=>'acao'] as $entrada=>$coluna) if (!empty($filtros[$entrada])) { $sql.=" AND l.$coluna=:$entrada"; $p[$entrada]=$filtros[$entrada]; }
+        if (!empty($filtros['modulo'])) {
+            $rotulosModulos = AuditoriaHelper::prefixosModulos();
+            $nomeModulo = $rotulosModulos[$filtros['modulo']] ?? null;
+            $condicoes = ['l.acao LIKE :modulo_prefixo'];
+            $p['modulo_prefixo'] = $filtros['modulo'].'_%';
+            if ($nomeModulo !== null) {
+                $placeholders = [];
+                foreach (array_keys(AuditoriaHelper::tabelasPorModulo($nomeModulo)) as $i => $tabela) {
+                    $chave = 'modulo_tab_' . $i;
+                    $placeholders[] = ':'.$chave;
+                    $p[$chave] = $tabela;
+                }
+                if ($placeholders) $condicoes[] = 'l.tabela_afetada IN ('.implode(',', $placeholders).')';
+            }
+            $sql .= ' AND ('.implode(' OR ', $condicoes).')';
+        }
         if (!empty($filtros['busca'])) { $sql.=' AND (l.acao LIKE :busca OR l.motivo LIKE :busca OR l.ip_origem LIKE :busca OR u.nome LIKE :busca)'; $p['busca']='%'.$filtros['busca'].'%'; }
         if (!empty($filtros['inicio'])) {$sql.=' AND l.criado_em >= :inicio';$p['inicio']=$filtros['inicio'].' 00:00:00';}
         if (!empty($filtros['fim'])) {$sql.=' AND l.criado_em <= :fim';$p['fim']=$filtros['fim'].' 23:59:59';}
