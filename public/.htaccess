@@ -40,13 +40,17 @@ AddType image/jpeg .jpg .jpeg
 AddType image/svg+xml .svg
 AddType image/x-icon .ico
 <IfModule mod_mime_module>
-    # Reforco: garante o Content-Type mesmo se AddType for ignorado
-    AddHandler text/css .css
-    AddHandler application/javascript .js
+    # Nota: AddHandler com tipos MIME e invalido e pode provocar erro
+    # 500 no Apache — por isso NAO e usado aqui. O AddType acima ja
+    # garante o Content-Type correcto.
+    DefaultType None
 </IfModule>
 <IfModule mod_headers.c>
     <FilesMatch "\.(css|js|png|jpe?g|svg|ico|woff2?)$">
-        Header set X-Content-Type-Options "nosniff"
+        # Nota: "nosniff" com MIME errado partia o layout; como os
+        # MIME types estao garantidos via AddType, removemos o header
+        # para maximo de compatibilidade com instalacoes antigas.
+        Header unset X-Content-Type-Options
         Header unset Content-Security-Policy
         # Cache curto: evita ficar preso a versoes antigas/partidas
         Header set Cache-Control "public, max-age=600"

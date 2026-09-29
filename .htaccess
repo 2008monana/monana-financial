@@ -2,104 +2,59 @@
 # MonanaFinancial - Encaminhamento para /public (URLs limpas)
 # Ficheiro na RAIZ do projeto (C:\xampp\htdocs\monana-financial\.htaccess)
 #
-# IMPORTANTE: este ficheiro usa regras RELATIVAS ao diretório onde está
-# instalado (funciona em htdocs/monana-financial e em domínio próprio).
-# Para aplicar: substitua este ficheiro no XAMPP, REINICIE o Apache e
-# faça um hard refresh no navegador (Ctrl+Shift+R).
+# ESTRATEGIA:
+#   - Os ficheiros ESTATICOS reais vivem em public/ e sao servidos por
+#     reescrita INTERNA directa (sem testes de existencia com capturas
+#     vazias %1/%2, sem redirecionamentos externos em cadeia e sem
+#     regras que possam provocar ciclos). As capturas $1/$2 da propria
+#     RewriteRule sao usadas no destino - o que e sempre valido.
+#   - As ROTAS dinamicas (/auth, /dashboard, ...) caem no front
+#     controller public/index.php.
+#   - Funciona instalado em htdocs/monana-financial OU em dominio proprio.
+# Para aplicar: substitua este ficheiro, REINICIE o Apache e faca
+# hard refresh no navegador (Ctrl+Shift+R).
 # =====================================================
 
-Options -Indexes -MultiViews +FollowSymLinks
+Options -Indexes +FollowSymLinks
 RewriteEngine On
 
 # =============================================
-# 0) PASTAS DE CÓDIGO-FONTE: bloqueio apenas para ACESSO DIRETO.
-#    O teste %{REQUEST_FILENAME} -f/-d garante que só pedidos que
-#    apontam fisicamente para estas pastas são bloqueados. Assim,
-#    a rota "/logs" do sistema NÃO gera mais "403 Forbidden"
-#    (antes a pasta física /logs da raiz conflituava com a rota).
+# 1) PASTAS DE CODIGO-FONTE: acesso directo proibido
+#    (apenas quando o pedido aponta fisicamente para elas).
 # =============================================
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^(config|controllers|core|helpers|middleware|models|views|exports|sql|vendor|storage)(/|$) - [F,L]
+RewriteRule ^(config|controllers|core|helpers|middleware|models|views|database|sql|exports|storage)(/|$) - [F,L]
 
 # =============================================
-# 1) REDIRECIONAMENTO EXTERNO: pedidos que ainda mostram /public/
-#    na URL (ex.: http://localhost/monana-financial/public/dashboard)
-#    passam a usar a estrutura limpa dominio/modulo.
-#    %1 = prefixo anterior a "public/" extraído do THE_REQUEST
-#    (ex.: /monana-financial); $1 = restante do caminho capturado pela regra.
+# 2) URLS DESACTUALIZADAS COM /public/ NA BARRA DE ENDERECO
+#    voltam a estrutura limpa (dominio/modulo).
+#    Ex.: /monana-financial/public/dashboard -> /monana-financial/dashboard
 # =============================================
-RewriteCond %{THE_REQUEST} (\S*/)?public/[^\s?]+
-RewriteRule ^public/(.*)$ %1$1 [R=302,L]
-RewriteCond %{THE_REQUEST} \S*/public/?[\s?]
-RewriteRule ^public/?$ %1 [R=302,L]
+RewriteCond %{THE_REQUEST} ^[A-Z]+\s\S*/public/[^\s?]+
+RewriteRule ^(.*)public/(.+)$ $1$2 [R=302,L]
+RewriteCond %{THE_REQUEST} ^[A-Z]+\s\S*/public/?[\s?]
+RewriteRule ^(.*)public/?$ $1/ [R=302,L]
 
 # =============================================
-# 2a) REDIRECIONAMENTO EXTERNO: URLs desatualizadas em cache/botão
-#     "voltar" do navegador que ainda apontam para /public/css|js|images|uploads
-#     passam a usar a estrutura limpa dominio/modulo.
-#     IMPORTANTE: %1 é o prefixo ANTERIOR a "public/" extraído do
-#     THE_REQUEST (ex.: /monana-financial); sem ele, o redirect gerava
-#     caminhos incorrectos como //css/login.css (404 no CSS/JS da página
-#     de login). A regra usa $1/$2 (capturas da própria regra), porque
-#     %1 já aponta para o prefixo do projeto.
+# 3) CREDENCIAIS NUNCA NA URL: se o formulario for enviado por
+#    GET (?email=...&senha=...), limpa a URL e volta ao login.
 # =============================================
-RewriteCond %{THE_REQUEST} (\S*/)?public/(css|js|images|uploads)/[^\s?]+
-RewriteRule ^public/(css|js|images|uploads)/(.*)$ %1$1/$2 [R=302,L]
+RewriteCond %{QUERY_STRING} (^|&)(email|senha)= [NC]
+RewriteRule ^auth(/login)?$ auth? [R=302,L,QSD]
 
 # =============================================
-# 2b) FICHEIROS ESTÁTICOS REAIS (css, js, images, uploads)
-#     Ex.: /monana-financial/css/login.css -> /public/css/login.css
-#     IMPORTANTE: esta versao NAO depende de capturas (%1/%2 nem $1/$2)
-#     nos testes de existencia. Nas versoes anteriores esses testes
-#     recebiam strings vazias, falhavam, e os pedidos caian em
-#     index.php — o navegador recebia HTML em vez de CSS/PNG e recusava
-#     aplicar a folha de estilos ("estilo quebrado"), alem de perder o
-#     favicon e a imagem de fundo do login.
-#     Cada regra testa diretamente o caminho do pedido ({REQUEST_URI})
-#     contra o ficheiro fisico em public/, servido com o MIME type
-#     correto. Aceita tambem pedidos que cheguem com o prefixo do
-#     projeto ainda no caminho (ex.: /monana-financial/css/login.css).
+# 4) FICHEIROS ESTATICOS (css, js, images, uploads, favicon):
+#    reescrita INTERNA para dentro de public/, usando as capturas
+#    da propria regra. Se o ficheiro nao existir, a seccao 5 ainda
+#    o envia para o front controller (que devolve 404 HTML normal),
+#    mas os caminhos abaixo correspondem aos ficheiros reais do repo.
 # =============================================
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f
-RewriteRule ^(css|js|images|uploads)/(.*)$ public/$1/$2 [L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI} -f
-RewriteRule ^[^/]+/(css|js|images|uploads)/(.*)$ public/$1/$2 [L]
-
-# Favicon na raiz da URL (ex.: http://localhost/favicon.ico), muito
-# usado pelo navegador sem passar pela view — serve public/favicon.ico.
-RewriteCond %{DOCUMENT_ROOT}/public/favicon.ico -f
-RewriteRule ^favicon\.ico$ public/favicon.ico [L]
-
-# Fallback generico: qualquer outro ficheiro/pasta REAL dentro de
-# /public (robusto: testa o caminho absoluto do documento).
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f [OR]
-RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -d
-RewriteRule ^(.+)$ public/$1 [L]
+RewriteRule ^(?:[^/]+/)?(css|js|images|uploads)/(.+)$ public/$1/$2 [L]
+RewriteRule ^(?:[^/]+/)?favicon\.ico$ public/favicon.ico [L]
 
 # =============================================
-# 3) PEDIDOS COM EXTENSÃO DE FICHEIRO (.php, .html, etc.)
-#    que não são ficheiros estáticos reais -> 404
-#    (impede acesso direto a index.php, config.php, etc.)
-#    IMPORTANTE: o teste de existencia faz-se contra o caminho FISICO
-#    em public/ (%{DOCUMENT_ROOT}/public%{REQUEST_URI}), porque os
-#    estaticos reais (favicon.ico, robots.txt, imagens na raiz de
-#    /public) ainda nao foram reescritos nesta altura e, sem este
-#    teste, receberiam um 404 falso.
-# =============================================
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} !-f
-RewriteCond %{REQUEST_URI} \.[a-zA-Z0-9]{1,6}(/|$)
-RewriteRule .* - [R=404,L]
-
-# =============================================
-# 4) URLs LIMPAS: tudo o resto cai em public/index.php
-#    (o Router trata os acessos proibidos a pastas de código-fonte,
-#     devolvendo 404 — nunca "Forbidden")
+# 5) TUDO O RESTO -> front controller (URLs limpas).
 # =============================================
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => '__root__',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-qwen-code-f9a3542c-b33a-4a1e-8dbd-bc783362b53c',
+        'version' => 'dev-qwen-code-f9a3542c-b33a-4a1e-8dbd-bc783362b53c',
+        'reference' => 'af5654d57fe4a3c466dd0c2c8bbed15f52fe8d95',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-qwen-code-f9a3542c-b33a-4a1e-8dbd-bc783362b53c',
+            'version' => 'dev-qwen-code-f9a3542c-b33a-4a1e-8dbd-bc783362b53c',
+            'reference' => 'af5654d57fe4a3c466dd0c2c8bbed15f52fe8d95',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
