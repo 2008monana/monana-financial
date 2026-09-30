@@ -85,7 +85,11 @@ class NotificacaoController extends Controller
     public function contagem(): void
     {
         $usuarioId = (int) $_SESSION['usuario_id'];
-        $naoLidas = $this->notificacaoModel->contarNaoLidas($usuarioId);
+        // Notificações destinam-se apenas ao admin da empresa — os restantes
+        // perfis (incluindo o super admin) recebem contagem zero, mantendo o
+        // sino de notificações oculto.
+        $perfil = $_SESSION['usuario_perfil'] ?? '';
+        $naoLidas = $perfil === 'admin_empresa' ? $this->notificacaoModel->contarNaoLidas($usuarioId) : 0;
 
         $this->json([
             'sucesso' => true,

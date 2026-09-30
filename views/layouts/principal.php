@@ -3470,12 +3470,14 @@ $isViewer = $usuario_perfil === 'visualizador';
         <a class="nav-item <?php echo $paginaAtiva === 'perfil' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/perfil">
             <i class="fa-solid fa-user-cog"></i> Meu Perfil
         </a>
+        <?php if ($isAdminEmpresa): ?>
         <a class="nav-item <?php echo $paginaAtiva === 'notificacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/notificacoes">
             <i class="fa-solid fa-bell"></i> Notificações
         </a>
         <a class="nav-item <?php echo $paginaAtiva === 'minha_assinatura' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/assinaturas/minha">
-            <i class="fa-solid fa-certificate"></i> Minha Assinatura
+            <i class="fa-solid fa-id-card"></i> Minha Assinatura
         </a>
+        <?php endif; ?>
 
         <a class="nav-item logout-item" href="#" onclick="confirmarLogout(event)">
             <i class="fa-solid fa-right-from-bracket"></i> Sair
@@ -3511,9 +3513,9 @@ $isViewer = $usuario_perfil === 'visualizador';
                 <i class="fa-regular fa-calendar"></i>
                 <?php echo date('d/m/Y'); ?>
             </div>
-            <a class="bell-wrap" href="<?php echo URL_BASE; ?>/notificacoes" title="Notificações">
+            <a class="bell-wrap" href="<?php echo URL_BASE; ?>/notificacoes" title="Notificações" id="sino-notificacoes" style="display:none;">
                 <i class="fa-regular fa-bell"></i>
-                <div class="bell-dot">0</div>
+                <div class="bell-dot" style="display:none;">0</div>
             </a>
             <a class="profile" href="<?php echo URL_BASE; ?>/perfil">
                 <div class="avatar"><?php echo strtoupper(substr($usuario_nome, 0, 2)); ?></div>
@@ -3533,6 +3535,8 @@ $isViewer = $usuario_perfil === 'visualizador';
             require_once $caminhoAssinaturaHelper;
             $estAs = AssinaturaHelper::detalharParaFaixa(AssinaturaHelper::estadoActual()); // memorizado pelo middleware (sem repetir a consulta)
             if ($estAs && in_array($estAs['estado'] ?? '', ['carencia', 'por_vencer'], true)) {
+                // "Ver detalhes" só aparece para quem tem acesso à página Minha Assinatura.
+                $podeVerMinhaAssinatura = $isAdminEmpresa;
                 $linkWaFaixa = AssinaturaHelper::linkWhatsapp(
                     'Olá! Sou da empresa ' . ($_SESSION['empresa_nome'] ?? '') . '. '
                     . ($estAs['estado'] === 'carencia' ? 'A nossa assinatura expirou. Gostaria de negociar a assinatura do Monana Financial.'
@@ -3556,7 +3560,9 @@ $isViewer = $usuario_perfil === 'visualizador';
                                     <i class="fa-brands fa-whatsapp"></i> Negociar no WhatsApp
                                 </a>
                             <?php endif; ?>
+                            <?php if ($podeVerMinhaAssinatura): ?>
                             <a class="assin-faixa-link" href="<?php echo URL_BASE; ?>/assinaturas/minha">Ver detalhes</a>
+                            <?php endif; ?>
                         </span>
                     </div>
                     <?php
@@ -3574,7 +3580,9 @@ $isViewer = $usuario_perfil === 'visualizador';
                                     <i class="fa-solid fa-rotate"></i> Renovar
                                 </a>
                             <?php endif; ?>
+                            <?php if ($podeVerMinhaAssinatura): ?>
                             <a class="assin-faixa-link" href="<?php echo URL_BASE; ?>/assinaturas/minha">Ver detalhes</a>
+                            <?php endif; ?>
                             <button type="button" class="assin-faixa-fechar" title="Fechar"
                                     onclick="document.getElementById('assin-faixa').remove();
                                              fetch('<?php echo URL_BASE; ?>/assinaturas/esconderFaixa', {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}});">
@@ -3638,8 +3646,11 @@ document.addEventListener('DOMContentLoaded', function() {
  * Busca via AJAX e atualiza o badge
  */
 function atualizarContagemNotificacoes() {
-    const dot = document.getElementById('bell-dot');
-    if (!dot) return;
+    const sino = document.getElementById('sino-notificacoes');
+    // Sino oculto por padrão: só aparece quando existe pelo menos 1 notificação não lida.
+    if (!sino) return;
+
+    const dot = sino.querySelector('.bell-dot');
 
     fetch('<?php echo URL_BASE; ?>/notificacoes/contagem')
         .then(response => {
@@ -3652,10 +3663,14 @@ function atualizarContagemNotificacoes() {
             if (data.sucesso && typeof data.nao_lidas !== 'undefined') {
                 const count = parseInt(data.nao_lidas) || 0;
                 if (count > 0) {
-                    dot.style.display = 'flex';
-                    dot.textContent = count > 99 ? '99+' : count;
+                    sino.style.display = 'flex';
+                    if (dot) {
+                        dot.style.display = 'flex';
+                        dot.textContent = count > 99 ? '99+' : count;
+                    }
                 } else {
-                    dot.style.display = 'none';
+                    sino.style.display = 'none';
+                    if (dot) dot.style.display = 'none';
                 }
             }
         })

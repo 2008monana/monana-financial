@@ -13,6 +13,12 @@ if (!$acessoTotal && !empty($_SESSION['usuario_id'])) {
         if ((int) $modulo['permitido'] === 1) $permitidos[$modulo['nome']] = true;
     }
 }
+// Ajustes de visibilidade por perfil:
+//  - "Minha Assinatura" e "Notificações": apenas o admin da empresa deve ver no sidebar.
+//  - O sino/link de notificações fica oculto para os restantes perfis.
+if ($perfil === 'super_admin') {
+    $modulosAdminEmpresa = array_diff($modulosAdminEmpresa, ['minha_assinatura', 'notificacoes']);
+}
 $temAcessoMenu = static function (string $modulo) use ($acessoTotal, $perfil, $modulosAdminEmpresa, $permitidos): bool {
     if ($acessoTotal) return true;
     if ($perfil === 'admin_empresa') return in_array($modulo, $modulosAdminEmpresa, true);
