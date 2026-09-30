@@ -9,7 +9,16 @@ foreach ($todos as $l) {
     elseif ($st === 'carencia') $carenciaCount++;
     elseif ($st === 'bloqueada') $bloqueadasCount++;
 }
-$linkBase = URL_BASE . '/assinaturas';
+    $linkBase = URL_BASE . '/assinaturas';
+    // Página exclusiva do Super Admin: não faz sentido mostrar o cartão
+    // "Minha Assinatura" (das empresas) nem cadeados de bloqueio —
+    // o Super Admin tem sempre acesso; os selos usam o efeito verde.
+    $selosAssinatura = [
+        'gratuita'  => ['class' => 'assin-gratuita',  'icone' => 'fa-circle-check', 'texto' => 'Gratuita'],
+        'activa'    => ['class' => 'assin-activa',    'icone' => 'fa-circle-check', 'texto' => 'Activa'],
+        'carencia'  => ['class' => 'assin-carencia',  'icone' => 'fa-hourglass-half', 'texto' => 'Em carência'],
+        'bloqueada' => ['class' => 'assin-bloqueada', 'icone' => 'fa-circle-check', 'texto' => 'Bloqueada'],
+    ];
 ?>
 
 <div class="assin-view">
@@ -26,19 +35,19 @@ $linkBase = URL_BASE . '/assinaturas';
 <section class="stats-grid">
     <article class="stat-card">
         <div class="stat-icon green"><i class="fas fa-coins"></i></div>
-        <div><span class="stat-valor"><?= htmlspecialchars(FormatacaoHelper::moeda($receita_mes)) ?></span><span class="stat-legenda">Receita do mês</span></div>
+        <div class="stat-info"><span class="stat-valor"><?= htmlspecialchars(FormatacaoHelper::moeda($receita_mes)) ?></span><span class="stat-legenda">Receita do mês</span></div>
     </article>
     <article class="stat-card">
         <div class="stat-icon navy"><i class="fas fa-circle-check"></i></div>
-        <div><span class="stat-valor"><?= (int) $activasCount ?></span><span class="stat-legenda">Empresas activas</span></div>
+        <div class="stat-info"><span class="stat-valor"><?= (int) $activasCount ?></span><span class="stat-legenda">Empresas activas</span></div>
     </article>
     <article class="stat-card">
         <div class="stat-icon orange"><i class="fas fa-hourglass-half"></i></div>
-        <div><span class="stat-valor"><?= (int) $carenciaCount ?></span><span class="stat-legenda">A vencer / em carência</span></div>
+        <div class="stat-info"><span class="stat-valor"><?= (int) $carenciaCount ?></span><span class="stat-legenda">A vencer / em carência</span></div>
     </article>
     <article class="stat-card">
-        <div class="stat-icon red"><i class="fas fa-lock"></i></div>
-        <div><span class="stat-valor"><?= (int) $bloqueadasCount ?></span><span class="stat-legenda">Bloqueadas</span></div>
+        <div class="stat-icon red"><i class="fas fa-ban"></i></div>
+        <div class="stat-info"><span class="stat-valor"><?= (int) $bloqueadasCount ?></span><span class="stat-legenda">Bloqueadas</span></div>
     </article>
 </section>
 
@@ -120,7 +129,7 @@ $linkBase = URL_BASE . '/assinaturas';
                         </div>
                     </td>
                     <td><?= htmlspecialchars($l['plano_nome'] ?? '') ?></td>
-                    <td><?= assinSeloEstado($st) ?></td>
+                    <td><?= assinSeloEstado($st, false, $selosAssinatura) ?></td>
                     <td><?= assinDataBr($ed['inicio']) ?></td>
                     <td>
                         <?php if ($st === 'gratuita'): ?>

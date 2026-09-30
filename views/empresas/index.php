@@ -5,10 +5,12 @@
 require_once CAMINHO_RAIZ . '/views/assinaturas/_estilos.php';
 
 $selosAssinatura = [
-    'gratuita'  => ['class' => 'assin-gratuita',  'icone' => 'fa-gift',           'texto' => 'Gratuita'],
+    'gratuita'  => ['class' => 'assin-gratuita',  'icone' => 'fa-circle-check',   'texto' => 'Gratuita'],
     'activa'    => ['class' => 'assin-activa',    'icone' => 'fa-circle-check',   'texto' => 'Activa'],
     'carencia'  => ['class' => 'assin-carencia',  'icone' => 'fa-hourglass-half', 'texto' => 'Em carência'],
-    'bloqueada' => ['class' => 'assin-bloqueada', 'icone' => 'fa-lock',           'texto' => 'Bloqueada'],
+    // O Super Admin tem sempre acesso a estas páginas: sem efeito de cadeado,
+    // usa-se o "efeito verdinho" de acesso permitido.
+    'bloqueada' => ['class' => 'assin-bloqueada', 'icone' => 'fa-circle-check',   'texto' => 'Bloqueada'],
 ];
 ?>
 
