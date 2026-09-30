@@ -12,6 +12,7 @@ $whatsEmpresa = AssinaturaHelper::linkWhatsapp(
 );
 ?>
 
+    <div class="assin-view">
 <div class="page-header">
     <div class="page-header-left">
         <h1 class="page-title"><i class="fas fa-crown"></i> Assinatura — <?= htmlspecialchars($empresa['nome']) ?></h1>
@@ -88,7 +89,10 @@ $whatsEmpresa = AssinaturaHelper::linkWhatsapp(
                         <select name="plano_id" id="selPlano" required>
                             <?php foreach ($planos as $p): ?>
                                 <option value="<?= (int) $p['id'] ?>"
+                                        <?= (isset($plano_actual) && $plano_actual !== null && (int) $p['id'] === (int) $plano_actual) ? 'selected' : '' ?>
                                         data-preco="<?= htmlspecialchars((string) $p['preco']) ?>"
+                                        data-nome="<?= htmlspecialchars($p['nome']) ?>"
+                                        data-duracao="<?= $p['duracao_dias'] !== null ? (int) $p['duracao_dias'] : 0 ?>"
                                         data-gratuito="<?= $p['codigo'] === 'gratuito' ? 1 : 0 ?>">
                                     <?= htmlspecialchars($p['nome']) ?>
                                 </option>
@@ -158,12 +162,20 @@ $whatsEmpresa = AssinaturaHelper::linkWhatsapp(
             <div class="assin-cartao-acoes">
                 <?php $bloqManual = !empty($estado['linha']['bloqueada_manual']); ?>
                 <?php if ($bloqManual): ?>
-                    <form method="post" action="<?= URL_BASE ?>/assinaturas/desbloquear/<?= (int) $empresa['id'] ?>" onsubmit="return confirm('Remover o bloqueio manual desta empresa?');">
+                    <form method="post" action="<?= URL_BASE ?>/assinaturas/desbloquear/<?= (int) $empresa['id'] ?>"
+                          data-confirmar="Esta acção remove o bloqueio manual e devolve o acesso normal a todos os utilizadores desta empresa."
+                          data-confirmar-titulo="Remover bloqueio?"
+                          data-confirmar-tipo="sucesso"
+                          data-confirmar-texto="Sim, desbloquear">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                         <button class="btn btn-success" style="width:100%"><i class="fas fa-lock-open"></i> Remover bloqueio</button>
                     </form>
                 <?php else: ?>
-                    <form method="post" action="<?= URL_BASE ?>/assinaturas/bloquear/<?= (int) $empresa['id'] ?>" onsubmit="return confirm('Bloquear JÁ o acesso desta empresa? Todos os utilizadores ficarão sem acesso.');">
+                    <form method="post" action="<?= URL_BASE ?>/assinaturas/bloquear/<?= (int) $empresa['id'] ?>"
+                          data-confirmar="Ao bloquear agora, <strong>todos os utilizadores desta empresa ficam imediatamente sem acesso</strong> ao sistema. Esta acção pode ser revertida a qualquer momento."
+                          data-confirmar-titulo="Bloquear acesso da empresa?"
+                          data-confirmar-tipo="perigo"
+                          data-confirmar-texto="Sim, bloquear agora">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                         <button class="btn btn-danger" style="width:100%"><i class="fas fa-lock"></i> Bloquear agora</button>
                     </form>
@@ -181,7 +193,11 @@ $whatsEmpresa = AssinaturaHelper::linkWhatsapp(
                     <div class="form-card" style="box-shadow:none;border:1px dashed var(--border)">
                         <div class="form-card-body" style="padding:14px">
                             <h4 style="margin:0 0 10px;font-size:14px"><i class="fas fa-coins"></i> Registar pagamento da carência</h4>
-                            <form method="post" action="<?= URL_BASE ?>/assinaturas/registarPagamento/<?= (int) $estado['linha']['id'] ?>">
+                            <form method="post" action="<?= URL_BASE ?>/assinaturas/registarPagamento/<?= (int) $estado['linha']['id'] ?>"
+                                  data-confirmar="Confirma o registo deste pagamento? A assinatura passa a <strong>activa</strong> imediatamente."
+                                  data-confirmar-titulo="Registar pagamento?"
+                                  data-confirmar-tipo="sucesso"
+                                  data-confirmar-texto="Sim, registar">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                                 <div class="form-group">
                                     <label>Valor (Kz)</label>
@@ -282,6 +298,10 @@ $whatsEmpresa = AssinaturaHelper::linkWhatsapp(
     var grpDetalhesPg = document.getElementById('grpDetalhesPg');
     var selPg = document.getElementById('selPagamento');
 
+    function formatarKz(v) {
+        return 'Kz ' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.').replace('.', ',');
+    }
+
     function actualizar() {
         var opt = sel.options[sel.selectedIndex];
         if (!opt) return;
@@ -300,15 +320,46 @@ $whatsEmpresa = AssinaturaHelper::linkWhatsapp(
     actualizar();
 
     document.getElementById('formTrocarPlano').addEventListener('submit', function (ev) {
+        if (this.dataset.aConfirmar === 'ok') return; // já confirmado no modal
+        ev.preventDefault();
+        var form = this;
         var opt = sel.options[sel.selectedIndex];
         var gratuito = opt.getAttribute('data-gratuito') === '1';
         var pendente = !gratuito && selPg.value === 'pendente';
-        var msg = gratuito
-            ? 'Vamos aplicar o plano GRATUITO a esta empresa. Confirma?'
-            : (pendente
-                ? 'Vamos aplicar o plano pago SEM registo de pagamento: a empresa entra em carência e será notificada. Confirma?'
-                : 'Vamos aplicar o plano pago com pagamento recebido e ativar já a assinatura. Confirma?');
-        if (!confirm(msg)) ev.preventDefault();
+        var nomePlano = opt.getAttribute('data-nome') || opt.text;
+        var duracao = parseInt(opt.getAttribute('data-duracao') || '0', 10);
+        var valor = parseFloat(inpValor.value || '0');
+
+        var titulo, msg, tipo, texto;
+        if (gratuito) {
+            titulo = 'Aplicar plano gratuito';
+            msg = 'Vamos aplicar o plano <strong>Gratuito</strong> a esta empresa.' +
+                  (duracao > 0 ? ' O período terminará em <strong>' + duracao + ' dias</strong>.' : ' Sem data de término.') +
+                  ' Confirma?';
+            tipo = 'info';
+            texto = 'Sim, aplicar';
+        } else if (pendente) {
+            titulo = 'Activar com carência';
+            msg = 'Vamos aplicar o plano <strong>' + nomePlano + '</strong> (<em>' + formatarKz(valor) + '</em>) ' +
+                  '<strong>sem registo de pagamento</strong>: a empresa entra em período de carência e será notificada. Confirma?';
+            tipo = 'aviso';
+            texto = 'Sim, aplicar';
+        } else {
+            titulo = 'Activar assinatura';
+            msg = 'Vamos aplicar o plano <strong>' + nomePlano + '</strong> (<em>' + formatarKz(valor) + '</em>) com ' +
+                  '<strong>pagamento recebido</strong> e activar já a assinatura desta empresa. Confirma?';
+            tipo = 'sucesso';
+            texto = 'Sim, aplicar plano';
+        }
+
+        assinConfirmar({ titulo: titulo, mensagem: msg, tipo: tipo, textoConfirmar: texto })
+            .then(function (sim) {
+                if (sim) {
+                    form.dataset.aConfirmar = 'ok';
+                    HTMLFormElement.prototype.submit.call(form);
+                }
+            });
     });
 })();
 </script>
+    </div><!-- /assin-view -->
