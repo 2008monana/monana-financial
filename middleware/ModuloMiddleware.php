@@ -22,6 +22,7 @@ class ModuloMiddleware
         'logs',
         'metodos_pagamento',
         'configuracoes',
+        'minha_assinatura',
     ];
 
     public function __construct()
@@ -60,7 +61,7 @@ class ModuloMiddleware
             // a consulta à própria empresa via LogsController::empresaId())
             // ('configuracoes' NÃO entra aqui: o Admin Empresa acede às configurações
             // da SUA empresa; ConfiguracoesController restringe a página /sistema)
-            $modulosExclusivos = ['empresas'];
+            $modulosExclusivos = ['empresas', 'assinaturas'];
             if (in_array($moduloNome, $modulosExclusivos)) {
                 $this->negarAcesso();
             }

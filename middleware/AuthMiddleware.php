@@ -49,7 +49,7 @@ class AuthMiddleware
         if (str_starts_with($rota, 'relatorios/diario-planilha')) return 'planilha';
         $pagina = explode('/', $rota)[0] ?? '';
         return [
-            'empresas' => 'empresas', 'filiais' => 'filiais', 'usuarios' => 'usuarios',
+            'empresas' => 'empresas', 'assinaturas' => 'assinaturas', 'filiais' => 'filiais', 'usuarios' => 'usuarios',
             'backups' => 'backups', 'logs' => 'logs', 'configuracoes' => 'configuracoes',
         ][$pagina] ?? null;
     }

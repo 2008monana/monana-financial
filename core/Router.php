@@ -114,6 +114,21 @@ class Router
         'empresas/alternarEstado' => 'empresas',
 
         // =============================================
+        // ASSINATURAS (Super Admin; minha/bloqueada para empresas)
+        // =============================================
+        'assinaturas' => 'assinaturas',
+        'assinaturas/index' => 'assinaturas',
+        'assinaturas/empresa' => 'assinaturas',
+        'assinaturas/trocarPlano' => 'assinaturas',
+        'assinaturas/registarPagamento' => 'assinaturas',
+        'assinaturas/bloquear' => 'assinaturas',
+        'assinaturas/desbloquear' => 'assinaturas',
+        'assinaturas/planos' => 'assinaturas',
+        'assinaturas/guardarPlano' => 'assinaturas',
+        'assinaturas/minha' => 'minha_assinatura',
+        'assinaturas/bloqueada' => 'perfil',
+
+        // =============================================
         // UTILIZADORES
         // =============================================
         'usuarios' => 'usuarios',
@@ -287,7 +302,7 @@ class Router
         $modulosValidosAuto = array_unique(array_merge(
             array_keys($this->rotaParaModulo),
             ['dashboard', 'transacoes', 'relatorios', 'categorias', 'filiais',
-             'empresas', 'usuarios', 'perfil', 'notificacoes', 'backups',
+             'empresas', 'assinaturas', 'minha_assinatura', 'usuarios', 'perfil', 'notificacoes', 'backups',
              'logs', 'configuracoes', 'metodos-pagamento', 'auth', 'importacao']
         ));
         if ($primeiro === 'public' || (!empty($partesUrl) && !isset($this->rotaParaModulo[$partesUrl[0]]) && $partesUrl[0] !== '')) {
@@ -373,6 +388,15 @@ class Router
             if (file_exists($caminhoMiddleware)) {
                 require_once $caminhoMiddleware;
                 (new AuthMiddleware())->verificar();
+            }
+
+            // =============================================
+            // MIDDLEWARE DE ASSINATURA (bloqueio por falta de pagamento)
+            // =============================================
+            $caminhoAssinaturaMiddleware = CAMINHO_RAIZ . '/middleware/AssinaturaMiddleware.php';
+            if (file_exists($caminhoAssinaturaMiddleware)) {
+                require_once $caminhoAssinaturaMiddleware;
+                (new AssinaturaMiddleware())->verificar($rotaAtual);
             }
 
             // =============================================

@@ -159,10 +159,10 @@ class AssinaturaHelper
     }
 
     /** Aviso prévio de vencimento (7/3/1 dias), idempotente pelo tipo. */
-    public static function notificarVencimento(int $empresaId, int $assinaturaId, string $tipo, int $dias): void
+    public static function notificarVencimento(int $empresaId, int $assinaturaId, string $tipo, int $dias): bool
     {
         if (!self::garantirAviso($assinaturaId, $tipo)) {
-            return;
+            return false;
         }
         $nome = self::nomeEmpresa($empresaId);
         try {
@@ -175,6 +175,7 @@ class AssinaturaHelper
         } catch (Throwable $e) {
             error_log('[Assinaturas] notificarVencimento falhou: ' . $e->getMessage());
         }
+        return true;
     }
 
     /** Confirmação interna quando o Super Admin regista um pagamento. */
