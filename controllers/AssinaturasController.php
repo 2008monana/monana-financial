@@ -385,6 +385,12 @@ class AssinaturasController extends Controller
         ]);
     }
 
+    /** Verifica se o pedido actual é POST. */
+    private function ehPost(): bool
+    {
+        return strtoupper($_SERVER['REQUEST_METHOD'] ?? '') === 'POST';
+    }
+
     /** CSRF para POSTs; responde JSON 403 em pedidos AJAX. */
     private function validarCsrfPost(): bool
     {
@@ -400,6 +406,11 @@ class AssinaturasController extends Controller
                 return false;
             }
             definirFlash('erro', 'Sessão expirada. Volte a tentar.');
+            $ref = $_SERVER['HTTP_REFERER'] ?? '';
+            if ($ref !== '' && strpos($ref, URL_BASE) === 0) {
+                header('Location: ' . $ref);
+                exit;
+            }
             $voltar = $_POST['_destino'] ?? 'dashboard';
             $this->redirecionar($voltar);
             return false;
