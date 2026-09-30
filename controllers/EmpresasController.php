@@ -26,11 +26,27 @@ class EmpresasController extends Controller
 
     public function index(): void
     {
+        require_once CAMINHO_RAIZ . '/models/Assinatura.php';
+        require_once CAMINHO_RAIZ . '/helpers/AssinaturaHelper.php';
+
         $empresas = $this->empresaModel->todos('nome');
 
-        // Conta filiais de cada empresa para exibir na listagem
+        // Conta filiais e calcula o estado da assinatura de cada empresa
+        $assinaturas = new Assinatura();
+        $carenciaHoras = AssinaturaHelper::carenciaHoras();
         foreach ($empresas as &$empresa) {
             $empresa['total_filiais'] = count($this->filialModel->porEmpresa((int) $empresa['id']));
+            try {
+                $est = $assinaturas->estadoDaEmpresa((int) $empresa['id'], $carenciaHoras);
+                $empresa['assinatura_estado'] = $est['estado'];
+                $empresa['assinatura_fim']    = $est['fim'];
+                $empresa['assinatura_plano']  = $est['plano']['nome'] ?? null;
+            } catch (Throwable $e) {
+                error_log('[Empresas] Estado de assinatura indisponível: ' . $e->getMessage());
+                $empresa['assinatura_estado'] = null; // falha aberta: não bloqueia a listagem
+                $empresa['assinatura_fim']    = null;
+                $empresa['assinatura_plano']  = null;
+            }
         }
         unset($empresa);
 

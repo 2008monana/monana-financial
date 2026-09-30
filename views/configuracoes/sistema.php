@@ -19,6 +19,15 @@
             <?php endforeach; ?>
         </div>
     </section>
+    <section class="config-cartao">
+        <div class="config-cartao-cabecalho"><div class="config-cartao-icone"><i class="fa-solid fa-crown"></i></div><h2>Assinaturas</h2></div>
+        <p>Contacto de negociação e tolerância usadas pelo módulo de Assinaturas.</p>
+        <div class="config-grid">
+            <?php foreach(['whatsapp_admin'=>'WhatsApp do administrador principal','assinatura_carencia_horas'=>'Carência após expiração (horas)'] as $k=>$l): ?>
+                <label><?php echo $l; ?><input type="text" name="configuracoes[<?php echo $k; ?>]" value="<?php echo htmlspecialchars($configuracoes[$k]??''); ?>"></label>
+            <?php endforeach; ?>
+        </div>
+    </section>
     <button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Guardar configurações</button>
 </form>
 <?php require CAMINHO_RAIZ.'/views/configuracoes/_estilos.php'; ?>
