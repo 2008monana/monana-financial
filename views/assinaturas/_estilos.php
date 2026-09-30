@@ -90,7 +90,185 @@
 .assin-mini-plano .desc{font-size:11px;color:var(--muted)}
 .assin-mini-plano .btn{margin-top:8px;justify-content:center}
 @media(max-width:480px){.assin-hero{padding:18px}.assin-resumo{padding:16px}}
+
+/* =========================================================
+   FICHA DA EMPRESA — cabeçalho, cartões, formulário e tabelas
+   (classes usadas por views/assinaturas/*.php; o layout
+   principal não define estas classes globalmente)
+   ========================================================= */
+.assin-view .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.assin-view .page-title{font-family:'Sora',sans-serif;font-size:23px;font-weight:700;color:var(--navy-deep);margin:0;display:flex;align-items:center;gap:10px;line-height:1.3}
+.assin-view .page-title > i{color:var(--orange)}
+.assin-view .page-subtitle{font-size:13px;color:var(--muted);margin:4px 0 0}
+.assin-view .page-header-right{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Botões base (garantidos mesmo fora do layout principal) */
+.assin-view .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:9px;font-size:13.5px;font-weight:600;font-family:'Inter',sans-serif;border:none;cursor:pointer;text-decoration:none;transition:transform .1s ease,opacity .15s ease,box-shadow .15s ease}
+.assin-view .btn:active{transform:translateY(1px)}
+.assin-view .btn-primary{background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff}
+.assin-view .btn-primary:hover{opacity:.92;box-shadow:0 6px 16px -8px rgba(10,25,48,.5)}
+.assin-view .btn-secondary{background:#eef2f7;color:var(--navy)}
+.assin-view .btn-secondary:hover{background:#e2e8f1}
+.assin-view .btn-success{background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff}
+.assin-view .btn-success:hover{opacity:.92;box-shadow:0 6px 16px -8px rgba(22,163,74,.55)}
+.assin-view .btn-danger{background:linear-gradient(135deg,var(--red),var(--red-dark));color:#fff}
+.assin-view .btn-danger:hover{opacity:.92;box-shadow:0 6px 16px -8px rgba(220,38,38,.55)}
+
+/* Selo de estado genérico (usado nas tabelas de histórico/pagamentos) */
+.assin-view .status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:700;background:#f1f5f9;color:var(--muted);white-space:nowrap}
+
+/* Cartões com cabeçalho (form-card "moderno") */
+.assin-view .form-card{width:100%;max-width:none;margin:0 auto 20px}
+.assin-view .assin-grelha > .form-card,.assin-view .assin-grelha > form.form-modern{min-width:0}
+.assin-view .assin-grelha > form.form-modern{margin:0}
+.assin-view .form-card-header{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:#fafbfc}
+.assin-view .form-card-header h3{margin:0;font-family:'Sora',sans-serif;font-size:15px;font-weight:600;color:var(--navy-deep)}
+.assin-view .form-card-header p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.assin-view .form-card-icon{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.assin-view .form-card-body{padding:20px}
+
+/* Campos de formulário */
+.assin-view .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+@media(max-width:640px){.assin-view .form-grid-2{grid-template-columns:1fr}}
+.assin-view .form-group{margin-bottom:16px}
+.assin-view .form-group label{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.assin-view .form-group label i{color:var(--muted);font-size:12px;width:14px;text-align:center}
+.assin-view .form-group input,.assin-view .form-group select,.assin-view .form-group textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13.5px;font-family:'Inter',sans-serif;color:var(--ink);background:var(--white)}
+.assin-view .form-group input:focus,.assin-view .form-group select:focus,.assin-view .form-group textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.14)}
+.assin-view .form-group textarea{resize:vertical;min-height:60px}
+
+/* Subsecção "registar pagamento" dentro das acções */
+.assin-view .assin-cartao-acoes .form-card{margin-bottom:0}
+.assin-view .assin-cartao-acoes .form-group{margin-bottom:12px}
+
+/* Tabelas do histórico / pagamentos */
+.assin-view .assin-tabela thead th:first-child,.assin-view .assin-tabela tbody td:first-child{padding-left:20px}
+.assin-view .assin-tabela thead th:last-child,.assin-view .assin-tabela tbody td:last-child{padding-right:20px}
+.assin-view .assin-tabela tbody tr{transition:background .15s ease}
+.assin-view .assin-tabela tbody tr:hover{background:#f8fafc}
+
+/* ---- MODAL DE CONFIRMAÇÃO (substitui window.confirm) ---- */
+.assin-modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.assin-modal.aberto{display:flex}
+.assin-modal-fundo{position:absolute;inset:0;background:rgba(10,25,48,.55);backdrop-filter:blur(3px);animation:assinFade .18s ease}
+.assin-modal-caixa{position:relative;background:#fff;border-radius:16px;max-width:430px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.3);text-align:center;padding:30px 28px 24px;animation:assinPop .2s cubic-bezier(.34,1.4,.64,1)}
+.assin-modal-icone{width:64px;height:64px;margin:0 auto 16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px}
+.assin-modal-icone.perigo{background:#fee2e2;color:#dc2626}
+.assin-modal-icone.aviso{background:#fef3c7;color:#b45309}
+.assin-modal-icone.info{background:#e0f2fe;color:#0369a1}
+.assin-modal-icone.sucesso{background:#dcfce7;color:#15803d}
+.assin-modal h3{margin:0 0 8px;font-family:'Sora',sans-serif;font-size:18px;color:var(--navy-deep,#0a1930)}
+.assin-modal .assin-modal-msg{margin:0 0 22px;font-size:14px;line-height:1.55;color:#64748b}
+.assin-modal-acoes{display:flex;gap:12px}
+.assin-modal-btn{flex:1;padding:11px 16px;border-radius:10px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:1px solid transparent;transition:filter .15s ease,background .15s ease}
+.assin-modal-btn.nao{background:#f8fafc;border-color:#e2e8f0;color:#334155}
+.assin-modal-btn.nao:hover{background:#eef2f7}
+.assin-modal-btn.sim.perigo{background:#dc2626;color:#fff}
+.assin-modal-btn.sim.aviso{background:#d97706;color:#fff}
+.assin-modal-btn.sim.info{background:#0e2748;color:#fff}
+.assin-modal-btn.sim.sucesso{background:#16a34a;color:#fff}
+.assin-modal-btn.sim:hover{filter:brightness(1.08)}
+@keyframes assinFade{from{opacity:0}to{opacity:1}}
+@keyframes assinPop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
 </style>
+
+<?php /* Modal de confirmação partilhado pelo módulo (substitui window.confirm). */ ?>
+<div class="assin-modal" id="assinModalConfirm" role="dialog" aria-modal="true" aria-labelledby="assinModalTitulo">
+    <div class="assin-modal-fundo" data-assin-fechar></div>
+    <div class="assin-modal-caixa">
+        <div class="assin-modal-icone perigo" id="assinModalIcone"><i class="fas fa-triangle-exclamation"></i></div>
+        <h3 id="assinModalTitulo">Confirmar acção</h3>
+        <p class="assin-modal-msg" id="assinModalMsg"></p>
+        <div class="assin-modal-acoes">
+            <button type="button" class="assin-modal-btn nao" data-assin-fechar>Cancelar</button>
+            <button type="button" class="assin-modal-btn sim perigo" id="assinModalSim">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ===== Modal de confirmação do módulo de Assinaturas =====
+   Uso: assinConfirmar({ titulo, mensagem, tipo, textoConfirmar }) -> Promise<boolean>
+   Também intercepta automaticamente formulários com [data-confirmar]. */
+(function () {
+    var MODAL_ID = 'assinModalConfirm';
+    var ICONES = {
+        perigo:  'fa-lock',
+        aviso:   'fa-triangle-exclamation',
+        info:    'fa-circle-question',
+        sucesso: 'fa-circle-check'
+    };
+    var ultimoFoco = null;
+
+    function el(id) { return document.getElementById(id); }
+
+    function abrir(opcoes) {
+        return new Promise(function (resolver) {
+            var modal = el(MODAL_ID);
+            if (!modal) { // fallback se o modal não existir na página
+                resolver(window.confirm((opcoes.mensagem || '').replace(/<[^>]*>/g, '')));
+                return;
+            }
+            var tipo = opcoes.tipo || 'aviso';
+            var icone = el('assinModalIcone');
+            var btnSim = el('assinModalSim');
+
+            el('assinModalTitulo').textContent = opcoes.titulo || 'Confirmar acção';
+            el('assinModalMsg').innerHTML = opcoes.mensagem || 'Tem a certeza?';
+            icone.className = 'assin-modal-icone ' + tipo;
+            icone.innerHTML = '<i class="fas ' + (ICONES[tipo] || ICONES.aviso) + '"></i>';
+            btnSim.className = 'assin-modal-btn sim ' + tipo;
+            btnSim.textContent = opcoes.textoConfirmar || 'Confirmar';
+
+            ultimoFoco = document.activeElement;
+            modal.classList.add('aberto');
+            document.body.style.overflow = 'hidden';
+            setTimeout(function () { btnSim.focus(); }, 30);
+
+            function fechar(resultado) {
+                modal.classList.remove('aberto');
+                document.body.style.overflow = '';
+                modal.removeEventListener('click', aoClicar);
+                document.removeEventListener('keydown', aoTeclado);
+                if (ultimoFoco && ultimoFoco.focus) ultimoFoco.focus();
+                resolver(resultado);
+            }
+            function aoClicar(ev) {
+                if (ev.target.closest('[data-assin-fechar]')) { fechar(false); return; }
+                if (ev.target === btnSim) { fechar(true); }
+            }
+            function aoTeclado(ev) {
+                if (ev.key === 'Escape') fechar(false);
+                else if (ev.key === 'Enter' && document.activeElement !== modal) fechar(true);
+            }
+            modal.addEventListener('click', aoClicar);
+            document.addEventListener('keydown', aoTeclado);
+        });
+    }
+
+    window.assinConfirmar = abrir;
+
+    /* Interceita formulários marcados com data-confirmar (e variantes por tipo). */
+    document.addEventListener('submit', function (ev) {
+        var form = ev.target;
+        if (!form.matches || !form.matches('[data-confirmar]')) return;
+        if (form.dataset.aConfirmar === 'ok') return; // já confirmado
+        ev.preventDefault();
+        var tipo = form.getAttribute('data-confirmar-tipo') || 'aviso';
+        abrir({
+            titulo: form.getAttribute('data-confirmar-titulo') || 'Confirmar acção',
+            mensagem: form.getAttribute('data-confirmar') || 'Tem a certeza?',
+            tipo: tipo,
+            textoConfirmar: form.getAttribute('data-confirmar-texto') || 'Confirmar'
+        }).then(function (sim) {
+            if (sim) {
+                form.dataset.aConfirmar = 'ok';
+                HTMLFormElement.prototype.submit.call(form);
+            }
+        });
+    }, true);
+})();
+</script>
 <?php
 /**
  * Funções auxiliares de apresentação partilhadas pelas views do módulo.

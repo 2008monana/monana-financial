@@ -12,6 +12,7 @@ foreach ($todos as $l) {
 $linkBase = URL_BASE . '/assinaturas';
 ?>
 
+<div class="assin-view">
 <div class="page-header">
     <div class="page-header-left">
         <h1 class="page-title"><i class="fas fa-crown"></i> Assinaturas</h1>
@@ -154,3 +155,4 @@ $linkBase = URL_BASE . '/assinaturas';
     <?php endif; ?>
 </section>
 <?php endif; ?>
+    </div><!-- /assin-view -->

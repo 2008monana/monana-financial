@@ -6,6 +6,7 @@
 require_once CAMINHO_RAIZ . '/views/assinaturas/_estilos.php';
 ?>
 
+<div class="assin-view">
 <div class="page-header">
     <div class="page-header-left">
         <h1 class="page-title"><i class="fas fa-tags"></i> Planos de Assinatura</h1>
@@ -52,3 +53,4 @@ require_once CAMINHO_RAIZ . '/views/assinaturas/_estilos.php';
         </article>
     <?php endforeach; ?>
 </section>
+    </div><!-- /assin-view -->

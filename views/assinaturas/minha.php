@@ -44,6 +44,7 @@ foreach ($planos as $pp) {
 $poupanca = max(0, $precoMensal * 12 - $precoAnual);
 ?>
 
+<div class="assin-view">
 <div class="page-header">
     <div class="page-header-left">
         <h1 class="page-title"><i class="fas fa-id-card"></i> Minha Assinatura</h1>
@@ -187,3 +188,4 @@ $poupanca = max(0, $precoMensal * 12 - $precoAnual);
 })();
 </script>
 <?php endif; ?>
+    </div><!-- /assin-view -->

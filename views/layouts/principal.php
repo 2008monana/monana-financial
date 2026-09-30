@@ -3433,6 +3433,12 @@ $isViewer = $usuario_perfil === 'visualizador';
         </a>
         <?php endif; ?>
 
+        <?php if ($isSuperAdmin): ?>
+        <a class="nav-item <?php echo $paginaAtiva === 'assinaturas' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/assinaturas">
+            <i class="fa-solid fa-crown"></i> Assinaturas
+        </a>
+        <?php endif; ?>
+
         <!-- GRUPO 4: FERRAMENTAS -->
         <?php if ($isAdminEmpresa || $isSuperAdmin): ?>
         <div class="menu-grupo-label">FERRAMENTAS</div>
@@ -3466,6 +3472,9 @@ $isViewer = $usuario_perfil === 'visualizador';
         </a>
         <a class="nav-item <?php echo $paginaAtiva === 'notificacoes' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/notificacoes">
             <i class="fa-solid fa-bell"></i> Notificações
+        </a>
+        <a class="nav-item <?php echo $paginaAtiva === 'minha_assinatura' ? 'active' : ''; ?>" href="<?php echo URL_BASE; ?>/assinaturas/minha">
+            <i class="fa-solid fa-certificate"></i> Minha Assinatura
         </a>
 
         <a class="nav-item logout-item" href="#" onclick="confirmarLogout(event)">

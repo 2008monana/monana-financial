@@ -116,14 +116,42 @@ class AssinaturasController extends Controller
         }
 
         $carenciaHoras = AssinaturaHelper::carenciaHoras();
+        $estado        = $this->assinaturas->estadoDaEmpresa($idEmpresa, $carenciaHoras);
+        $planos        = $this->planos->activos();
+
+        // Plano actualmente em vigor (para pré-seleccionar no formulário).
+        $planoActual = null;
+        if (!empty($estado['linha']['plano_id'])) {
+            $planoActual = (int) $estado['linha']['plano_id'];
+        } else {
+            $linhaActual = $this->assinaturas->buscarUmPor('empresa_id', $idEmpresa);
+            if ($linhaActual && !empty($linhaActual['plano_id'])) {
+                $planoActual = (int) $linhaActual['plano_id'];
+            }
+        }
+        // Garante que o plano actual está disponível no selector mesmo se foi desactivado entretanto.
+        if ($planoActual !== null) {
+            $temNoSelector = false;
+            foreach ($planos as $p) {
+                if ((int) $p['id'] === $planoActual) { $temNoSelector = true; break; }
+            }
+            if (!$temNoSelector) {
+                $registo = $this->planos->encontrarPorId($planoActual);
+                if ($registo) {
+                    array_unshift($planos, $registo);
+                }
+            }
+        }
+
         $this->renderizar('assinaturas/empresa', [
             'tituloPagina'   => 'Assinatura — ' . $empresa['nome'],
             'paginaAtiva'    => 'assinaturas',
             'empresa'        => $empresa,
-            'estado'         => $this->assinaturas->estadoDaEmpresa($idEmpresa, $carenciaHoras),
+            'estado'         => $estado,
             'historico'      => $this->assinaturas->historico($idEmpresa),
             'pagamentos'     => $this->assinaturas->pagamentos($idEmpresa),
-            'planos'         => $this->planos->activos(),
+            'planos'         => $planos,
+            'plano_actual'   => $planoActual,
             'carencia_horas' => $carenciaHoras,
             'csrf_token'     => SegurancaHelper::gerarTokenCSRF(),
         ]);
@@ -357,6 +385,12 @@ class AssinaturasController extends Controller
         ]);
     }
 
+    /** Verifica se o pedido actual é POST. */
+    private function ehPost(): bool
+    {
+        return strtoupper($_SERVER['REQUEST_METHOD'] ?? '') === 'POST';
+    }
+
     /** CSRF para POSTs; responde JSON 403 em pedidos AJAX. */
     private function validarCsrfPost(): bool
     {
@@ -372,6 +406,11 @@ class AssinaturasController extends Controller
                 return false;
             }
             definirFlash('erro', 'Sessão expirada. Volte a tentar.');
+            $ref = $_SERVER['HTTP_REFERER'] ?? '';
+            if ($ref !== '' && strpos($ref, URL_BASE) === 0) {
+                header('Location: ' . $ref);
+                exit;
+            }
             $voltar = $_POST['_destino'] ?? 'dashboard';
             $this->redirecionar($voltar);
             return false;
