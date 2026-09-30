@@ -7,6 +7,35 @@
  */
 ?>
 <style>
+/* ============================================
+   ASSINATURAS — ESTILOS COMPLETOS E AUTÓNOMOS
+   As classes partilhadas (.page-header, .stats-grid, .stat-card,
+   .filtros-logs, .tabela-logs, .empty-state, .btn*) são definidas
+   aqui de raiz para que as páginas do módulo nunca fiquem com o
+   estilo "quebrado", independentemente das outras vistas.
+   ============================================ */
+
+/* Varias locais (com fallback para as globais já existentes) */
+.assin-view{
+    --assin-green-dark:#16a34a;
+    --assin-red-dark:#dc2626;
+    --assin-orange-dark:#d97706;
+    --assin-purple:#8b5cf6;
+    --assin-shadow-sm:0 1px 3px rgba(16,24,40,.06);
+    --assin-shadow-md:0 4px 14px -6px rgba(14,39,72,.16);
+    --assin-shadow-lg:0 14px 30px -12px rgba(14,39,72,.22);
+    /* aliases locais p/ variáveis usadas pelo módulo mas não definidas no layout */
+    --green-dark:var(--assin-green-dark);
+    --red-dark:var(--assin-red-dark);
+    --orange-dark:var(--assin-orange-dark);
+    --purple-dark:#7c3aed;
+    --shadow-sm:var(--assin-shadow-sm);
+    --shadow-md:var(--assin-shadow-md);
+    --shadow-lg:var(--assin-shadow-lg);
+    --transition:all .2s ease;
+    --white:#fff;
+}
+
 /* ---- Selos de estado da assinatura (modificadores de .status-badge) ---- */
 .status-badge.assin-gratuita { background:#e0f2fe; color:#0369a1; }
 .status-badge.assin-gratuita i { font-size:10px; }
@@ -18,8 +47,50 @@
 .status-badge.assin-bloqueada i { font-size:10px; }
 .status-badge.assin-xl { padding:8px 20px; font-size:14px; border-radius:26px; }
 
-/* ---- Ícone laranja para os cartões de estatística ---- */
-.stat-icon.orange { background: linear-gradient(135deg, var(--orange), var(--orange-dark)); }
+/* ---- Cabeçalho da página ---- */
+.assin-view .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.assin-view .page-header-left{display:flex;flex-direction:column;gap:2px}
+.assin-view .page-title{font-family:'Sora',sans-serif;font-size:23px;font-weight:700;color:var(--navy-deep);margin:0;display:flex;align-items:center;gap:10px;line-height:1.3}
+.assin-view .page-title > i{color:var(--green)}
+.assin-view .page-subtitle{font-size:13px;color:var(--muted);margin:4px 0 0}
+.assin-view .page-header-right{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ---- Cartões de estatística ---- */
+.assin-view .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+@media(max-width:1100px){.assin-view .stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.assin-view .assin-stats-grid,.assin-view .stats-grid{grid-template-columns:1fr}}
+.assin-view .stat-card{background:var(--white,#fff);border:1px solid var(--border);border-radius:var(--radius,12px);padding:18px 20px;display:flex;align-items:center;gap:14px;transition:transform .2s ease,box-shadow .2s ease}
+.assin-view .stat-card:hover{transform:translateY(-2px);box-shadow:var(--assin-shadow-md)}
+.assin-view .stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0}
+.assin-view .stat-icon.navy{background:linear-gradient(135deg,var(--navy),var(--navy-light))}
+.assin-view .stat-icon.green{background:linear-gradient(135deg,var(--green),var(--assin-green-dark))}
+.assin-view .stat-icon.red{background:linear-gradient(135deg,var(--red),var(--assin-red-dark))}
+.assin-view .stat-icon.purple{background:linear-gradient(135deg,var(--assin-purple),#7c3aed)}
+.assin-view .stat-icon.orange{background:linear-gradient(135deg,var(--orange),var(--assin-orange-dark))}
+.assin-view .stat-info{display:flex;flex-direction:column;min-width:0}
+.assin-view .stat-valor,.assin-view .stat-value{font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:var(--ink);line-height:1.2;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.assin-view .stat-legenda,.assin-view .stat-label{font-size:12px;color:var(--muted);font-weight:600;display:block}
+
+/* ---- Filtros e tabela ("logs" padrão partilhado) ---- */
+.assin-view .filtros-logs,.assin-view .tabela-logs{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:18px;box-shadow:var(--assin-shadow-sm)}
+.assin-view .filtros-logs form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 16px;align-items:end}
+.assin-view .filtros-logs label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--ink)}
+.assin-view .filtros-logs input,.assin-view .filtros-logs select{padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;font:inherit;min-width:0;width:100%}
+.assin-view .filtros-logs select{cursor:pointer}
+.assin-view .filtros-acoes{display:flex;gap:8px;flex-wrap:wrap}
+.assin-view .tabela-logs-cabecalho{display:flex;justify-content:flex-end;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:10px}
+
+/* ---- Botões base do módulo (independentes das folhas externas) ---- */
+.assin-view .btn-success{background:linear-gradient(135deg,var(--green),var(--assin-green-dark));color:#fff}
+.assin-view .btn-danger{background:linear-gradient(135deg,var(--red),var(--assin-red-dark));color:#fff}
+.assin-view .btn-warning{background:linear-gradient(135deg,var(--orange),var(--assin-orange-dark));color:#fff}
+.assin-view .btn.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+
+/* ---- Estado vazio ---- */
+.assin-view .empty-state{background:#fff;border:1px dashed var(--border);border-radius:14px;padding:44px 24px;text-align:center;margin-bottom:20px}
+.assin-view .empty-state > i{font-size:34px;color:var(--muted);opacity:.55;margin-bottom:12px}
+.assin-view .empty-state h3{margin:0 0 6px;font-family:'Sora',sans-serif;font-size:17px;color:var(--navy-deep)}
+.assin-view .empty-state p{margin:0 0 18px;font-size:13px;color:var(--muted)}
 
 /* ---- Tabela de assinaturas ---- */
 .assin-tabela-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;padding:0;overflow:hidden;margin-bottom:18px}
@@ -105,8 +176,8 @@
 .assin-view .assin-hero::after{content:'';position:absolute;top:-70px;right:-70px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(34,197,94,.10),transparent 70%);pointer-events:none}
 .assin-view .assin-progresso{height:10px;background:#eef1f6;box-shadow:inset 0 1px 2px rgba(14,39,72,.06)}
 .assin-view .assin-progresso span{box-shadow:0 0 8px rgba(34,197,94,.35)}
-.assin-view .assin-hero .dias{font-size:42px;background:linear-gradient(135deg,var(--navy-deep),var(--navy-light));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1.05}
-.assin-view .assin-hero .dias small{-webkit-text-fill-color:var(--muted)}
+.assin-view .assin-hero .dias{font-size:42px;color:var(--navy-deep);line-height:1.05}
+.assin-view .assin-hero .dias small{color:var(--muted)}
 
 .assin-view .form-card{border:none;box-shadow:0 6px 20px -10px rgba(14,39,72,.12);transition:box-shadow .2s ease,transform .2s ease}
 .assin-view .form-card:hover{box-shadow:0 12px 28px -12px rgba(14,39,72,.18)}
@@ -127,7 +198,7 @@
    ========================================================= */
 .assin-view .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
 .assin-view .page-title{font-family:'Sora',sans-serif;font-size:23px;font-weight:700;color:var(--navy-deep);margin:0;display:flex;align-items:center;gap:10px;line-height:1.3}
-.assin-view .page-title > i{color:var(--orange)}
+.assin-view .page-title > i{color:var(--green)}
 .assin-view .page-subtitle{font-size:13px;color:var(--muted);margin:4px 0 0}
 .assin-view .page-header-right{display:flex;gap:10px;flex-wrap:wrap}
 
