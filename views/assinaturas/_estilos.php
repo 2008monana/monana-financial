@@ -92,6 +92,35 @@
 @media(max-width:480px){.assin-hero{padding:18px}.assin-resumo{padding:16px}}
 
 /* =========================================================
+   MELHORIAS DE ESTILO — página "Minha Assinatura"
+   (aplicadas em contexto via .assin-view, sem afectar as
+   outras vistas do módulo)
+   ========================================================= */
+.assin-view{position:relative}
+.assin-view::before{content:'';position:absolute;top:-40px;left:-40px;width:280px;height:280px;background:radial-gradient(circle,rgba(34,197,94,.07),transparent 65%);pointer-events:none;z-index:0}
+.assin-view > *{position:relative;z-index:1}
+
+.assin-view .assin-hero{position:relative;overflow:hidden;border:none;box-shadow:0 10px 30px -12px rgba(10,25,48,.14)}
+.assin-view .assin-hero::before{content:'';position:absolute;inset:0 auto 0 0;width:5px;background:linear-gradient(180deg,var(--green),var(--navy))}
+.assin-view .assin-hero::after{content:'';position:absolute;top:-70px;right:-70px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(34,197,94,.10),transparent 70%);pointer-events:none}
+.assin-view .assin-progresso{height:10px;background:#eef1f6;box-shadow:inset 0 1px 2px rgba(14,39,72,.06)}
+.assin-view .assin-progresso span{box-shadow:0 0 8px rgba(34,197,94,.35)}
+.assin-view .assin-hero .dias{font-size:42px;background:linear-gradient(135deg,var(--navy-deep),var(--navy-light));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1.05}
+.assin-view .assin-hero .dias small{-webkit-text-fill-color:var(--muted)}
+
+.assin-view .form-card{border:none;box-shadow:0 6px 20px -10px rgba(14,39,72,.12);transition:box-shadow .2s ease,transform .2s ease}
+.assin-view .form-card:hover{box-shadow:0 12px 28px -12px rgba(14,39,72,.18)}
+.assin-view .form-card-header h3{font-family:'Sora',sans-serif;letter-spacing:.2px}
+
+.assin-view .assin-mini-plano{border:1px solid var(--border);box-shadow:0 4px 14px -8px rgba(14,39,72,.12)}
+.assin-view .assin-mini-plano:hover{transform:translateY(-4px);box-shadow:0 14px 30px -12px rgba(14,39,72,.22);border-color:rgba(34,197,94,.4)}
+.assin-view .assin-mini-plano .preco{color:var(--green-dark)}
+
+.assin-view .assin-alerta-carencia{box-shadow:0 6px 18px -10px rgba(245,158,11,.35)}
+
+@media(max-width:480px){.assin-view .assin-hero .dias{font-size:32px}}
+
+/* =========================================================
    FICHA DA EMPRESA — cabeçalho, cartões, formulário e tabelas
    (classes usadas por views/assinaturas/*.php; o layout
    principal não define estas classes globalmente)
