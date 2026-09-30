@@ -299,12 +299,26 @@ class AssinaturasController extends Controller
             'paginaAtiva'    => 'minha_assinatura',
             'layout'         => 'principal',
             'empresa'        => $empresa ?: ['id' => $empresaId, 'nome' => $_SESSION['empresa_nome'] ?? ''],
-            'estado'         => $this->assinaturas->estadoDaEmpresa($empresaId, $carenciaHoras),
+            'estado'         => AssinaturaHelper::detalharParaFaixa($this->assinaturas->estadoDaEmpresa($empresaId, $carenciaHoras)),
             'pagamentos'     => $this->assinaturas->pagamentos($empresaId),
             'planos'         => $this->planos->activos(),
             'carencia_horas' => $carenciaHoras,
             'csrf_token'     => SegurancaHelper::gerarTokenCSRF(),
         ]);
+    }
+
+    /**
+     * POST — esconde a faixa azul de "vence em 7 dias" até ao fim da sessão.
+     * Qualquer perfil autenticado da empresa pode usar (não altera dados).
+     */
+    public function esconderFaixa(): void
+    {
+        $_SESSION['assin_faixa_7d_fechada'] = true;
+        if (strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest') {
+            $this->json(['sucesso' => true]);
+            return;
+        }
+        $this->redirecionar('dashboard');
     }
 
     // =====================================================

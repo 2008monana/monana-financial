@@ -6,6 +6,12 @@
 require_once CAMINHO_RAIZ . '/views/assinaturas/_estilos.php';
 
 $estadoStr = $estado['estado'] ?? 'gratuita';
+if ($estadoStr === 'por_vencer') {
+    $estadoStr = 'activa'; // vista base: a faixa de "vence em breve" é tratada como activa
+    $porVencer = true;
+} else {
+    $porVencer = false;
+}
 $segRest   = (int) ($estado['segundos_restantes'] ?? 0);
 $diasRest  = (int) ceil($segRest / 86400);
 $temFim    = !empty($estado['fim']);

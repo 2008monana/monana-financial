@@ -102,6 +102,36 @@ class AssinaturaHelper
         return self::$estadoCorrente;
     }
 
+    /** Formata segundos como "31h 12min", "5 dias", "45min" (usado pela faixa do layout). */
+    public static function tempoLegivel(int $segundos): string
+    {
+        if ($segundos <= 0) return '0min';
+        $d = intdiv($segundos, 86400);
+        $h = intdiv($segundos % 86400, 3600);
+        $m = intdiv($segundos % 3600, 60);
+        if ($d >= 2) return $d . ' dias';
+        if ($d === 1) return '1 dia';
+        if ($h > 0) return $h . 'h ' . sprintf('%02d', $m) . 'min';
+        return max(1, $m) . 'min';
+    }
+
+    /**
+     * Sub-estado informativo para o layout: 'por_vencer' quando uma assinatura
+     * paga termina em <= 7 dias (mostra a faixa azul fechável). Não altera o
+     * array base devolvido por estadoDaEmpresa().
+     */
+    public static function detalharParaFaixa(?array $estado): ?array
+    {
+        if (!$estado) return null;
+        if (($estado['estado'] ?? '') === 'activa') {
+            $seg = (int) ($estado['segundos_restantes'] ?? 0);
+            if ($seg > 0 && $seg <= 7 * 86400) {
+                $estado['estado'] = 'por_vencer';
+            }
+        }
+        return $estado;
+    }
+
     /** Regista um aviso idempotente; devolve true só se a linha foi realmente inserida. */
     public static function garantirAviso(int $assinaturaId, string $tipo): bool
     {

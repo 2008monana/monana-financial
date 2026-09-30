@@ -57,6 +57,12 @@ class AuditoriaHelper
         'backup_eliminado'             => ['Backup eliminado', 'perigo'],
         'backup_descarregado'          => ['Backup descarregado', 'info'],
         'backup_agendamento_alterado'  => ['Agendamento de backup alterado', 'info'],
+        'assinatura_criada'            => ['Assinatura criada', 'sucesso'],
+        'assinatura_plano_alterado'    => ['Plano da assinatura alterado', 'aviso'],
+        'assinatura_pagamento_registado' => ['Pagamento de assinatura registado', 'sucesso'],
+        'assinatura_bloqueio_manual'   => ['Empresa bloqueada manualmente', 'perigo'],
+        'assinatura_bloqueio_removido' => ['Bloqueio manual removido', 'aviso'],
+        'plano_editado'                => ['Plano de assinatura editado', 'info'],
     ];
 
     /** Catálogo central das tabelas afetadas: chave na base de dados => rótulo legível. */
@@ -74,6 +80,9 @@ class AuditoriaHelper
         'notificacoes'      => 'Notificações',
         'backups'           => 'Backups',
         'tentativas_login'  => 'Autenticação',
+        'planos'            => 'Planos de assinatura',
+        'assinaturas'       => 'Assinaturas',
+        'assinatura_pagamentos' => 'Pagamentos de assinatura',
     ];
 
     public static function registar(

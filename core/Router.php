@@ -126,6 +126,7 @@ class Router
         'assinaturas/planos' => 'assinaturas',
         'assinaturas/guardarPlano' => 'assinaturas',
         'assinaturas/minha' => 'minha_assinatura',
+        'assinaturas/esconderFaixa' => 'minha_assinatura',
         'assinaturas/bloqueada' => 'perfil',
 
         // =============================================

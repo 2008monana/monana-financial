@@ -5,7 +5,7 @@ require_once CAMINHO_RAIZ . '/models/Modulo.php';
 $perfil = $_SESSION['usuario_perfil'] ?? 'visualizador';
 $paginaAtiva = $paginaAtiva ?? 'dashboard';
 $acessoTotal = $perfil === 'super_admin';
-$modulosAdminEmpresa = ['dashboard', 'movimentos', 'fecho_diario', 'relatorios', 'planilha', 'categorias', 'filiais', 'usuarios', 'backups', 'logs', 'perfil', 'notificacoes', 'metodos_pagamento'];
+$modulosAdminEmpresa = ['dashboard', 'movimentos', 'fecho_diario', 'relatorios', 'planilha', 'categorias', 'filiais', 'usuarios', 'backups', 'logs', 'perfil', 'notificacoes', 'metodos_pagamento', 'minha_assinatura'];
 $moduloModel = new Modulo();
 $permitidos = [];
 if (!$acessoTotal && !empty($_SESSION['usuario_id'])) {
@@ -31,6 +31,7 @@ $itens = [
     ],
     'gestao' => [
         ['empresas', 'fa-building', 'Empresas', 'empresas'],
+        ['assinaturas', 'fa-crown', 'Assinaturas', 'assinaturas'],
         ['filiais', 'fa-code-branch', 'Filiais', 'filiais'],
         ['usuarios', 'fa-users', 'Utilizadores', 'usuarios'],
         ['metodos-pagamento', 'fa-money-bill-wave', 'Métodos de Pagamento', 'metodos_pagamento'],
@@ -42,6 +43,7 @@ $itens = [
     ],
     'conta' => [
         ['perfil', 'fa-user-cog', 'Meu Perfil', 'perfil'],
+        ['assinaturas/minha', 'fa-id-card', 'Minha Assinatura', 'minha_assinatura'],
         ['notificacoes', 'fa-bell', 'Notificações', 'notificacoes'],
     ],
 ];
