@@ -26,11 +26,27 @@ class EmpresasController extends Controller
 
     public function index(): void
     {
+        require_once CAMINHO_RAIZ . '/models/Assinatura.php';
+        require_once CAMINHO_RAIZ . '/helpers/AssinaturaHelper.php';
+
         $empresas = $this->empresaModel->todos('nome');
 
-        // Conta filiais de cada empresa para exibir na listagem
+        // Conta filiais e calcula o estado da assinatura de cada empresa
+        $assinaturas = new Assinatura();
+        $carenciaHoras = AssinaturaHelper::carenciaHoras();
         foreach ($empresas as &$empresa) {
             $empresa['total_filiais'] = count($this->filialModel->porEmpresa((int) $empresa['id']));
+            try {
+                $est = $assinaturas->estadoDaEmpresa((int) $empresa['id'], $carenciaHoras);
+                $empresa['assinatura_estado'] = $est['estado'];
+                $empresa['assinatura_fim']    = $est['fim'];
+                $empresa['assinatura_plano']  = $est['plano']['nome'] ?? null;
+            } catch (Throwable $e) {
+                error_log('[Empresas] Estado de assinatura indisponível: ' . $e->getMessage());
+                $empresa['assinatura_estado'] = null; // falha aberta: não bloqueia a listagem
+                $empresa['assinatura_fim']    = null;
+                $empresa['assinatura_plano']  = null;
+            }
         }
         unset($empresa);
 
@@ -43,30 +59,96 @@ class EmpresasController extends Controller
 
     public function criar(): void
     {
+        require_once CAMINHO_RAIZ . '/models/Plano.php';
         $this->renderizar('empresas/form', [
             'tituloPagina' => 'Nova Empresa',
             'paginaAtiva'  => 'empresas',
             'empresa'      => null,
             'erros'        => [],
+            'planos'       => (new Plano())->todosOrdenados(),
         ]);
     }
 
     public function gravar(): void
     {
-        $dados = $this->dadosValidados();
+        require_once CAMINHO_RAIZ . '/models/Plano.php';
+        require_once CAMINHO_RAIZ . '/models/Assinatura.php';
 
-        if (!empty($dados['erros'])) {
+        $dados = $this->dadosValidados();
+        $erros = $dados['erros'];
+
+        // ---- Cartão "Assinatura" (apenas na criação) ----
+        $planoModel  = new Plano();
+        $assinaturas = new Assinatura();
+        $planoId     = (int) ($_POST['plano_id'] ?? 0);
+        $plano       = $planoId > 0 ? $planoModel->encontrarPorId($planoId) : null;
+        if (!$plano) {
+            $plano = $planoModel->porCodigo('gratuito') ?: null;
+        }
+        if (!$plano) {
+            $erros['plano_id'] = 'Nenhum plano disponível. Corra a migração de assinaturas.';
+        }
+        $ehGratuito = $plano && $plano['codigo'] === 'gratuito';
+        $pago       = !$ehGratuito && !empty($_POST['pagamento_recebido']);
+        $valor      = $ehGratuito ? 0.00 : max(0.0, (float) str_replace('.', '', (string) ($_POST['valor_acordado'] ?? $plano['preco'])));
+        $inicioData = trim($_POST['data_inicio'] ?? '');
+        if ($inicioData !== '' && !DateTime::createFromFormat('Y-m-d', $inicioData)) {
+            $erros['data_inicio'] = 'Data de início inválida.';
+        }
+        $fimGratis  = trim($_POST['fim_gratuito'] ?? '');
+        if ($ehGratuito && $fimGratis !== '') {
+            $d = DateTime::createFromFormat('Y-m-d', $fimGratis);
+            if (!$d || $d->format('Y-m-d') !== $fimGratis) {
+                $erros['fim_gratuito'] = 'Data de fim do período gratuito inválida.';
+            }
+        } elseif (!$ehGratuito) {
+            $fimGratis = '';
+        }
+
+        if (!empty($erros)) {
             $this->renderizar('empresas/form', [
                 'tituloPagina' => 'Nova Empresa',
                 'paginaAtiva'  => 'empresas',
                 'empresa'      => $_POST,
-                'erros'        => $dados['erros'],
+                'erros'        => $erros,
+                'planos'       => $planoModel->todosOrdenados(),
             ]);
             return;
         }
 
-        $id = $this->empresaModel->inserir($dados['campos']);
+        // Empresa + primeira assinatura na mesma transacção (tudo ou nada).
+        $bd = Database::obterLigacao();
+        try {
+            $bd->beginTransaction();
+            $id = $this->empresaModel->inserir($dados['campos']);
+            $idAssinatura = $assinaturas->criarInicial(
+                (int) $id,
+                (int) $plano['id'],
+                $valor,
+                $pago,
+                $inicioData !== '' ? $inicioData : null,
+                $ehGratuito && $fimGratis !== '' ? $fimGratis : null,
+                trim($_POST['observacoes_assinatura'] ?? '') ?: null,
+                (int) ($_SESSION['usuario_id'] ?? 0) ?: null
+            );
+            $bd->commit();
+        } catch (Throwable $e) {
+            if ($bd->inTransaction()) {
+                $bd->rollBack();
+            }
+            error_log('[Empresas] Falha ao criar empresa+assinatura: ' . $e->getMessage());
+            definirFlash('erro', 'Não foi possível criar a empresa com a assinatura. Tente novamente.');
+            $this->redirecionar('empresas/criar');
+            return;
+        }
+
         AuditoriaHelper::registar('empresa_criada', 'empresas', $id, null, $dados['campos']);
+        AuditoriaHelper::registar('assinatura_criada', 'assinaturas', $idAssinatura, null,
+            ['empresa_id' => $id, 'plano' => $plano['nome'], 'estado' => $ehGratuito ? 'activa(gratuita)' : ($pago ? 'activa' : 'pendente_pagamento')]);
+        if (!$ehGratuito && !$pago) {
+            // Regra 3.3: entrou em carência por troca para plano pago sem pagamento.
+            AssinaturaHelper::notificarCarencia((int) $id, $idAssinatura, 'gratuita cessou', AssinaturaHelper::carenciaHoras());
+        }
         NotificacaoHelper::paraSuperAdministradores(
             'sucesso', 'Nova empresa registada', $dados['campos']['nome'] . ' foi adicionada ao sistema.',
             URL_BASE . '/empresas/editar/' . $id

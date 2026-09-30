@@ -3516,6 +3516,71 @@ $isViewer = $usuario_perfil === 'visualizador';
         </div>
     </div>
 
+    <?php
+    // ===== FAIXA DE AVISO DE ASSINATURA (apenas para utilizadores de empresa) =====
+    if (!$isSuperAdmin && !empty($_SESSION['empresa_id'])) {
+        $caminhoAssinaturaHelper = CAMINHO_RAIZ . '/helpers/AssinaturaHelper.php';
+        if (file_exists($caminhoAssinaturaHelper)) {
+            require_once $caminhoAssinaturaHelper;
+            $estAs = AssinaturaHelper::detalharParaFaixa(AssinaturaHelper::estadoActual()); // memorizado pelo middleware (sem repetir a consulta)
+            if ($estAs && in_array($estAs['estado'] ?? '', ['carencia', 'por_vencer'], true)) {
+                $linkWaFaixa = AssinaturaHelper::linkWhatsapp(
+                    'Olá! Sou da empresa ' . ($_SESSION['empresa_nome'] ?? '') . '. '
+                    . ($estAs['estado'] === 'carencia' ? 'A nossa assinatura expirou. Gostaria de negociar a assinatura do Monana Financial.'
+                                                       : 'A nossa assinatura está perto de terminar. Gostaria de renovar a assinatura do Monana Financial.')
+                );
+                $segRestantes = max(0, (int) ($estAs['segundos_restantes'] ?? 0));
+                $limiteTs = isset($estAs['limite_carencia']) ? strtotime(str_replace(' ', 'T', $estAs['limite_carencia'])) : null;
+                if ($estAs['estado'] === 'carencia'):
+                    // Sem botão de fechar: não se pode dispensar a carência.
+                    $codPlanoFaixa = $estAs['plano']['codigo'] ?? '';
+                    ?>
+                    <div class="assin-faixa assin-faixa-carencia" id="assin-faixa"
+                         data-limite="<?php echo $limiteTs ? (int) $limiteTs : ''; ?>">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                        <span>A sua assinatura <?php echo $codPlanoFaixa === 'gratuito' ? 'gratuita cessou' : 'expirou'; ?>.
+                            Faltam <strong id="assin-contagem"><?php echo htmlspecialchars(AssinaturaHelper::tempoLegivel($segRestantes)); ?></strong>
+                            para o bloqueio do acesso.</span>
+                        <span class="assin-fixa-acoes">
+                            <?php if ($linkWaFaixa): ?>
+                                <a class="btn btn-sm btn-success" href="<?php echo htmlspecialchars($linkWaFaixa); ?>" target="_blank" rel="noopener">
+                                    <i class="fa-brands fa-whatsapp"></i> Negociar no WhatsApp
+                                </a>
+                            <?php endif; ?>
+                            <a class="assin-faixa-link" href="<?php echo URL_BASE; ?>/assinaturas/minha">Ver detalhes</a>
+                        </span>
+                    </div>
+                    <?php
+                else:
+                    // Últimos 7 dias: pode ser fechada até ao fim da sessão.
+                    if (empty($_SESSION['assin_faixa_7d_fechada'])):
+                    $diasRestantes = (int) ceil($segRestantes / 86400);
+                    ?>
+                    <div class="assin-faixa assin-faixa-vencimento" id="assin-faixa">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>A sua assinatura termina em <?php echo $diasRestantes; ?> <?php echo $diasRestantes === 1 ? 'dia' : 'dias'; ?>.</span>
+                        <span class="assin-fixa-acoes">
+                            <?php if ($linkWaFaixa): ?>
+                                <a class="btn btn-sm btn-primary" href="<?php echo htmlspecialchars($linkWaFaixa); ?>" target="_blank" rel="noopener">
+                                    <i class="fa-solid fa-rotate"></i> Renovar
+                                </a>
+                            <?php endif; ?>
+                            <a class="assin-faixa-link" href="<?php echo URL_BASE; ?>/assinaturas/minha">Ver detalhes</a>
+                            <button type="button" class="assin-faixa-fechar" title="Fechar"
+                                    onclick="document.getElementById('assin-faixa').remove();
+                                             fetch('<?php echo URL_BASE; ?>/assinaturas/esconderFaixa', {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}});">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </span>
+                    </div>
+                    <?php
+                    endif;
+                endif;
+            }
+        }
+    }
+    ?>
+
     <!-- ===== CONTENT ===== -->
     <div class="content">
         <?php
@@ -3710,5 +3775,40 @@ document.addEventListener('DOMContentLoaded', function() {
 #modalLogout.aberto { display: flex !important; animation: fadeInModal .2s ease; }
 @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
 </style>
+
+<style>
+/* ---- Faixa de aviso de assinatura (módulo Assinaturas) ---- */
+.assin-faixa{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:13.5px;font-weight:600;flex-wrap:wrap}
+.assin-fixa-acoes{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.assin-faixa-carencia{background:#fef3c7;color:#b45309;border-left:4px solid var(--orange)}
+.assin-faixa-vencimento{background:#eff6ff;color:#1e3a8a;border-left:4px solid var(--blue)}
+.assin-faixa i.fa-solid{font-size:16px}
+.assin-faixa-link{color:inherit;text-decoration:underline;font-weight:700;font-size:13px}
+.assin-faixa-fechar{background:none;border:none;cursor:pointer;color:inherit;font-size:15px;padding:4px}
+@media(max-width:768px){.assin-faixa{padding:10px 14px}.assin-fixa-acoes{margin-left:0}}
+</style>
+
+<script>
+// Contagem decrescente da faixa de carência — actualiza a cada minuto, sem recarregar a página.
+(function() {
+    const faixa = document.getElementById('assin-faixa');
+    if (!faixa || !faixa.dataset.limite) return;
+    const limite = parseInt(faixa.dataset.limite, 10);
+    const alvo = document.getElementById('assin-contagem');
+    if (!alvo || !limite) return;
+    function fmt(seg) {
+        if (seg <= 0) return '0min';
+        const d = Math.floor(seg / 86400), h = Math.floor((seg % 86400) / 3600), m = Math.floor((seg % 3600) / 60);
+        if (d >= 2) return d + ' dias';
+        if (d === 1) return '1 dia';
+        if (h > 0) return h + 'h ' + String(m).padStart(2, '0') + 'min';
+        return Math.max(1, m) + 'min';
+    }
+    setInterval(function() {
+        const restantes = Math.max(0, Math.floor(limite - Date.now() / 1000));
+        alvo.textContent = fmt(restantes);
+    }, 60000);
+})();
+</script>
 </body>
 </html>

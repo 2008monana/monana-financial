@@ -2,6 +2,14 @@
 /**
  * Listagem de Empresas - Super Admin
  */
+require_once CAMINHO_RAIZ . '/views/assinaturas/_estilos.php';
+
+$selosAssinatura = [
+    'gratuita'  => ['class' => 'assin-gratuita',  'icone' => 'fa-gift',           'texto' => 'Gratuita'],
+    'activa'    => ['class' => 'assin-activa',    'icone' => 'fa-circle-check',   'texto' => 'Activa'],
+    'carencia'  => ['class' => 'assin-carencia',  'icone' => 'fa-hourglass-half', 'texto' => 'Em carência'],
+    'bloqueada' => ['class' => 'assin-bloqueada', 'icone' => 'fa-lock',           'texto' => 'Bloqueada'],
+];
 ?>
 
 <div class="page-header">
@@ -73,10 +81,21 @@
                     <span class="status-badge <?php echo $empresa['ativa'] ? 'ativo' : 'inativo'; ?>">
                         <i class="fas fa-circle"></i> <?php echo $empresa['ativa'] ? 'Ativa' : 'Inativa'; ?>
                     </span>
+                    <?php $stAs = $empresa['assinatura_estado'] ?? null; ?>
+                    <?php if ($stAs && isset($selosAssinatura[$stAs])): ?>
+                        <span class="status-badge <?php echo $selosAssinatura[$stAs]['class']; ?>" title="Assinatura">
+                            <i class="fas <?php echo $selosAssinatura[$stAs]['icone']; ?>"></i> <?php echo $selosAssinatura[$stAs]['texto']; ?>
+                        </span>
+                    <?php endif; ?>
                 </div>
 
                 <div class="empresa-card-body">
                     <div class="empresa-details">
+                        <?php if (!empty($empresa['assinatura_fim'])): ?>
+                            <span><i class="fas fa-calendar-day" style="color:var(--orange);"></i> Vence em <?php echo htmlspecialchars(date('d/m/Y', strtotime((string) $empresa['assinatura_fim']))); ?></span>
+                        <?php elseif (($empresa['assinatura_estado'] ?? '') === 'gratuita'): ?>
+                            <span><i class="fas fa-gift" style="color:#0369a1;"></i> Sem data de fim (gratuito)</span>
+                        <?php endif; ?>
                         <?php if ($empresa['email_contacto']): ?>
                             <span><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($empresa['email_contacto']); ?></span>
                         <?php endif; ?>
@@ -106,6 +125,9 @@
                     </a>
                     <a href="<?php echo URL_BASE; ?>/empresas/editar/<?php echo $empresa['id']; ?>" class="btn btn-sm btn-primary" title="Editar">
                         <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="<?php echo URL_BASE; ?>/assinaturas/empresa/<?php echo (int) $empresa['id']; ?>" class="btn btn-sm btn-secondary" title="Assinatura">
+                        <i class="fas fa-crown"></i> Assinatura
                     </a>
                     <form method="post" action="<?php echo URL_BASE; ?>/empresas/alternarEstado/<?php echo $empresa['id']; ?>" style="display:inline;">
                         <button type="submit" class="btn btn-sm <?php echo $empresa['ativa'] ? 'btn-danger' : 'btn-success'; ?>" 
