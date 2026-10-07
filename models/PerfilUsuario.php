@@ -1,12 +1,18 @@
 <?php
 /**
  * Modelo de Perfil do Usuário
+ * Tabela: perfis_usuarios (foto via Cloudinary, contactos, cargo...)
  */
+
+require_once CAMINHO_RAIZ . '/core/Model.php';
+
 class PerfilUsuario extends Model {
-    protected $tabela = 'perfis_usuarios';
-    protected $chavePrimaria = 'id';
-    protected $preenchiveis = [
-        'usuario_id', 'foto_url', 'foto_public_id', 'telefone', 
+    protected string $tabela = 'perfis_usuarios';
+    protected string $chavePrimaria = 'id';
+
+    /** Colunas que podem ser gravadas a partir de dados do utilizador */
+    private array $preenchiveis = [
+        'usuario_id', 'foto_url', 'foto_public_id', 'telefone',
         'cargo', 'departamento', 'biografia'
     ];
 
@@ -14,9 +20,9 @@ class PerfilUsuario extends Model {
      * Buscar perfil por usuário
      */
     public function buscarPorUsuario($usuarioId) {
-        $sql = "SELECT * FROM {$this->tabela} WHERE usuario_id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$usuarioId]);
+        $sql = "SELECT * FROM {$this->tabela} WHERE usuario_id = :usuario_id LIMIT 1";
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute(['usuario_id' => (int) $usuarioId]);
         return $stmt->fetch();
     }
 
@@ -24,13 +30,17 @@ class PerfilUsuario extends Model {
      * Criar ou atualizar perfil
      */
     public function salvar($usuarioId, $dados) {
+        // Filtrar apenas colunas permitidas
+        $dados = array_intersect_key($dados, array_flip($this->preenchiveis));
+
         $perfil = $this->buscarPorUsuario($usuarioId);
-        
+
         if ($perfil) {
-            return $this->atualizar($perfil['id'], $dados);
+            unset($dados['usuario_id']);
+            return $this->atualizar((int) $perfil['id'], $dados);
         } else {
-            $dados['usuario_id'] = $usuarioId;
-            return $this->criar($dados);
+            $dados['usuario_id'] = (int) $usuarioId;
+            return $this->inserir($dados);
         }
     }
 
