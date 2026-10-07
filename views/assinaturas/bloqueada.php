@@ -5,7 +5,7 @@
  */
 $raiz       = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
 $urlBase    = defined('URL_BASE') ? URL_BASE : '';
-$fbv        = @filemtime($raiz . '/public/images/logo.png') ?: time();
+$fbv        = @filemtime($raiz . '/public/images/favicon.png') ?: time();
 $linkWhats  = AssinaturaHelper::linkWhatsapp(
     AssinaturaHelper::mensagemNegociacao($empresa_nome ?? '', 'expirou')
 );
@@ -19,7 +19,7 @@ $terminouEm  = !empty($estado['limite_carencia']) ? $estado['limite_carencia']
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Acesso suspenso — MonanaFinancial</title>
-<link rel="icon" type="image/png" sizes="32x32" href="<?= $urlBase ?>/images/favicon-32.png?v=<?= $fbv ?>">
+<link rel="icon" type="image/png" href="<?= $urlBase ?>/images/favicon.png?v=<?= $fbv ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -64,7 +64,7 @@ $terminouEm  = !empty($estado['limite_carencia']) ? $estado['limite_carencia']
 </head>
 <body>
   <main class="bl-card">
-    <img src="<?= $urlBase ?>/images/logo.png?v=<?= $fbv ?>" alt="MonanaFinancial" class="bl-logo">
+    <img src="<?= $urlBase ?>/images/favicon.png?v=<?= $fbv ?>" alt="MonanaFinancial" class="bl-logo">
     <div class="bl-marca">Monana<span>Financial</span></div>
 
     <div class="bl-icone"><i class="fas fa-lock"></i></div>

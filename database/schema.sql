@@ -234,6 +234,184 @@ CREATE TABLE perfis_usuario (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------
+-- METODOS DE PAGAMENTO (por empresa)
+-- ---------------------------------------------------------
+CREATE TABLE metodos_pagamento (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    empresa_id INT UNSIGNED NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    descricao VARCHAR(255) DEFAULT NULL,
+    codigo VARCHAR(50) NOT NULL,
+    tipo ENUM('entrada', 'saida') NOT NULL DEFAULT 'entrada',
+    categoria VARCHAR(50) DEFAULT NULL,
+    cor VARCHAR(20) DEFAULT '#0e2748',
+    icone VARCHAR(50) DEFAULT 'fa-credit-card',
+    ordem INT UNSIGNED DEFAULT 0,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_mp_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_empresa_codigo (empresa_id, codigo),
+    INDEX idx_empresa_tipo (empresa_id, tipo)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------
+-- CATEGORIAS DE SAIDA (tipos de gasto, por empresa)
+-- ---------------------------------------------------------
+CREATE TABLE categorias_saida (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    empresa_id INT UNSIGNED NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    descricao VARCHAR(255) DEFAULT NULL,
+    cor VARCHAR(20) DEFAULT '#dc2626',
+    icone VARCHAR(50) DEFAULT 'fa-tag',
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_cs_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_empresa_nome_saida (empresa_id, nome),
+    INDEX idx_saida_empresa (empresa_id, ativo)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------
+-- MODULOS E PERMISSOES POR MODULO (controle de acesso administrativo)
+-- ---------------------------------------------------------
+CREATE TABLE modulos (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(50) NOT NULL UNIQUE,
+    descricao VARCHAR(150) NOT NULL,
+    icone VARCHAR(50) DEFAULT 'fa-puzzle-piece',
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    ordem INT UNSIGNED DEFAULT 0,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE usuario_modulo_permissoes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT UNSIGNED NOT NULL,
+    modulo_id INT UNSIGNED NOT NULL,
+    pode_acessar TINYINT(1) NOT NULL DEFAULT 1,
+    pode_editar TINYINT(1) NOT NULL DEFAULT 0,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ump_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ump_modulo FOREIGN KEY (modulo_id) REFERENCES modulos(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_usuario_modulo (usuario_id, modulo_id)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------
+-- BACKUPS (registos de cópias de segurança manuais/automáticas)
+-- ---------------------------------------------------------
+CREATE TABLE backups (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tipo ENUM('manual', 'automatico') NOT NULL DEFAULT 'manual',
+    arquivo VARCHAR(255) NOT NULL,
+    caminho VARCHAR(500) NOT NULL,
+    tamanho BIGINT UNSIGNED DEFAULT 0,
+    tabelas TEXT DEFAULT NULL,
+    empresa_id INT UNSIGNED DEFAULT NULL,
+    criado_por INT UNSIGNED DEFAULT NULL,
+    status ENUM('concluido', 'em_processamento', 'falha') NOT NULL DEFAULT 'concluido',
+    mensagem TEXT DEFAULT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_backup_criador FOREIGN KEY (criado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+    INDEX idx_backup_criado_em (criado_em)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------
+-- MODULO DE ASSINATURAS (SaaS): planos, assinaturas, pagamentos e avisos
+-- ---------------------------------------------------------
+CREATE TABLE planos (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    descricao VARCHAR(500) DEFAULT NULL,
+    preco DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+    moeda VARCHAR(10) NOT NULL DEFAULT 'AOA',
+    periodo ENUM('mensal','trimestral','semestral','anual') NOT NULL DEFAULT 'mensal',
+    limite_empresas INT UNSIGNED DEFAULT 1,
+    limite_filiais INT UNSIGNED DEFAULT 1,
+    limite_usuarios INT UNSIGNED DEFAULT 5,
+    limite_transacoes_mes INT UNSIGNED DEFAULT 0,
+    funcionalidades JSON DEFAULT NULL,
+    destaque TINYINT(1) NOT NULL DEFAULT 0,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE assinaturas (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    empresa_id INT UNSIGNED NOT NULL,
+    plano_id INT UNSIGNED NOT NULL,
+    inicio DATE NOT NULL,
+    fim DATE NOT NULL,
+    valor DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+    estado ENUM('ativa','pausada','expirada','cancelada','teste') NOT NULL DEFAULT 'ativa',
+    renovacao_automatica TINYINT(1) NOT NULL DEFAULT 0,
+    observacoes VARCHAR(500) DEFAULT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_assin_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    CONSTRAINT fk_assin_plano FOREIGN KEY (plano_id) REFERENCES planos(id) ON DELETE RESTRICT,
+    INDEX idx_assin_estado_fim (estado, fim)
+) ENGINE=InnoDB;
+
+CREATE TABLE assinatura_pagamentos (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    assinatura_id INT UNSIGNED NOT NULL,
+    valor DECIMAL(15,2) NOT NULL,
+    metodo VARCHAR(50) DEFAULT NULL,
+    referencia VARCHAR(150) DEFAULT NULL,
+    pago_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    comprovativo VARCHAR(255) DEFAULT NULL,
+    registado_por INT UNSIGNED DEFAULT NULL,
+    CONSTRAINT fk_aspag_assinatura FOREIGN KEY (assinatura_id) REFERENCES assinaturas(id) ON DELETE CASCADE,
+    INDEX idx_aspag_data (pago_em)
+) ENGINE=InnoDB;
+
+CREATE TABLE assinatura_avisos (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    assinatura_id INT UNSIGNED NOT NULL,
+    tipo ENUM('expiracao','vencimento','expirada','renovada') NOT NULL,
+    dias_restantes INT DEFAULT NULL,
+    enviado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    canal ENUM('email','sistema') NOT NULL DEFAULT 'sistema',
+    CONSTRAINT fk_aviso_assinatura FOREIGN KEY (assinatura_id) REFERENCES assinaturas(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_aviso_dia (assinatura_id, tipo, dias_restantes)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------
+-- TENTATIVAS DE LOGIN (segurança / bloqueio por força bruta)
+-- ---------------------------------------------------------
+CREATE TABLE tentativas_login (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) NOT NULL,
+    dispositivo VARCHAR(150) DEFAULT NULL,
+    ip VARCHAR(45) DEFAULT NULL,
+    sucesso TINYINT(1) NOT NULL DEFAULT 0,
+    tentado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_tentativa_email_data (email, tentado_em)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------
+-- PERFIS DE UTILIZADOR EXTENDIDOS (foto via Cloudinary, contactos)
+-- ---------------------------------------------------------
+CREATE TABLE perfis_usuarios (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT UNSIGNED NOT NULL,
+    foto_url VARCHAR(500) DEFAULT NULL,
+    foto_public_id VARCHAR(255) DEFAULT NULL,
+    telefone VARCHAR(30) DEFAULT NULL,
+    cargo VARCHAR(100) DEFAULT NULL,
+    departamento VARCHAR(100) DEFAULT NULL,
+    biografia TEXT DEFAULT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_pu_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_pu_usuario (usuario_id)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------
 -- NOTIFICACOES
 -- ---------------------------------------------------------
 CREATE TABLE notificacoes (

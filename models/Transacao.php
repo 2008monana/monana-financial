@@ -28,12 +28,13 @@ class Transacao extends Model
                        f.empresa_id,
                        e.nome as empresa_nome,
                        c.nome as categoria_nome,
-                       u.nome as usuario_nome
+                       CASE WHEN sa.id IS NOT NULL THEN 'Sistema' ELSE u.nome END as usuario_nome
                 FROM transacoes t
                 LEFT JOIN filiais f ON t.filial_id = f.id
                 LEFT JOIN empresas e ON t.empresa_id = e.id
                 LEFT JOIN categorias c ON t.categoria_id = c.id
                 LEFT JOIN usuarios u ON t.usuario_id = u.id
+                       LEFT JOIN usuarios sa ON sa.id = u.id AND sa.perfil = 'super_admin'
                 WHERE t.data_transacao BETWEEN :data_inicio AND :data_fim";
 
         $params = [
@@ -112,12 +113,13 @@ class Transacao extends Model
                        f.empresa_id,
                        e.nome as empresa_nome,
                        c.nome as categoria_nome,
-                       u.nome as usuario_nome
+                       CASE WHEN sa.id IS NOT NULL THEN 'Sistema' ELSE u.nome END as usuario_nome
                 FROM transacoes t
                 LEFT JOIN filiais f ON t.filial_id = f.id
                 LEFT JOIN empresas e ON t.empresa_id = e.id
                 LEFT JOIN categorias c ON t.categoria_id = c.id
                 LEFT JOIN usuarios u ON t.usuario_id = u.id
+                       LEFT JOIN usuarios sa ON sa.id = u.id AND sa.perfil = 'super_admin'
                 WHERE 1=1";
 
         $params = [];
@@ -386,12 +388,13 @@ class Transacao extends Model
                        f.nome as filial_nome, 
                        e.nome as empresa_nome,
                        c.nome as categoria_nome,
-                       u.nome as usuario_nome
+                       CASE WHEN sa.id IS NOT NULL THEN 'Sistema' ELSE u.nome END as usuario_nome
                 FROM transacoes t
                 LEFT JOIN filiais f ON t.filial_id = f.id
                 LEFT JOIN empresas e ON t.empresa_id = e.id
                 LEFT JOIN categorias c ON t.categoria_id = c.id
                 LEFT JOIN usuarios u ON t.usuario_id = u.id
+                       LEFT JOIN usuarios sa ON sa.id = u.id AND sa.perfil = 'super_admin'
                 WHERE t.id = :id
                 LIMIT 1";
         $stmt = $this->bd->prepare($sql);

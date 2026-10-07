@@ -25,8 +25,25 @@ CARD 1: DADOS PESSOAIS
     </div>
 
     <div class="form-card-body">
-        <form method="POST" action="<?php echo URL_BASE; ?>/perfil/atualizar">
+        <form method="POST" action="<?php echo URL_BASE; ?>/perfil/atualizar" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+
+            <!-- Avatar / Foto de perfil (dentro do formulário para ser enviado) -->
+            <?php $fotoUrl = $perfilExtra['foto_url'] ?? null; ?>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border,#e2e8f0);">
+                <img src="<?php echo htmlspecialchars($fotoUrl ?: (URL_BASE . '/images/avatar-padrao.png')); ?>"
+                     alt="Foto de perfil"
+                     onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2296%22 height=%2296%22><rect width=%2296%22 height=%2296%22 rx=%2248%22 fill=%22%231e293b%22/><text x=%2248%22 y=%2260%22 font-size=%2236%22 fill=%22white%22 text-anchor=%22middle%22><?php echo rawurlencode(mb_strtoupper(substr($usuario['nome'], 0, 1))); ?></text></svg>';"
+                     style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--navy,#1e293b);background:#e2e8f0;">
+                <div>
+                    <strong>Foto de perfil</strong>
+                    <p style="color:var(--muted,#64748b);font-size:12px;margin:4px 0 8px;">Imagem de no máximo 2 MB.</p>
+                    <input type="file" name="foto" id="input-foto-perfil" accept="image/jpeg,image/png,image/gif,image/webp" style="font-size:12px;">
+                    <?php if (!empty($fotoUrl)): ?>
+                        <label style="display:block;font-size:12px;margin-top:6px;"><input type="checkbox" name="remover_foto" value="1"> Remover foto atual</label>
+                    <?php endif; ?>
+                </div>
+            </div>
 
             <div class="form-row">
                 <div class="form-group">
@@ -418,3 +435,25 @@ CARD 3: PERMISSÕES
     }
 }
 </style>
+
+<script>
+// Bloqueio no navegador: rejeita imagens acima de 2 MB antes do envio
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('input-foto-perfil');
+    if (!input) return;
+    const aviso = document.createElement('p');
+    aviso.style.cssText = 'color:#dc2626;font-size:12px;margin:6px 0 0;display:none;';
+    input.parentNode.appendChild(aviso);
+
+    input.addEventListener('change', function () {
+        const arquivo = this.files && this.files[0];
+        if (arquivo && arquivo.size > 2 * 1024 * 1024) {
+            aviso.textContent = 'A imagem selecionada tem ' + (arquivo.size / (1024 * 1024)).toFixed(2) + ' MB. O limite máximo é 2 MB — escolha uma imagem menor.';
+            aviso.style.display = 'block';
+            this.value = '';
+            return;
+        }
+        aviso.style.display = 'none';
+    });
+});
+</script>

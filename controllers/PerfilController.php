@@ -12,12 +12,15 @@ require_once CAMINHO_RAIZ . '/middleware/AuthMiddleware.php';
 require_once CAMINHO_RAIZ . '/helpers/flash.php';
 require_once CAMINHO_RAIZ . '/helpers/SegurancaHelper.php';
 require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
+require_once CAMINHO_RAIZ . '/helpers/CloudinaryHelper.php';
+require_once CAMINHO_RAIZ . '/models/PerfilUsuario.php';
 
 class PerfilController extends Controller
 {
     private Usuario $usuarioModel;
     private Empresa $empresaModel;
     private Modulo $moduloModel;
+    private PerfilUsuario $perfilModel;
 
     public function __construct()
     {
@@ -25,6 +28,7 @@ class PerfilController extends Controller
         $this->usuarioModel = new Usuario();
         $this->empresaModel = new Empresa();
         $this->moduloModel = new Modulo();
+        $this->perfilModel = new PerfilUsuario();
     }
 
     /**
@@ -51,12 +55,30 @@ class PerfilController extends Controller
         // Buscar permissões do utilizador
         $permissoes = $this->moduloModel->getPermissoesUsuario($usuarioId);
 
+        // Buscar perfil estendido (foto, departamento, biografia) com tolerância a falhas
+        $perfilExtra = [];
+        try {
+            $pdoPerfil = Database::obterLigacao();
+            $stTab = $pdoPerfil->prepare('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :t');
+            $stTab->execute([':t' => 'perfis_usuarios']);
+            if ((int) $stTab->fetchColumn() > 0) {
+                $perfilExtra = $this->perfilModel->buscarPorUsuario($usuarioId) ?: [];
+            }
+        } catch (Throwable $e) {
+            error_log('perfil_extra_consulta: ' . $e->getMessage());
+        }
+        // Fallback: foto guardada diretamente na tabela usuarios
+        if (empty($perfilExtra['foto_url']) && !empty($usuario['foto_url'])) {
+            $perfilExtra['foto_url'] = $usuario['foto_url'];
+        }
+
         $this->renderizar('perfil/index', [
             'tituloPagina' => 'Meu Perfil',
             'paginaAtiva' => 'perfil',
             'usuario' => $usuario,
             'empresaNome' => $empresaNome,
             'permissoes' => $permissoes,
+            'perfilExtra' => $perfilExtra,
             'csrf_token' => SegurancaHelper::gerarTokenCSRF(),
         ]);
     }
@@ -90,15 +112,134 @@ class PerfilController extends Controller
             'cargo' => $cargo ?: null,
         ]);
 
+        // Campos estendidos do perfil (tabela perfis_usuarios)
+        $departamento = trim($_POST['departamento'] ?? '');
+        $biografia    = trim($_POST['biografia'] ?? '');
+        $perfilExtra  = ['departamento' => $departamento ?: null, 'biografia' => $biografia ?: null];
+
+        // ---------------------------------------------------------
+        // Upload de foto de perfil (Cloudinary com fallback local).
+        // Regras: máx. 2 MB; se exceder, o sistema RECUSA o ficheiro
+        // e mantém a foto anterior.
+        // ---------------------------------------------------------
+        $anterior = null;
+        try {
+            $anterior = $this->perfilModel->buscarPorUsuario($usuarioId) ?: null;
+        } catch (Throwable $e) {
+            error_log('perfil_anterior_consulta: ' . $e->getMessage());
+        }
+        if (empty($anterior['foto_url']) && !empty($usuario['foto_url'])) {
+            $anterior = is_array($anterior) ? $anterior : [];
+            $anterior['foto_url'] = $usuario['foto_url'];
+        }
+
+        $fotoProcessada   = false;
+        $erroFoto         = null;
+        $haErroDeUpload   = isset($_FILES['foto']) && ($_FILES['foto']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE
+                            && empty($_FILES['foto']['name']);
+
+        if (!empty($_FILES['foto']['name']) && ($_FILES['foto']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $upload = CloudinaryHelper::enviarImagem($_FILES['foto'], 'monana/avatares');
+            if ($upload['sucesso']) {
+                // Remove o ficheiro/asset anterior (Cloudinary ou pasta local)
+                if (!empty($anterior['foto_public_id'])) {
+                    CloudinaryHelper::removerImagem((string) $anterior['foto_public_id']);
+                }
+                $perfilExtra['foto_url']       = $upload['url'];
+                $perfilExtra['foto_public_id'] = $upload['public_id'];
+                $fotoProcessada = true;
+            } else {
+                $erroFoto = $upload['erro'];
+            }
+        } elseif ($haErroDeUpload) {
+            // Ficheiro rejeitado pelo PHP (geralmente acima de 2 MB / upload_max_filesize)
+            $erroFoto = 'A imagem excede o limite de 2 MB.';
+        } elseif (isset($_POST['remover_foto'])) {
+            if (!empty($anterior['foto_public_id'])) {
+                CloudinaryHelper::removerImagem((string) $anterior['foto_public_id']);
+            }
+            $perfilExtra['foto_url']       = null;
+            $perfilExtra['foto_public_id'] = null;
+            $fotoProcessada = true;
+        }
+
+        // Persistir dados do formulário mesmo quando a foto foi recusada
+        $guardarDados = $perfilExtra;
+        if (!$fotoProcessada) {
+            unset($guardarDados['foto_url'], $guardarDados['foto_public_id']);
+        }
+        $guardarDados['telefone'] = $telefone ?: null;
+        $guardarDados['cargo']    = $cargo ?: null;
+
+        try {
+            $this->perfilModel->salvar($usuarioId, $guardarDados);
+        } catch (Throwable $e) {
+            // perfis_usuarios pode ainda não existir na base (migração pendente)
+            error_log('perfil_extra: ' . $e->getMessage());
+        }
+
+        // Fallback: garante que a foto fica registada mesmo sem a tabela perfis_usuarios
+        if ($fotoProcessada) {
+            $guardado = false;
+            try {
+                $pdo = Database::obterLigacao();
+                $st  = $pdo->prepare('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :t');
+                $st->execute([':t' => 'perfis_usuarios']);
+                if ((int) $st->fetchColumn() > 0) {
+                    $this->perfilModel->salvar($usuarioId, [
+                        'foto_url'        => $perfilExtra['foto_url'] ?? null,
+                        'foto_public_id'  => $perfilExtra['foto_public_id'] ?? null,
+                    ]);
+                    $guardado = true;
+                }
+            } catch (Throwable $e) {
+                error_log('fallback_foto_perfil: ' . $e->getMessage());
+            }
+            if (!$guardado) {
+                try {
+                    $this->garantirColunaFotoUsuarios();
+                    $this->usuarioModel->atualizar($usuarioId, [
+                        'foto_url' => $perfilExtra['foto_url'] ?? null,
+                    ]);
+                } catch (Throwable $e) {
+                    error_log('fallback_foto_usuarios: ' . $e->getMessage());
+                    definirFlash('erro', 'A foto foi enviada, mas não foi possível associá-la ao seu perfil.');
+                }
+            }
+        }
+
+        if ($erroFoto !== null) {
+            definirFlash('erro', 'Foto não enviada: ' . $erroFoto . ' A sua foto atual foi mantida.');
+        }
+
         if ($atualizado) {
             $_SESSION['usuario_nome'] = $nome;
             AuditoriaHelper::registar('perfil_atualizado', 'usuarios', $usuarioId, null, ['nome' => $nome, 'telefone' => $telefone, 'cargo' => $cargo], 'baixa');
-            definirFlash('sucesso', 'Perfil atualizado com sucesso!');
-        } else {
+            if ($erroFoto === null) {
+                definirFlash('sucesso', 'Perfil atualizado com sucesso!');
+            }
+        } elseif ($erroFoto === null) {
             definirFlash('erro', 'Erro ao atualizar perfil.');
         }
 
         $this->redirecionar('perfil');
+    }
+
+    /**
+     * Garante que a tabela usuarios tem a coluna foto_url (fallback quando
+     * a tabela perfis_usuarios ainda não foi migrada). Idempotente.
+     */
+    private function garantirColunaFotoUsuarios(): void
+    {
+        $pdo = Database::obterLigacao();
+        $st  = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.columns
+             WHERE table_schema = DATABASE() AND table_name = :t AND column_name = :c'
+        );
+        $st->execute([':t' => 'usuarios', ':c' => 'foto_url']);
+        if ((int) $st->fetchColumn() === 0) {
+            $pdo->exec('ALTER TABLE usuarios ADD COLUMN foto_url VARCHAR(500) NULL');
+        }
     }
 
     /**

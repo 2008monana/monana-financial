@@ -71,7 +71,7 @@ function exibirGrupoMenu(array $itens, string $paginaAtiva, string $titulo, call
 <aside class="sidebar" id="sidebar">
     <!-- MARCA -->
     <div class="side-brand">
-        <img src="<?php echo URL_BASE; ?>/images/logo.png" alt="MonanaFinancial" class="side-logo">
+        <img src="<?php echo URL_BASE; ?>/images/favicon.png" alt="MonanaFinancial" class="side-logo">
         <div class="side-brand-text">
             <div class="name">Monana<span>Financial</span></div>
             <div class="sub">GESTÃO FINANCEIRA</div>

@@ -2,6 +2,7 @@
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
 require_once CAMINHO_RAIZ . '/models/DashboardFinanceiro.php';
+require_once CAMINHO_RAIZ . '/models/LogAuditoria.php';
 
 class DashboardController extends Controller
 {
@@ -38,7 +39,7 @@ class DashboardController extends Controller
         }, $empresas, array_keys($empresas));
         $this->renderizar('dashboard/superadmin', array_merge($this->baseDados($periodo, $datas), [
             'total_empresas' => count((new Empresa())->todos()), 'novas_empresas' => 0, 'total_filiais' => $this->contar('filiais'), 'novas_filiais' => 0,
-            'total_usuarios' => $this->contar('usuarios'), 'novos_usuarios' => 0, 'vendas_totais' => $totais['vendas'], 'crescimento_vendas' => 0,
+            'total_usuarios' => $this->contarUsuariosEmpresa(null), 'novos_usuarios' => 0, 'vendas_totais' => $totais['vendas'], 'crescimento_vendas' => 0,
             'resultado_global' => $totais['saldo'], 'crescimento_resultado' => 0, 'total_despesas' => $totais['compras'] + $totais['custos'], 'crescimento_global' => 0,
             'resumo_empresas' => $resumo, 'metodos_pagamento' => [], 'atividades_recentes' => $this->atividades(null), 'alertas' => [],
             'datasets_vendas' => $this->datasetsEmpresas($empresas, $cores),
@@ -71,8 +72,9 @@ class DashboardController extends Controller
     private function contar(string $tabela, ?int $empresaId = null): int { $bd = Database::obterLigacao(); $sql = "SELECT COUNT(*) FROM $tabela" . ($empresaId ? ' WHERE empresa_id = :id' : ''); $s = $bd->prepare($sql); $s->execute($empresaId ? ['id'=>$empresaId] : []); return (int) $s->fetchColumn(); }
 
     // Contagem de utilizadores visiveis na area da empresa: exclui o super_admin
-    // (que nao pertence a nenhuma empresa) e utilizadores desativados, para que o
-    // KPI do dashboard reflita a lista real de "Utilizadores".
+    // (que nao pertence a nenhuma empresa e nao deve ser contabilizado como
+    // utilizador do sistema pelas empresas) e utilizadores desativados, para que
+    // o KPI do dashboard reflita a lista real de "Utilizadores".
     private function contarUsuariosEmpresa(?int $empresaId): int
     {
         $bd = Database::obterLigacao();
@@ -85,7 +87,10 @@ class DashboardController extends Controller
         }
         return (int) $s->fetchColumn();
     }
-    private function atividades(?int $empresaId): array { return array_map(fn($t) => ['nome'=>$t['usuario'] ?? 'Utilizador', 'empresa'=>$t['empresa'] ?? '', 'tempo'=>date('d/m H:i', strtotime($t['data_transacao'])), 'cor'=>'#3b82f6'], $this->financeiro->recentes($empresaId)); }
+    // Feed "Atividade recente": usa os logs de auditoria, que já excluem
+    // automaticamente qualquer ação do Super Administrador nas listagens
+    // visíveis às empresas (LogAuditoria::clauseExcluirSuperAdmin).
+    private function atividades(?int $empresaId): array { require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php'; return array_map(fn($l) => ['nome'=>$l['usuario_nome'] ?? 'Sistema', 'descricao'=>AuditoriaHelper::descricaoEvento($l), 'empresa'=>$l['ip_origem'] ?? '', 'tempo'=>date('d/m H:i', strtotime($l['criado_em'])), 'cor'=>'#3b82f6'], (new LogAuditoria())->recentes(6, $empresaId)); }
     private function categorias(int $empresaId, array $datas, array $tipos, string $cor): array { $dados=$this->financeiro->porCategoria($empresaId,$datas['inicio'],$datas['fim'],$tipos); $total=array_sum(array_column($dados,'valor')); return array_map(fn($d)=>['nome'=>$d['nome'],'percentual'=>$total ? round($d['valor']*100/$total,1):0,'cor'=>$cor],$dados); }
     private function datasetsEmpresas(array $empresas, array $cores): array { return array_map(fn($e,$i)=>['label'=>$e['nome'],'data'=>array_fill(0,12,(float)$e['vendas']),'backgroundColor'=>$cores[$i%count($cores)],'borderRadius'=>4],$empresas,array_keys($empresas)); }
     private function datasetsFiliais(array $filiais, array $cores): array { return array_map(fn($f,$i)=>['label'=>$f['nome'],'data'=>array_fill(0,12,(float)$f['vendas']),'borderColor'=>$cores[$i%count($cores)],'backgroundColor'=>'rgba(59,130,246,0.1)','fill'=>true,'tension'=>0.4],$filiais,array_keys($filiais)); }

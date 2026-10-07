@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => '__root__',
-        'pretty_version' => 'dev-qwen-code-f9a3542c-b33a-4a1e-8dbd-bc783362b53c',
-        'version' => 'dev-qwen-code-f9a3542c-b33a-4a1e-8dbd-bc783362b53c',
-        'reference' => 'af5654d57fe4a3c466dd0c2c8bbed15f52fe8d95',
+        'pretty_version' => 'dev-qwen-code-04deba7a-ba67-4723-8fe5-b10f26aa2acb',
+        'version' => 'dev-qwen-code-04deba7a-ba67-4723-8fe5-b10f26aa2acb',
+        'reference' => '6c5069fc27f7b6ac91877cdd4b5a184ddf06820b',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => 'dev-qwen-code-f9a3542c-b33a-4a1e-8dbd-bc783362b53c',
-            'version' => 'dev-qwen-code-f9a3542c-b33a-4a1e-8dbd-bc783362b53c',
-            'reference' => 'af5654d57fe4a3c466dd0c2c8bbed15f52fe8d95',
+            'pretty_version' => 'dev-qwen-code-04deba7a-ba67-4723-8fe5-b10f26aa2acb',
+            'version' => 'dev-qwen-code-04deba7a-ba67-4723-8fe5-b10f26aa2acb',
+            'reference' => '6c5069fc27f7b6ac91877cdd4b5a184ddf06820b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -88,6 +88,15 @@
             'reference' => 'a1e7a2f88ee13635d86fc61cfbdf2306a76ddfc7',
             'type' => 'library',
             'install_path' => __DIR__ . '/../masterminds/html5',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'phpmailer/phpmailer' => array(
+            'pretty_version' => 'v6.12.0',
+            'version' => '6.12.0.0',
+            'reference' => 'd1ac35d784bf9f5e61b424901d5a014967f15b12',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../phpmailer/phpmailer',
             'aliases' => array(),
             'dev_requirement' => false,
         ),

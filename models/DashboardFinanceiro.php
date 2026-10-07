@@ -30,7 +30,10 @@ class DashboardFinanceiro extends Model
         $dados = $this->agrupar('e.id, e.nome', 'e.nome', 'empresas e', 't.empresa_id = e.id', $inicio, $fim);
         foreach ($dados as &$empresa) {
             $empresa['filiais'] = $this->contar('filiais', (int) $empresa['id_empresa']);
-            $empresa['usuarios'] = $this->contar('usuarios', (int) $empresa['id_empresa']);
+            // Exclui o super_admin da contagem: as empresas não o contabilizam como utilizador do sistema
+            $stmt = $this->bd->prepare("SELECT COUNT(*) FROM usuarios WHERE empresa_id = :eid AND perfil != 'super_admin' AND ativo = 1");
+            $stmt->execute(['eid' => (int) $empresa['id_empresa']]);
+            $empresa['usuarios'] = (int) $stmt->fetchColumn();
         }
         return $dados;
     }
@@ -57,11 +60,14 @@ class DashboardFinanceiro extends Model
 
     public function recentes(?int $empresaId, int $limite = 5): array
     {
+        // As empresas não podem ver ações do Super Administrador: os registos
+        // criados por esse perfil são ocultados das listagens visíveis à empresa.
         $sql = 'SELECT t.tipo, t.descricao, t.valor, t.data_transacao, f.nome filial, e.nome empresa, u.nome usuario
                 FROM transacoes t LEFT JOIN filiais f ON f.id = t.filial_id LEFT JOIN empresas e ON e.id = t.empresa_id
-                LEFT JOIN usuarios u ON u.id = t.usuario_id';
-        $params = [];
-        if ($empresaId) { $sql .= ' WHERE t.empresa_id = :empresa_id'; $params['empresa_id'] = $empresaId; }
+                LEFT JOIN usuarios u ON u.id = t.usuario_id
+                WHERE (t.usuario_id IS NULL OR NOT EXISTS (SELECT 1 FROM usuarios sa WHERE sa.id = t.usuario_id AND sa.perfil = :perfil_sa))';
+        $params = ['perfil_sa' => 'super_admin'];
+        if ($empresaId) { $sql .= ' AND t.empresa_id = :empresa_id'; $params['empresa_id'] = $empresaId; }
         $sql .= ' ORDER BY t.data_transacao DESC, t.id DESC LIMIT ' . (int) $limite;
         $stmt = $this->bd->prepare($sql);
         $stmt->execute($params);
@@ -98,7 +104,8 @@ class DashboardFinanceiro extends Model
 
     private function contarUsuariosFilial(int $filialId): int
     {
-        $stmt = $this->bd->prepare('SELECT COUNT(*) FROM usuario_filiais WHERE filial_id = :filial_id');
+        // Exclui o super_admin: não é contabilizado como utilizador do sistema pelas empresas
+        $stmt = $this->bd->prepare("SELECT COUNT(*) FROM usuario_filiais uf INNER JOIN usuarios u ON u.id = uf.usuario_id WHERE uf.filial_id = :filial_id AND u.perfil != 'super_admin'");
         $stmt->execute(['filial_id' => $filialId]);
         return (int) $stmt->fetchColumn();
     }
