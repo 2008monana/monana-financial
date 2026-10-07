@@ -4,6 +4,7 @@ require_once CAMINHO_RAIZ . '/helpers/NotificacaoHelper.php';
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Filial.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
+require_once CAMINHO_RAIZ . '/models/LogAuditoria.php';
 require_once CAMINHO_RAIZ . '/middleware/AuthMiddleware.php';
 require_once CAMINHO_RAIZ . '/helpers/flash.php';
 
@@ -32,7 +33,18 @@ class FiliaisController extends Controller
         }
         // super_admin: vem de ?empresa_id= ou do campo do formulário
         $valor = $_GET['empresa_id'] ?? $_POST['empresa_id'] ?? null;
-        return $valor ? (int) $valor : null;
+        if (!$valor) return null;
+        $id = (int) $valor;
+        // Marca a entrada no contexto de gestão da empresa: a partir daqui,
+        // os registos do Super Admin deixam de ser visíveis/contabilizados
+        // pelas empresas (ver LogAuditoria::clauseVisibilidadeEmpresa).
+        $nome = '';
+        try {
+            $emp = (new Empresa())->encontrarPorId($id);
+            $nome = (string) ($emp['nome'] ?? '');
+        } catch (Throwable $e) { /* irrelevante para o marcador */ }
+        LogAuditoria::marcarContextoEmpresa($id, $nome);
+        return $id;
     }
 
     public function index(): void

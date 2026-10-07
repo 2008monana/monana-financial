@@ -51,6 +51,7 @@ class AuditoriaHelper
         'configuracao_alterada'        => ['Configurações alteradas', 'info'],
         'logs_exportados'              => ['Logs exportados', 'info'],
         'logs_visualizados'            => ['Logs visualizados', 'info'],
+        'empresa_selecionada'          => ['Contexto de gestão de empresa ativado', 'info'],
         'notificacao_lida'             => ['Notificação marcada como lida', 'info'],
         'backup_gerado'                => ['Backup gerado', 'sucesso'],
         'backup_falhou'                => ['Backup falhou', 'perigo'],
@@ -95,10 +96,22 @@ class AuditoriaHelper
         ?string $motivo = null,
         ?int $usuarioId = null
     ): void {
+        // As empresas não podem ver — nem ser contabilizadas por — acções do
+        // Super Administrador. Em contexto de empresa, eventos causados pelo
+        // super_admin são registados sem autor; o Super Admin continua a ver
+        // tudo (incluindo os seus próprios registos com autor).
+        $idSessao = isset($_SESSION['usuario_id']) ? (int) $_SESSION['usuario_id'] : null;
+        if ($usuarioId === null && $idSessao !== null) {
+            $perfilSessao = (string) ($_SESSION['usuario_perfil'] ?? '');
+            if ($perfilSessao === 'super_admin' && !empty($_SESSION['empresa_id'])) {
+                $usuarioId = 0; // sentinela: não associar a nenhum utilizador
+            }
+        }
+
         try {
             require_once CAMINHO_RAIZ . '/models/LogAuditoria.php';
             (new LogAuditoria())->registar(
-                $usuarioId ?? (isset($_SESSION['usuario_id']) ? (int) $_SESSION['usuario_id'] : null),
+                self::resolverUsuarioAuditoria($usuarioId, $idSessao),
                 $acao,
                 $tabelaAfetada,
                 $registoId,
@@ -112,7 +125,7 @@ class AuditoriaHelper
             try {
                 self::garantirEsquema();
                 (new LogAuditoria())->registar(
-                    $usuarioId ?? (isset($_SESSION['usuario_id']) ? (int) $_SESSION['usuario_id'] : null),
+                    self::resolverUsuarioAuditoria($usuarioId, $idSessao),
                     $acao,
                     $tabelaAfetada,
                     $registoId,
@@ -126,6 +139,21 @@ class AuditoriaHelper
                 error_log('[Auditoria] ' . $e2->getMessage());
             }
         }
+    }
+
+    /**
+     * Decide o `usuario_id` a gravar no log de auditoria.
+     *  - null  -> autor da sessão (Super Admin em contexto global mantém-se identificado);
+     *  - 0     -> sentinela: evento ocorrido em contexto de empresa causado pelo
+     *             Super Administrador, que nunca deve aparecer associado a ele
+     *             nas listagens/estatísticas visíveis às empresas;
+     *  - >0    -> utilizador explícito fornecido pelo chamador.
+     */
+    private static function resolverUsuarioAuditoria(?int $usuarioIdParam, ?int $idSessao): ?int
+    {
+        if ($usuarioIdParam === null) return $idSessao;
+        if ($usuarioIdParam === 0)     return null;
+        return $usuarioIdParam;
     }
 
     /**

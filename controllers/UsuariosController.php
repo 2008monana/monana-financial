@@ -48,7 +48,19 @@ class UsuariosController extends Controller
         // Se for super_admin, pode escolher empresa via parâmetro
         if (($_SESSION['usuario_perfil'] ?? '') === 'super_admin') {
             $valor = $_GET['empresa_id'] ?? $_POST['empresa_id'] ?? null;
-            return $valor ? (int) $valor : null;
+            if (!$valor) return null;
+            $id = (int) $valor;
+            // Marca a entrada no contexto de gestão da empresa: a partir
+            // daqui os registos do Super Admin deixam de ser visíveis ou
+            // contabilizados pelas empresas.
+            require_once CAMINHO_RAIZ . '/models/LogAuditoria.php';
+            $nome = '';
+            try {
+                $emp = (new Empresa())->encontrarPorId($id);
+                $nome = (string) ($emp['nome'] ?? '');
+            } catch (Throwable $e) { /* irrelevante para o marcador */ }
+            LogAuditoria::marcarContextoEmpresa($id, $nome);
+            return $id;
         }
         
         // Admin de empresa só vê a sua própria empresa

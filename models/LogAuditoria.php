@@ -37,8 +37,7 @@ class LogAuditoria extends Model
     public function paginar(array $filtros, ?int $empresaId, int $pagina, int $porPagina = 25): array
     {
         $sql=' FROM logs_auditoria l LEFT JOIN usuarios u ON u.id=l.usuario_id WHERE 1=1'; $p=[];
-        $this->clauseExcluirSuperAdmin($sql, $p);
-        if ($empresaId !== null) { $sql.=' AND u.empresa_id=:empresa_id'; $p['empresa_id']=$empresaId; }
+        $this->clauseVisibilidadeEmpresa($sql, $p, $empresaId);
         foreach (['usuario_id'=>'usuario_id','acao'=>'acao'] as $entrada=>$coluna) if (!empty($filtros[$entrada])) { $sql.=" AND l.$coluna=:$entrada"; $p[$entrada]=$filtros[$entrada]; }
         if (!empty($filtros['modulo'])) {
             $rotulosModulos = AuditoriaHelper::prefixosModulos();
@@ -67,8 +66,7 @@ class LogAuditoria extends Model
     {
         $sql='SELECT l.*,u.nome usuario_nome FROM logs_auditoria l LEFT JOIN usuarios u ON u.id=l.usuario_id WHERE l.id=:id';
         $p=['id'=>$id];
-        $this->clauseExcluirSuperAdmin($sql, $p);
-        if($empresaId!==null){$sql.=' AND u.empresa_id=:empresa_id';$p['empresa_id']=$empresaId;}
+        $this->clauseVisibilidadeEmpresa($sql, $p, $empresaId);
         $s=$this->bd->prepare($sql);$s->execute($p);return $s->fetch();
     }
 
@@ -84,6 +82,53 @@ class LogAuditoria extends Model
     }
 
     /**
+     * As empresas não podem ver as acções do Super Administrador nem ser
+     * contabilizadas por elas. Este filtro é aplicado a TODOS os registos
+     * históricos (inclusive os gravados antes desta regra, que ainda têm o
+     * usuario_id do super admin preenchido): em contexto de empresa apenas
+     * aparecem eventos de utilizadores da própria empresa; em contexto global
+     * (Super Admin) tudo é visível.
+     */
+    private function clauseVisibilidadeEmpresa(string &$sql, array &$p, ?int $empresaId): void
+    {
+        if ($empresaId !== null) {
+            // Listagem da empresa: apenas autores pertencentes à empresa.
+            $sql .= ' AND u.empresa_id = :empresa_id';
+            $p['empresa_id'] = $empresaId;
+            return;
+        }
+        // Contexto global (Super Admin): esconder apenas os registos causados
+        // pelo Super Admin DENTRO do contexto de gestão de uma empresa. O
+        // divisor de águas é o evento 'empresa_selecionada', gravado sempre
+        // que ele entra no contexto de uma empresa: tudo o que vier depois é
+        // "gestão da empresa" e fica invisível para as empresas; os seus
+        // registos administrativos globais continuam visíveis para ele.
+        $sql .= ' AND NOT (u.perfil = \'super_admin\' AND l.acao <> \'empresa_selecionada\' AND EXISTS ('
+              .       'SELECT 1 FROM logs_auditoria s '
+              .       'WHERE s.usuario_id = l.usuario_id AND s.acao = \'empresa_selecionada\' '
+              .       'AND s.criado_em <= l.criado_em'
+              .   '))';
+    }
+
+    /**
+     * Registo centralizado do momento em que o Super Administrador entra no
+     * contexto de gestão de uma empresa (usado pela cláusula de visibilidade).
+     */
+    public static function marcarContextoEmpresa(int $empresaId, string $nomeEmpresa = ''): void
+    {
+        if ($empresaId <= 0 || empty($_SESSION['usuario_id'])) return;
+        require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
+        AuditoriaHelper::registar(
+            'empresa_selecionada',
+            'empresas',
+            $empresaId,
+            null,
+            ['nome' => $nomeEmpresa !== '' ? $nomeEmpresa : null],
+            'baixa'
+        );
+    }
+
+    /**
      * Últimas ações registadas, com o MESMO filtro de visibilidade aplicado à
      * listagem principal: as empresas nunca veem (nem contabilizam) ações do
      * Super Administrador. Usado pelo feed "Atividade recente" do dashboard.
@@ -92,11 +137,7 @@ class LogAuditoria extends Model
     {
         $sql = ' FROM logs_auditoria l LEFT JOIN usuarios u ON u.id = l.usuario_id WHERE 1=1';
         $p   = [];
-        $this->clauseExcluirSuperAdmin($sql, $p);
-        if ($empresaId !== null) {
-            $sql .= ' AND u.empresa_id = :empresa_id';
-            $p['empresa_id'] = $empresaId;
-        }
+        $this->clauseVisibilidadeEmpresa($sql, $p, $empresaId);
         $st = $this->bd->prepare('SELECT l.*, u.nome usuario_nome' . $sql . ' ORDER BY l.criado_em DESC LIMIT ' . max(1, min(50, $limite)));
         $st->execute($p);
         return $st->fetchAll();
