@@ -114,6 +114,11 @@ class LogAuditoria extends Model
      */
     private function clauseVisibilidadeEmpresa(string &$sql, array &$p, ?int $empresaId): void
     {
+        // REGRA: em QUALQUER listagem de logs (painel da empresa ou painel
+        // global), eventos causados por contas super_admin ficam EXCLUÍDOS
+        // — as empresas não podem ver as ações do Super Administrador nos
+        // seus registos nem contabilizá-lo como utilizador do sistema.
+        $this->clauseExcluirSuperAdmin($sql, $p);
         if ($empresaId !== null) {
             // Listagem da empresa: apenas autores pertencentes à empresa.
             // Isto exclui por construção qualquer ação do Super Administrador
