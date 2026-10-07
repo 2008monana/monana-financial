@@ -177,13 +177,32 @@ class UsuariosController extends Controller
         $this->redirecionar('usuarios/index' . ($_SESSION['empresa_id'] ? '' : '?empresa_id=' . $empresaId));
     }
 
+    /**
+     * REGRA DE NEGÓCIO: as empresas não podem ver nem gerir contas do
+     * Super Administrador, nem contabilizá-lo como utilizador do sistema.
+     * Em contexto de empresa (admin_empresa), qualquer conta super_admin é
+     * tratada como inexistente ("Utilizador não encontrado").
+     */
+    private function bloquearSuperAdmin(array $usuario): bool
+    {
+        if (($usuario['perfil'] ?? '') !== 'super_admin' && !$this->usuarioModel->esSuperAdmin((int) $usuario['id'])) {
+            return false;
+        }
+        if (($_SESSION['usuario_perfil'] ?? '') === 'super_admin') {
+            return false; // o próprio Super Admin pode gerir a sua conta
+        }
+        definirFlash('erro', 'Utilizador não encontrado.');
+        $this->redirecionar('usuarios');
+        return true;
+    }
+
     public function editar(string $id): void
     {
         $usuario = $this->usuarioModel->encontrarPorId((int) $id);
 
-        if (!$usuario) {
-            definirFlash('erro', 'Utilizador não encontrado.');
-            $this->redirecionar('usuarios');
+        if (!$usuario || $this->bloquearSuperAdmin($usuario)) {
+            if (!headers_sent()) { definirFlash('erro', 'Utilizador não encontrado.'); $this->redirecionar('usuarios'); }
+            return;
         }
 
         $modulos = $this->moduloModel->todosAtivos();
@@ -210,6 +229,14 @@ class UsuariosController extends Controller
 
     public function atualizar(string $id): void
     {
+        // Regra: contas super_admin não são geríveis nem visíveis pelas empresas.
+        $alvo = $this->usuarioModel->encontrarPorId((int) $id);
+        if (!$alvo || $this->bloquearSuperAdmin($alvo)) {
+            definirFlash('erro', 'Utilizador não encontrado.');
+            $this->redirecionar('usuarios');
+            return;
+        }
+
         $dados = $this->dadosValidados((int) $id);
 
         if (!empty($dados['erros'])) {
@@ -251,7 +278,7 @@ class UsuariosController extends Controller
     {
         $usuario = $this->usuarioModel->encontrarPorId((int) $id);
 
-        if ($usuario) {
+        if ($usuario && !$this->bloquearSuperAdmin($usuario)) {
             $novoEstado = $usuario['ativo'] ? 0 : 1;
             $this->usuarioModel->atualizar((int) $id, ['ativo' => $novoEstado]);
             AuditoriaHelper::registar($novoEstado ? 'usuario_ativado' : 'usuario_desativado', 'usuarios', (int) $id, ['ativo' => $usuario['ativo']], ['ativo' => $novoEstado], $novoEstado ? 'baixa' : 'alta');
@@ -266,7 +293,7 @@ class UsuariosController extends Controller
     {
         $usuario = $this->usuarioModel->encontrarPorId((int) $id);
 
-        if ($usuario) {
+        if ($usuario && !$this->bloquearSuperAdmin($usuario)) {
             $novaSenha = $this->usuarioModel->gerarSenhaAleatoria();
             $this->usuarioModel->atualizar((int) $id, [
                 'senha_hash'      => $this->usuarioModel->criarHashSenha($novaSenha),

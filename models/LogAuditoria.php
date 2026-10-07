@@ -6,6 +6,21 @@ class LogAuditoria extends Model
     protected string $tabela = 'logs_auditoria';
     public function registar(?int $usuarioId, string $acao, ?string $tabelaAfetada = null, ?int $registoId = null, ?array $antigos = null, ?array $novos = null, string $prioridade = 'media', ?string $motivo = null): int
     {
+        // REGRA: as empresas não podem ver nem contabilizar ações do Super
+        // Administrador. Em contexto de empresa (sessão com empresa_id), os
+        // eventos causados por contas super_admin são gravados SEM autor —
+        // ficam como registo anónimo "Sistema" e nunca como "Super Admin".
+        if ($usuarioId !== null && $usuarioId > 0 && !empty($_SESSION['empresa_id'])) {
+            static $cacheSA = [];
+            if (!isset($cacheSA[$usuarioId])) {
+                $stmtSA = $this->bd->prepare("SELECT COUNT(*) FROM usuarios WHERE id = :id AND perfil = 'super_admin'");
+                $stmtSA->execute(['id' => $usuarioId]);
+                $cacheSA[$usuarioId] = (bool) (int) $stmtSA->fetchColumn();
+            }
+            if ($cacheSA[$usuarioId]) {
+                $usuarioId = null;
+            }
+        }
         return $this->inserir(['usuario_id'=>$usuarioId,'acao'=>$acao,'tabela_afetada'=>$tabelaAfetada,'registo_id'=>$registoId,
             'dados_antigos'=>$antigos ? json_encode($antigos, JSON_UNESCAPED_UNICODE) : null,
             'dados_novos'=>$novos ? json_encode($novos, JSON_UNESCAPED_UNICODE) : null,
@@ -77,37 +92,42 @@ class LogAuditoria extends Model
         if ($ids === null) {
             $bd = Database::obterLigacao();
             $ids = array_map('intval', $bd->query("SELECT id FROM usuarios WHERE perfil = 'super_admin'")->fetchAll(PDO::FETCH_COLUMN));
+            if (!$ids) $ids = [0];
         }
         return $ids;
     }
 
     /**
-     * As empresas não podem ver as acções do Super Administrador nem ser
-     * contabilizadas por elas. Este filtro é aplicado a TODOS os registos
-     * históricos (inclusive os gravados antes desta regra, que ainda têm o
-     * usuario_id do super admin preenchido): em contexto de empresa apenas
-     * aparecem eventos de utilizadores da própria empresa; em contexto global
-     * (Super Admin) tudo é visível.
+     * REGRA DE VISIBILIDADE (regra absoluta):
+     * As empresas NÃO PODEM ver as ações do Super Administrador nos seus
+     * registos — em parte alguma (listagem, detalhe, exportação ou feed do
+     * dashboard) — nem ser contabilizadas por ele.
+     *
+     * A cláusula abaixo é aplicada automaticamente a TODAS as consultas de
+     * logs, inclusive registos históricos gravados antes desta regra:
+     *  - Em contexto de empresa: só aparecem eventos cujo autor pertence à
+     *    própria empresa (ou eventos de sistema sem autor).
+     *  - No painel global do Super Admin: ficam escondidos todos os eventos
+     *    causados por contas super_admin — as suas ações administrativas
+     *    globais (planos, assinaturas, empresas) também não pertencem ao
+     *    registo visível das empresas.
      */
     private function clauseVisibilidadeEmpresa(string &$sql, array &$p, ?int $empresaId): void
     {
         if ($empresaId !== null) {
             // Listagem da empresa: apenas autores pertencentes à empresa.
+            // Isto exclui por construção qualquer ação do Super Administrador
+            // (que nunca tem empresa_id) e eventos com autor inexistente.
             $sql .= ' AND u.empresa_id = :empresa_id';
             $p['empresa_id'] = $empresaId;
             return;
         }
-        // Contexto global (Super Admin): esconder apenas os registos causados
-        // pelo Super Admin DENTRO do contexto de gestão de uma empresa. O
-        // divisor de águas é o evento 'empresa_selecionada', gravado sempre
-        // que ele entra no contexto de uma empresa: tudo o que vier depois é
-        // "gestão da empresa" e fica invisível para as empresas; os seus
-        // registos administrativos globais continuam visíveis para ele.
-        $sql .= ' AND NOT (u.perfil = \'super_admin\' AND l.acao <> \'empresa_selecionada\' AND EXISTS ('
-              .       'SELECT 1 FROM logs_auditoria s '
-              .       'WHERE s.usuario_id = l.usuario_id AND s.acao = \'empresa_selecionada\' '
-              .       'AND s.criado_em <= l.criado_em'
-              .   '))';
+        // Contexto global (Super Admin): nenhum registo com autor super_admin
+        // é exibido nas listagens/exportações partilhadas.
+        $ids = self::idsSuperAdminPublicos();
+        $ph = [];
+        foreach ($ids as $i => $id) { $k = 'sa_'.$i; $ph[] = ':'.$k; $p[$k] = $id; }
+        $sql .= ' AND (l.usuario_id IS NULL OR l.usuario_id NOT IN ('.implode(',', $ph).'))';
     }
 
     /**

@@ -38,6 +38,18 @@ class Usuario extends Model
     }
 
     /**
+     * Todos os utilizadores VISÍVEIS para listagens administrativas.
+     * O Super Administrador nunca aparece em nenhuma listagem consumida
+     * pelas empresas nem é contabilizado como utilizador do sistema.
+     */
+    public function todosVisiveis(string $ordem = 'nome'): array
+    {
+        $stmt = $this->bd->prepare("SELECT * FROM usuarios WHERE perfil != 'super_admin' ORDER BY {$ordem}");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Contagem de utilizadores efetivos do sistema, excluindo sempre o
      * Super Administrador (que não pertence a nenhuma empresa e não deve
      * ser contabilizado nem visível pelas empresas).
@@ -50,6 +62,14 @@ class Usuario extends Model
         $stmt = $this->bd->prepare($sql);
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
+    }
+
+    /** Impedir qualquer operação sobre contas super_admin a partir de contextos de empresa. */
+    public function esSuperAdmin(int $usuarioId): bool
+    {
+        $stmt = $this->bd->prepare("SELECT COUNT(*) FROM usuarios WHERE id = :id AND perfil = 'super_admin'");
+        $stmt->execute(['id' => $usuarioId]);
+        return (bool) (int) $stmt->fetchColumn();
     }
 
     public function gerarSenhaAleatoria(int $tamanho = 10): string
