@@ -82,4 +82,23 @@ class LogAuditoria extends Model
         }
         return $ids;
     }
+
+    /**
+     * Últimas ações registadas, com o MESMO filtro de visibilidade aplicado à
+     * listagem principal: as empresas nunca veem (nem contabilizam) ações do
+     * Super Administrador. Usado pelo feed "Atividade recente" do dashboard.
+     */
+    public function recentes(int $limite = 6, ?int $empresaId = null): array
+    {
+        $sql = ' FROM logs_auditoria l LEFT JOIN usuarios u ON u.id = l.usuario_id WHERE 1=1';
+        $p   = [];
+        $this->clauseExcluirSuperAdmin($sql, $p);
+        if ($empresaId !== null) {
+            $sql .= ' AND u.empresa_id = :empresa_id';
+            $p['empresa_id'] = $empresaId;
+        }
+        $st = $this->bd->prepare('SELECT l.*, u.nome usuario_nome' . $sql . ' ORDER BY l.criado_em DESC LIMIT ' . max(1, min(50, $limite)));
+        $st->execute($p);
+        return $st->fetchAll();
+    }
 }

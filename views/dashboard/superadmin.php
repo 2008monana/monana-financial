@@ -182,8 +182,11 @@
 <!-- BOTTOM GRID -->
 <div class="bottom-grid">
     <div class="card-activities">
-        <h4><i class="fas fa-clock"></i> Últimos Acessos</h4>
+        <h4><i class="fas fa-clock"></i> Atividade Recente</h4>
         <div class="activity-list">
+            <?php if (empty($atividades_recentes)): ?>
+                <p class="text-muted" style="padding:8px 0;">Sem atividade registada.</p>
+            <?php endif; ?>
             <?php foreach ($atividades_recentes as $atividade): ?>
             <div class="activity-item">
                 <div class="activity-avatar" style="background:<?php echo $atividade['cor']; ?>">
@@ -192,7 +195,7 @@
                 <div class="activity-info">
                     <div class="activity-name"><?php echo htmlspecialchars($atividade['nome']); ?></div>
                     <div class="activity-detail">
-                        <?php echo htmlspecialchars($atividade['empresa']); ?>
+                        <?php echo htmlspecialchars($atividade['descricao'] ?? ''); ?>
                         <span class="activity-time">• <?php echo $atividade['tempo']; ?></span>
                     </div>
                 </div>

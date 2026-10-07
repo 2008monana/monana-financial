@@ -2,6 +2,7 @@
 require_once CAMINHO_RAIZ . '/core/Controller.php';
 require_once CAMINHO_RAIZ . '/models/Empresa.php';
 require_once CAMINHO_RAIZ . '/models/DashboardFinanceiro.php';
+require_once CAMINHO_RAIZ . '/models/LogAuditoria.php';
 
 class DashboardController extends Controller
 {
@@ -86,7 +87,10 @@ class DashboardController extends Controller
         }
         return (int) $s->fetchColumn();
     }
-    private function atividades(?int $empresaId): array { return array_map(fn($t) => ['nome'=>$t['usuario'] ?? 'Utilizador', 'empresa'=>$t['empresa'] ?? '', 'tempo'=>date('d/m H:i', strtotime($t['data_transacao'])), 'cor'=>'#3b82f6'], $this->financeiro->recentes($empresaId)); }
+    // Feed "Atividade recente": usa os logs de auditoria, que já excluem
+    // automaticamente qualquer ação do Super Administrador nas listagens
+    // visíveis às empresas (LogAuditoria::clauseExcluirSuperAdmin).
+    private function atividades(?int $empresaId): array { require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php'; return array_map(fn($l) => ['nome'=>$l['usuario_nome'] ?? 'Sistema', 'descricao'=>AuditoriaHelper::descricaoEvento($l), 'empresa'=>$l['ip_origem'] ?? '', 'tempo'=>date('d/m H:i', strtotime($l['criado_em'])), 'cor'=>'#3b82f6'], (new LogAuditoria())->recentes(6, $empresaId)); }
     private function categorias(int $empresaId, array $datas, array $tipos, string $cor): array { $dados=$this->financeiro->porCategoria($empresaId,$datas['inicio'],$datas['fim'],$tipos); $total=array_sum(array_column($dados,'valor')); return array_map(fn($d)=>['nome'=>$d['nome'],'percentual'=>$total ? round($d['valor']*100/$total,1):0,'cor'=>$cor],$dados); }
     private function datasetsEmpresas(array $empresas, array $cores): array { return array_map(fn($e,$i)=>['label'=>$e['nome'],'data'=>array_fill(0,12,(float)$e['vendas']),'backgroundColor'=>$cores[$i%count($cores)],'borderRadius'=>4],$empresas,array_keys($empresas)); }
     private function datasetsFiliais(array $filiais, array $cores): array { return array_map(fn($f,$i)=>['label'=>$f['nome'],'data'=>array_fill(0,12,(float)$f['vendas']),'borderColor'=>$cores[$i%count($cores)],'backgroundColor'=>'rgba(59,130,246,0.1)','fill'=>true,'tension'=>0.4],$filiais,array_keys($filiais)); }
