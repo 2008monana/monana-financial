@@ -37,6 +37,21 @@ class Usuario extends Model
         return $stmt->fetchAll();
     }
 
+    /**
+     * Contagem de utilizadores efetivos do sistema, excluindo sempre o
+     * Super Administrador (que não pertence a nenhuma empresa e não deve
+     * ser contabilizado nem visível pelas empresas).
+     */
+    public function contarAtivos(?int $empresaId = null): int
+    {
+        $sql = "SELECT COUNT(*) FROM usuarios WHERE perfil != 'super_admin' AND ativo = 1";
+        $params = [];
+        if ($empresaId !== null) { $sql .= ' AND empresa_id = :empresa_id'; $params['empresa_id'] = $empresaId; }
+        $stmt = $this->bd->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
+
     public function gerarSenhaAleatoria(int $tamanho = 10): string
     {
         $caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';

@@ -38,7 +38,7 @@ class DashboardController extends Controller
         }, $empresas, array_keys($empresas));
         $this->renderizar('dashboard/superadmin', array_merge($this->baseDados($periodo, $datas), [
             'total_empresas' => count((new Empresa())->todos()), 'novas_empresas' => 0, 'total_filiais' => $this->contar('filiais'), 'novas_filiais' => 0,
-            'total_usuarios' => $this->contar('usuarios'), 'novos_usuarios' => 0, 'vendas_totais' => $totais['vendas'], 'crescimento_vendas' => 0,
+            'total_usuarios' => $this->contarUsuariosEmpresa(null), 'novos_usuarios' => 0, 'vendas_totais' => $totais['vendas'], 'crescimento_vendas' => 0,
             'resultado_global' => $totais['saldo'], 'crescimento_resultado' => 0, 'total_despesas' => $totais['compras'] + $totais['custos'], 'crescimento_global' => 0,
             'resumo_empresas' => $resumo, 'metodos_pagamento' => [], 'atividades_recentes' => $this->atividades(null), 'alertas' => [],
             'datasets_vendas' => $this->datasetsEmpresas($empresas, $cores),
@@ -71,8 +71,9 @@ class DashboardController extends Controller
     private function contar(string $tabela, ?int $empresaId = null): int { $bd = Database::obterLigacao(); $sql = "SELECT COUNT(*) FROM $tabela" . ($empresaId ? ' WHERE empresa_id = :id' : ''); $s = $bd->prepare($sql); $s->execute($empresaId ? ['id'=>$empresaId] : []); return (int) $s->fetchColumn(); }
 
     // Contagem de utilizadores visiveis na area da empresa: exclui o super_admin
-    // (que nao pertence a nenhuma empresa) e utilizadores desativados, para que o
-    // KPI do dashboard reflita a lista real de "Utilizadores".
+    // (que nao pertence a nenhuma empresa e nao deve ser contabilizado como
+    // utilizador do sistema pelas empresas) e utilizadores desativados, para que
+    // o KPI do dashboard reflita a lista real de "Utilizadores".
     private function contarUsuariosEmpresa(?int $empresaId): int
     {
         $bd = Database::obterLigacao();
