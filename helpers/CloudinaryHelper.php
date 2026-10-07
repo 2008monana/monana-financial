@@ -19,6 +19,12 @@ require_once CAMINHO_RAIZ . '/config/constants.php';
 
 class CloudinaryHelper
 {
+    /** Tamanho máximo permitido para imagens de perfil: 2 MB */
+    public const TAMANHO_MAXIMO = 2 * 1024 * 1024;
+
+    /** Tipos MIME aceites para upload de imagem */
+    private const TIPOS_MIME_VALIDOS = ['image/jpeg', 'image/pjpeg', 'image/png', 'image/gif', 'image/webp'];
+
     /** Lê e valida a configuração do Cloudinary */
     public static function configuracao(): ?array
     {
@@ -45,11 +51,31 @@ class CloudinaryHelper
     public static function enviarImagem(array $file, string $pasta = 'monana/avatares'): array
     {
         // Validações básicas antes de qualquer upload
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_INI_SIZE
+            || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_FORM_SIZE) {
+            return self::falha('A imagem excede o limite de 2 MB.');
+        }
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             return self::falha('Nenhum ficheiro recebido ou erro no upload.');
         }
-        if (($file['size'] ?? 0) > 2 * 1024 * 1024) {
+        if (!is_uploaded_file($file['tmp_name'] ?? '')) {
+            return self::falha('Ficheiro de upload inválido.');
+        }
+        if (($file['size'] ?? 0) > self::TAMANHO_MAXIMO) {
             return self::falha('A imagem excede o limite de 2 MB.');
+        }
+
+        // Verificação robusta do tipo real da imagem (não depende apenas do getimagesize)
+        $tipoMime = null;
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $tipoMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+        } elseif (function_exists('mime_content_type')) {
+            $tipoMime = @mime_content_type($file['tmp_name']);
+        }
+        if ($tipoMime !== null && !in_array(strtolower($tipoMime), self::TIPOS_MIME_VALIDOS, true)) {
+            return self::falha('Formato inválido: use JPG, PNG, GIF ou WebP.');
         }
 
         $info = @getimagesize($file['tmp_name']);
@@ -143,16 +169,29 @@ class CloudinaryHelper
         if (!is_dir($destino) && !@mkdir($destino, 0775, true)) {
             return self::falha('Não foi possível criar a pasta de destino.');
         }
+        if (!is_writable($destino)) {
+            return self::falha('A pasta de destino não tem permissões de escrita (verifique o Apache/XAMPP).');
+        }
 
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) ?: 'jpg';
-        $nome = 'avatar_' . bin2hex(random_bytes(6)) . '.' . $ext;
+        // Extensão derivada do tipo REAL da imagem (nunca do nome enviado pelo utilizador)
+        $info = @getimagesize($file['tmp_name']);
+        $extensoesPorTipo = [
+            IMAGETYPE_JPEG => 'jpg',
+            IMAGETYPE_PNG  => 'png',
+            IMAGETYPE_GIF  => 'gif',
+            IMAGETYPE_WEBP => 'webp',
+        ];
+        $ext = $info !== false ? ($extensoesPorTipo[$info[2]] ?? 'jpg') : 'jpg';
+
+        $nome = 'avatar_' . date('YmdHis') . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
         $caminhoCompleto = $destino . '/' . $nome;
 
+        // Em contexto web usa move_uploaded_file; em CLI/teste aceita cópia normal
         $gravou = is_uploaded_file($file['tmp_name'])
             ? move_uploaded_file($file['tmp_name'], $caminhoCompleto)
-            : @rename($file['tmp_name'], $caminhoCompleto); // contexto de teste/CLI
+            : @copy($file['tmp_name'], $caminhoCompleto);
 
-        if (!$gravou) {
+        if (!$gravou || !file_exists($caminhoCompleto)) {
             return self::falha('Falha ao gravar o ficheiro no servidor.');
         }
         @chmod($caminhoCompleto, 0644);
@@ -160,18 +199,30 @@ class CloudinaryHelper
         return [
             'sucesso'   => true,
             'url'       => URL_BASE . '/uploads/' . $subpasta . '/' . $nome,
-            'public_id' => 'uploads/' . $subpasta . '/' . $nome,
+            'public_id' => 'local:' . $subpasta . '/' . $nome,
             'servidor'  => 'local',
             'erro'      => null,
         ];
     }
 
-    /** Remove um asset do Cloudinary (melhor esforço) */
+    /** Remove um asset do Cloudinary ou local (melhor esforço) */
     public static function removerImagem(string $publicId): bool
     {
+        // Ficheiro local em public/uploads/avatares — apaga do disco
+        if (strpos($publicId, 'local:') === 0) {
+            $relativo = substr($publicId, strlen('local:'));
+            if (basename($relativo) !== $relativo && strpos($relativo, '..') === false) {
+                $caminho = CAMINHO_UPLOADS . '/' . $relativo;
+                if (is_file($caminho)) {
+                    @unlink($caminho);
+                }
+            }
+            return true;
+        }
+
         $cfg = self::configuracao();
         if (!$cfg || strpos($publicId, 'uploads/') === 0) {
-            return true; // nada a fazer no Cloudinary (upload local)
+            return true; // nada a fazer no Cloudinary (upload local antigo)
         }
         if (!function_exists('curl_init')) {
             return false;

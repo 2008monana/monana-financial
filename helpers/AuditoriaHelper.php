@@ -197,30 +197,100 @@ class AuditoriaHelper
         return 'Sistema';
     }
 
+    /** Rótulos legíveis para campos comuns (usados nas descrições dos logs). */
+    private const ROTULOS_CAMPOS = [
+        'nome' => 'nome', 'designacao' => 'designação', 'descricao' => 'descrição',
+        'email' => 'e-mail', 'telefone' => 'telefone', 'cargo' => 'cargo',
+        'valor' => 'valor', 'tipo' => 'tipo', 'estado' => 'estado', 'ativo' => 'estado',
+        'categoria_id' => 'categoria', 'filial_id' => 'filial', 'empresa_id' => 'empresa',
+        'usuario_id' => 'utilizador', 'data_transacao' => 'data', 'metodo_pagamento' => 'método de pagamento',
+        'departamento' => 'departamento', 'biografia' => 'biografia', 'foto_url' => 'foto',
+        'limite_utilizadores' => 'limite de utilizadores', 'limite_filiais' => 'limite de filiais',
+        'preco' => 'preço', 'duracao_dias' => 'duração (dias)', 'montante' => 'montante',
+    ];
+
     /** Descrição legível do evento: rótulo da acção + detalhe contextual quando disponível. */
     public static function descricaoEvento(array $log): string
     {
-        $descricao = self::rotuloAcao($log['acao'] ?? '');
+        $rotulo  = self::rotuloAcao($log['acao'] ?? '');
+        $entidade = self::nomeDaEntidadeAfetada($log);
 
-        // Detalhe principal: motivo explícito ou identificação amigável do registo
-        $detalhe = trim((string) ($log['motivo'] ?? ''));
-        if ($detalhe === '' && !empty($log['registo_id'])) {
-            $detalhe = self::identificarRegisto(
-                (string) ($log['tabela_afetada'] ?? ''),
-                (int) $log['registo_id'],
-                $log
-            );
+        // 1) Frase completa e natural, ex.: "Transação criada — \"Almoço de equipa\" (lançamento n.º 2)"
+        if ($entidade !== null && $entidade !== '') {
+            $frase = $rotulo . ' — "' . $entidade . '"';
+            if (!empty($log['registo_id'])) {
+                $frase .= ' (' . self::nomeColetivoRegisto((string) ($log['tabela_afetada'] ?? ''))
+                       . ' n.º ' . (int) $log['registo_id'] . ')';
+            }
+            $contexto = self::contextoDosDados($log);
+            if ($contexto !== '') $frase .= '; ' . $contexto;
+            return $frase;
         }
 
+        // 2) Sem nome identificável: motivo explícito (se for significativo) ou campos alterados
+        $descricao = $rotulo;
         $extra = [];
-        if ($detalhe !== '') $extra[] = $detalhe;
 
-        // Contexto adicional a partir dos dados registados (sem expor campos sensíveis)
+        $motivo = trim((string) ($log['motivo'] ?? ''));
+        if (self::detalheSignificativo($motivo)) {
+            $extra[] = $motivo;
+        }
+
         $contexto = self::contextoDosDados($log);
         if ($contexto !== '') $extra[] = $contexto;
 
         if ($extra) $descricao .= ' — ' . implode('; ', $extra);
         return $descricao;
+    }
+
+    /** Diz se um texto de detalhe acrescenta realmente informação (evita "registo #2"). */
+    private static function detalheSignificativo(string $texto): bool
+    {
+        $normalizado = mb_strtolower(trim($texto));
+        if ($normalizado === '') return false;
+        // Padrões genéricos e inúteis como "registo #2", "registro #10", "#3"
+        if (preg_match('/^(?:reg[io]st(?:o|ro)?\s*)?#\s*\d+$/', $normalizado)) return false;
+        return true;
+    }
+
+    /** Nome da entidade afetada, extraído dos dados guardados no log. */
+    private static function nomeDaEntidadeAfetada(array $log): ?string
+    {
+        foreach (['dados_novos', 'dados_antigos'] as $campo) {
+            if (empty($log[$campo])) continue;
+            $dados = json_decode((string) $log[$campo], true);
+            if (!is_array($dados)) continue;
+            foreach (['nome', 'designacao', 'titulo', 'descricao', 'email'] as $chave) {
+                // email só identifica a entidade em operações sobre utilizadores
+                if ($chave === 'email' && (string) ($log['tabela_afetada'] ?? '') !== 'usuarios') continue;
+                if (!empty($dados[$chave]) && is_string($dados[$chave]) && trim($dados[$chave]) !== '') {
+                    return mb_substr(trim($dados[$chave]), 0, 60);
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Nome coletivo (gênero neutro) da entidade de uma tabela, p.ex. 'lançamentos'. */
+    private static function nomeColetivoRegisto(string $tabela): string
+    {
+        return match ($tabela) {
+            'transacoes'          => 'lançamentos',
+            'categorias'          => 'categorias',
+            'categorias_saida'    => 'categorias de saída',
+            'metodos_pagamento'   => 'métodos de pagamento',
+            'filiais'             => 'filiais',
+            'empresas'            => 'empresas',
+            'usuarios'            => 'utilizadores',
+            'configuracoes'       => 'definições',
+            'notificacoes'        => 'notificações',
+            'backups'             => 'backups',
+            'planos'              => 'planos',
+            'assinaturas'         => 'assinaturas',
+            'assinatura_pagamentos' => 'pagamentos de assinatura',
+            'importacoes'         => 'importações',
+            default               => $tabela !== '' ? str_replace('_', ' ', $tabela) : 'registos',
+        };
     }
 
     /** Identificação amigável de um registo pelo número, com o nome da entidade. */
@@ -244,17 +314,9 @@ class AuditoriaHelper
         };
 
         // Se os dados guardados tiverem um nome identificável, usa-o em vez do número
-        foreach (['dados_novos', 'dados_antigos'] as $campo) {
-            if (!empty($log[$campo])) {
-                $dados = json_decode((string) $log[$campo], true);
-                if (is_array($dados)) {
-                    foreach (['nome', 'designacao', 'descricao', 'email', 'titulo'] as $chave) {
-                        if (!empty($dados[$chave]) && is_string($dados[$chave])) {
-                            return $entidade . ' "' . mb_substr(trim($dados[$chave]), 0, 60) . '"';
-                        }
-                    }
-                }
-            }
+        $nome = self::nomeDaEntidadeAfetada($log);
+        if ($nome !== null && $nome !== '') {
+            return $entidade . ' "' . $nome . '"';
         }
 
         return $entidade . ' n.º ' . $registoId;
@@ -276,7 +338,8 @@ class AuditoriaHelper
             if (is_array($antigos) && array_key_exists($campo, $antigos) && (string) $antigos[$campo] === (string) $valor) {
                 continue; // sem mudança efetiva
             }
-            $camposAlterados[] = str_replace('_', ' ', $campo);
+            $rotulo = self::ROTULOS_CAMPOS[$campo] ?? str_replace('_', ' ', $campo);
+            $camposAlterados[] = $rotulo;
         }
         if ($camposAlterados === []) return '';
 
