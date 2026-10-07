@@ -56,7 +56,16 @@ class PerfilController extends Controller
         $permissoes = $this->moduloModel->getPermissoesUsuario($usuarioId);
 
         // Perfil estendido (foto Cloudinary, departamento, biografia)
-        $perfilExtra = $this->perfilModel->buscarPorUsuario($usuarioId) ?: [];
+        $perfilExtra = [];
+        try {
+            $perfilExtra = $this->perfilModel->buscarPorUsuario($usuarioId) ?: [];
+        } catch (Throwable $e) {
+            error_log('perfil_extra_consulta: ' . $e->getMessage());
+        }
+        // Fallback: foto guardada diretamente na tabela usuarios
+        if (empty($perfilExtra['foto_url']) && !empty($usuario['foto_url'])) {
+            $perfilExtra['foto_url'] = $usuario['foto_url'];
+        }
 
         $this->renderizar('perfil/index', [
             'tituloPagina' => 'Meu Perfil',
@@ -104,6 +113,7 @@ class PerfilController extends Controller
         $perfilExtra  = ['departamento' => $departamento ?: null, 'biografia' => $biografia ?: null];
 
         // Upload de foto de perfil (Cloudinary com fallback local)
+        $fotoProcessada = false;
         if (!empty($_FILES['foto']['name']) && ($_FILES['foto']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
             $upload = CloudinaryHelper::enviarImagem($_FILES['foto'], 'monana/avatares');
             if ($upload['sucesso']) {
@@ -113,6 +123,7 @@ class PerfilController extends Controller
                 }
                 $perfilExtra['foto_url'] = $upload['url'];
                 $perfilExtra['foto_public_id'] = $upload['public_id'];
+                $fotoProcessada = true;
             } else {
                 definirFlash('erro', 'Foto não enviada: ' . $upload['erro']);
             }
@@ -123,6 +134,7 @@ class PerfilController extends Controller
             }
             $perfilExtra['foto_url'] = null;
             $perfilExtra['foto_public_id'] = null;
+            $fotoProcessada = true;
         }
 
         try {
@@ -130,6 +142,36 @@ class PerfilController extends Controller
         } catch (Throwable $e) {
             // perfis_usuarios pode ainda não existir na base (migração pendente)
             error_log('perfil_extra: ' . $e->getMessage());
+        }
+
+        // Fallback: garante que a foto fica registada mesmo sem a tabela perfis_usuarios
+        if ($fotoProcessada) {
+            $guardado = false;
+            try {
+                $pdo = Database::obterLigacao();
+                $st  = $pdo->prepare('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :t');
+                $st->execute([':t' => 'perfis_usuarios']);
+                if ((int) $st->fetchColumn() > 0) {
+                    $this->perfilModel->salvar($usuarioId, [
+                        'foto_url'        => $perfilExtra['foto_url'] ?? null,
+                        'foto_public_id'  => $perfilExtra['foto_public_id'] ?? null,
+                    ]);
+                    $guardado = true;
+                }
+            } catch (Throwable $e) {
+                error_log('fallback_foto_perfil: ' . $e->getMessage());
+            }
+            if (!$guardado) {
+                try {
+                    $this->garantirColunaFotoUsuarios();
+                    $this->usuarioModel->atualizar($usuarioId, [
+                        'foto_url' => $perfilExtra['foto_url'] ?? null,
+                    ]);
+                } catch (Throwable $e) {
+                    error_log('fallback_foto_usuarios: ' . $e->getMessage());
+                    definirFlash('erro', 'A foto foi enviada, mas não foi possível associá-la ao seu perfil.');
+                }
+            }
         }
 
         if ($atualizado) {
@@ -141,6 +183,23 @@ class PerfilController extends Controller
         }
 
         $this->redirecionar('perfil');
+    }
+
+    /**
+     * Garante que a tabela usuarios tem a coluna foto_url (fallback quando
+     * a tabela perfis_usuarios ainda não foi migrada). Idempotente.
+     */
+    private function garantirColunaFotoUsuarios(): void
+    {
+        $pdo = Database::obterLigacao();
+        $st  = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.columns
+             WHERE table_schema = DATABASE() AND table_name = :t AND column_name = :c'
+        );
+        $st->execute([':t' => 'usuarios', ':c' => 'foto_url']);
+        if ((int) $st->fetchColumn() === 0) {
+            $pdo->exec('ALTER TABLE usuarios ADD COLUMN foto_url VARCHAR(500) NULL');
+        }
     }
 
     /**

@@ -197,15 +197,92 @@ class AuditoriaHelper
         return 'Sistema';
     }
 
-    /** Descrição legível do evento: rótulo da acção + registo/motivo quando disponível. */
+    /** Descrição legível do evento: rótulo da acção + detalhe contextual quando disponível. */
     public static function descricaoEvento(array $log): string
     {
         $descricao = self::rotuloAcao($log['acao'] ?? '');
+
+        // Detalhe principal: motivo explícito ou identificação amigável do registo
+        $detalhe = trim((string) ($log['motivo'] ?? ''));
+        if ($detalhe === '' && !empty($log['registo_id'])) {
+            $detalhe = self::identificarRegisto(
+                (string) ($log['tabela_afetada'] ?? ''),
+                (int) $log['registo_id'],
+                $log
+            );
+        }
+
         $extra = [];
-        if (!empty($log['registo_id'])) $extra[] = 'registo #' . $log['registo_id'];
-        if (!empty($log['motivo'])) $extra[] = $log['motivo'];
+        if ($detalhe !== '') $extra[] = $detalhe;
+
+        // Contexto adicional a partir dos dados registados (sem expor campos sensíveis)
+        $contexto = self::contextoDosDados($log);
+        if ($contexto !== '') $extra[] = $contexto;
+
         if ($extra) $descricao .= ' — ' . implode('; ', $extra);
         return $descricao;
+    }
+
+    /** Identificação amigável de um registo pelo número, com o nome da entidade. */
+    private static function identificarRegisto(string $tabela, int $registoId, array $log): string
+    {
+        $entidade = match ($tabela) {
+            'transacoes'          => 'lançamento',
+            'categorias'          => 'categoria',
+            'categorias_saida'    => 'categoria de saída',
+            'metodos_pagamento'   => 'método de pagamento',
+            'filiais'             => 'filial',
+            'empresas'            => 'empresa',
+            'usuarios'            => 'utilizador',
+            'configuracoes'       => 'definição',
+            'notificacoes'        => 'notificação',
+            'backups'             => 'backup',
+            'planos'              => 'plano',
+            'assinaturas'         => 'assinatura',
+            'assinatura_pagamentos' => 'pagamento de assinatura',
+            default               => $tabela !== '' ? str_replace('_', ' ', $tabela) : 'registo',
+        };
+
+        // Se os dados guardados tiverem um nome identificável, usa-o em vez do número
+        foreach (['dados_novos', 'dados_antigos'] as $campo) {
+            if (!empty($log[$campo])) {
+                $dados = json_decode((string) $log[$campo], true);
+                if (is_array($dados)) {
+                    foreach (['nome', 'designacao', 'descricao', 'email', 'titulo'] as $chave) {
+                        if (!empty($dados[$chave]) && is_string($dados[$chave])) {
+                            return $entidade . ' "' . mb_substr(trim($dados[$chave]), 0, 60) . '"';
+                        }
+                    }
+                }
+            }
+        }
+
+        return $entidade . ' n.º ' . $registoId;
+    }
+
+    /** Resumo curto das alterações registadas (ex.: "alterado: telefone"). */
+    private static function contextoDosDados(array $log): string
+    {
+        if (empty($log['dados_novos'])) return '';
+        $novos = json_decode((string) $log['dados_novos'], true);
+        if (!is_array($novos) || $novos === []) return '';
+
+        $sensiveis = ['senha', 'senha_hash', 'smtp_senha', 'token', 'csrf_token'];
+        $antigos = !empty($log['dados_antigos']) ? json_decode((string) $log['dados_antigos'], true) : [];
+        $camposAlterados = [];
+        foreach ($novos as $campo => $valor) {
+            if (in_array($campo, $sensiveis, true)) continue;
+            if (is_array($valor) || is_object($valor)) continue;
+            if (is_array($antigos) && array_key_exists($campo, $antigos) && (string) $antigos[$campo] === (string) $valor) {
+                continue; // sem mudança efetiva
+            }
+            $camposAlterados[] = str_replace('_', ' ', $campo);
+        }
+        if ($camposAlterados === []) return '';
+
+        $lista = implode(', ', array_slice($camposAlterados, 0, 4));
+        if (count($camposAlterados) > 4) $lista .= '…';
+        return 'campos: ' . $lista;
     }
 
     /** Lista de prefixos de acção => módulo (ex.: 'transacao' => 'Transações'). */

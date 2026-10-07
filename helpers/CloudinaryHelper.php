@@ -146,10 +146,16 @@ class CloudinaryHelper
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) ?: 'jpg';
         $nome = 'avatar_' . bin2hex(random_bytes(6)) . '.' . $ext;
+        $caminhoCompleto = $destino . '/' . $nome;
 
-        if (!move_uploaded_file($file['tmp_name'], $destino . '/' . $nome)) {
+        $gravou = is_uploaded_file($file['tmp_name'])
+            ? move_uploaded_file($file['tmp_name'], $caminhoCompleto)
+            : @rename($file['tmp_name'], $caminhoCompleto); // contexto de teste/CLI
+
+        if (!$gravou) {
             return self::falha('Falha ao gravar o ficheiro no servidor.');
         }
+        @chmod($caminhoCompleto, 0644);
 
         return [
             'sucesso'   => true,
