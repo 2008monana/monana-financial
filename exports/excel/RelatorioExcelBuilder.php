@@ -54,6 +54,8 @@ class RelatorioExcelBuilder
     private string $nomeFolha = 'Relatório';
     private string $nomeFicheiro;
     private string $orientacao = 'landscape';
+    /** Nome exibido na faixa de marca em vez de "MonanaFinancial" (ver definirMarca()). */
+    private string $marcaPersonalizada = '';
 
     /** Cabeçalho em dois níveis com mesclagem (estilo planilha) */
     private array $agrupamentosCabecalho = [];
@@ -84,6 +86,33 @@ class RelatorioExcelBuilder
     {
         $this->empresa = $empresa;
         return $this;
+    }
+
+    /**
+     * Substitui a marca "MonanaFinancial" pelo nome da empresa nos Excel
+     * gerados por utilizadores Admin de Empresa (maior coerência documental).
+     */
+    public function definirMarca(string $nome): static
+    {
+        $this->marcaPersonalizada = trim($nome);
+        return $this;
+    }
+
+    /** Nome do titular do relatório: empresa > sessão > marca padrão. */
+    private function nomeMarca(): string
+    {
+        if ($this->marcaPersonalizada !== '') {
+            return $this->marcaPersonalizada;
+        }
+        $nomeEmpresa = trim((string) ($this->empresa['nome'] ?? ''));
+        if ($nomeEmpresa !== '') {
+            return $nomeEmpresa;
+        }
+        $sessao = trim((string) ($_SESSION['empresa_nome'] ?? ''));
+        if ($sessao !== '') {
+            return $sessao;
+        }
+        return 'MonanaFinancial';
     }
 
     /** @param array $colunas Cabeçalhos das colunas, ex: ['Data', 'Descrição', 'Valor (Kz)'] */

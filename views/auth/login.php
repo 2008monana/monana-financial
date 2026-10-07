@@ -9,14 +9,10 @@
 $__urlBase = defined('URL_BASE') ? URL_BASE : '';
 $__raiz    = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
 ?>
-<?php $__fbv = @filemtime($__raiz . '/public/images/logo.png') ?: time(); ?>
-<!-- Favicon: gerado a partir de public/images/logo.png -->
-<link rel="icon" type="image/png" sizes="32x32" href="<?= $__urlBase ?>/images/favicon-32.png?v=<?= $__fbv ?>">
-<link rel="icon" type="image/png" sizes="48x48" href="<?= $__urlBase ?>/images/favicon-48.png?v=<?= $__fbv ?>">
-<link rel="icon" type="image/png" sizes="192x192" href="<?= $__urlBase ?>/images/favicon-192.png?v=<?= $__fbv ?>">
-<link rel="apple-touch-icon" href="<?= $__urlBase ?>/images/apple-touch-icon.png?v=<?= $__fbv ?>">
-<link rel="shortcut icon" type="image/x-icon" href="<?= $__urlBase ?>/favicon.ico?v=<?= $__fbv ?>">
-<link rel="icon" type="image/x-icon" href="<?= $__urlBase ?>/favicon.ico?v=<?= $__fbv ?>">
+<?php $__fbv = @filemtime($__raiz . '/public/images/favicon.png') ?: time(); ?>
+<!-- Favicon e logotipo oficial do sistema: public/images/favicon.png -->
+<link rel="icon" type="image/png" href="<?= $__urlBase ?>/images/favicon.png?v=<?= $__fbv ?>">
+<link rel="shortcut icon" type="image/png" href="<?= $__urlBase ?>/images/favicon.png?v=<?= $__fbv ?>">
 <link rel="stylesheet" href="<?= $__urlBase ?>/css/login.css?v=<?= @filemtime($__raiz . '/public/css/login.css') ?: time ?>">
 <!-- Fallback: se a folha de estilos externa falhar (MIME/404), o layout basico e aplicado aqui. -->
 <style>
@@ -88,7 +84,7 @@ if (is_readable($caminhoCssLogin)) {
          alt="">
 
     <div class="brand-mark">
-      <img src="<?= $__urlBase ?>/images/logo.png" alt="MonanaFinancial" class="brand-logo">
+      <img src="<?= $__urlBase ?>/images/favicon.png" alt="MonanaFinancial" class="brand-logo">
       <div>
         <div class="brand-name">Monana<span>Financial</span></div>
         <div class="brand-tagline-small">GESTÃO FINANCEIRA INTELIGENTE</div>

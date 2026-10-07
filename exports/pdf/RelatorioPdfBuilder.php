@@ -54,6 +54,13 @@ class RelatorioPdfBuilder
     private string $orientacao = 'landscape';
     private string $nomeFicheiro;
     private string $rodapeExtra = '';
+    /**
+     * Nome exibido no cabeçalho/rodapé do PDF em vez da marca "MonanaFinancial".
+     * Por omissão (string vazia) mantém-se a marca do sistema — usado pelo
+     * Super Administrador. Os relatórios gerados por utilizadores Admin de
+     * Empresa recebem o nome da respetiva empresa via definirMarca().
+     */
+    private string $marcaPersonalizada = '';
 
     /**
      * Colunas com mesclagem vertical no cabeçalho (relatório tipo planilha).
@@ -80,6 +87,43 @@ class RelatorioPdfBuilder
     {
         $this->empresa = $empresa;
         return $this;
+    }
+
+    /**
+     * Substitui a marca "MonanaFinancial" pelo nome da empresa nos PDFs
+     * gerados por utilizadores Admin de Empresa (maior coerência documental).
+     */
+    public function definirMarca(string $nome): static
+    {
+        $this->marcaPersonalizada = trim($nome);
+        return $this;
+    }
+
+    /** Nome do titular do relatório: empresa > sessão > marca padrão. */
+    private function nomeMarca(): string
+    {
+        if ($this->marcaPersonalizada !== '') {
+            return $this->marcaPersonalizada;
+        }
+        $nomeEmpresa = trim((string) ($this->empresa['nome'] ?? ''));
+        if ($nomeEmpresa !== '') {
+            return $nomeEmpresa;
+        }
+        $sessao = trim((string) ($_SESSION['empresa_nome'] ?? ''));
+        if ($sessao !== '') {
+            return $sessao;
+        }
+        return 'MonanaFinancial';
+    }
+
+    /** Divide o nome em duas partes coloridas para a faixa de marca (ex.: "MAMABAR (SU), Lda"). */
+    private function dividirMarca(string $nome): array
+    {
+        $pos = mb_strpos($nome, ' ');
+        if ($pos === false || $pos >= mb_strlen($nome) - 1) {
+            return [$nome, ''];
+        }
+        return [mb_substr($nome, 0, $pos), mb_substr($nome, $pos + 1)];
     }
 
     /**
@@ -502,10 +546,24 @@ class RelatorioPdfBuilder
 
         $blocoEmpresa = '';
         if ($empresaNome !== '') {
-            $blocoEmpresa = '<div class="empresa-nome">' . $empresaNome . '</div>';
+            // Quando a marca já mostra o nome da empresa, evita repeti-lo:
+            // exibe apenas NIF/endereço logo abaixo.
+            if ($this->nomeMarca() !== $empresaNome) {
+                $blocoEmpresa = '<div class="empresa-nome">' . $empresaNome . '</div>';
+            }
             if ($infoLinha !== '') {
                 $blocoEmpresa .= '<div class="empresa-info">' . $infoLinha . '</div>';
             }
+        }
+
+        $marca = $this->nomeMarca();
+        if ($marca === 'MonanaFinancial') {
+            $blocoMarca = '<div class="marca"><span class="monana">Monana</span><span class="destaque">Financial</span></div>';
+        } else {
+            [$parte1, $parte2] = $this->dividirMarca($marca);
+            $blocoMarca = '<div class="marca"><span class="monana">' . htmlspecialchars($parte1) . '</span>'
+                        . ($parte2 !== '' ? '<span class="destaque">' . htmlspecialchars(' ' . $parte2) . '</span>' : '')
+                        . '</div>';
         }
 
         $geradoEm = date('d/m/Y \à\s H:i');
@@ -516,7 +574,7 @@ class RelatorioPdfBuilder
                     <tr>
                         <td style="width:' . ($temLogo ? '18' : '0') . '%; vertical-align:middle;">' . $blocoLogo . '</td>
                         <td style="width:' . ($temLogo ? '42' : '60') . '%; vertical-align:middle;">
-                            <div class="marca"><span class="monana">Monana</span><span class="destaque">Financial</span></div>
+                            ' . $blocoMarca . '
                             ' . $blocoEmpresa . '
                         </td>
                         <td style="width:40%; vertical-align:middle;">
@@ -656,6 +714,6 @@ class RelatorioPdfBuilder
     private function gerarRodape(): string
     {
         $extra = $this->rodapeExtra ? ' &nbsp;•&nbsp; ' . htmlspecialchars($this->rodapeExtra) : '';
-        return '<div class="rodape">Gerado em ' . date('d/m/Y H:i') . ' &nbsp;•&nbsp; MonanaFinancial' . $extra . '</div>';
+        return '<div class="rodape">Gerado em ' . date('d/m/Y H:i') . ' &nbsp;•&nbsp; ' . htmlspecialchars($this->nomeMarca()) . $extra . '</div>';
     }
 }
