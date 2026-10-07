@@ -27,15 +27,19 @@ class EmpresasController extends Controller
     public function index(): void
     {
         require_once CAMINHO_RAIZ . '/models/Assinatura.php';
+        require_once CAMINHO_RAIZ . '/models/Usuario.php';
         require_once CAMINHO_RAIZ . '/helpers/AssinaturaHelper.php';
 
         $empresas = $this->empresaModel->todos('nome');
 
-        // Conta filiais e calcula o estado da assinatura de cada empresa
+        // Conta filiais, utilizadores (sem contar o Super Admin) e calcula o estado da assinatura de cada empresa
         $assinaturas = new Assinatura();
+        $usuarioModel = new Usuario();
         $carenciaHoras = AssinaturaHelper::carenciaHoras();
         foreach ($empresas as &$empresa) {
             $empresa['total_filiais'] = count($this->filialModel->porEmpresa((int) $empresa['id']));
+            // REGRA: o Super Administrador nunca é contabilizado como utilizador do sistema.
+            $empresa['total_usuarios'] = count($this->usuarioModel->porEmpresa((int) $empresa['id']));
             try {
                 $est = $assinaturas->estadoDaEmpresa((int) $empresa['id'], $carenciaHoras);
                 $empresa['assinatura_estado'] = $est['estado'];

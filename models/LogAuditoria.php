@@ -7,17 +7,11 @@ class LogAuditoria extends Model
     public function registar(?int $usuarioId, string $acao, ?string $tabelaAfetada = null, ?int $registoId = null, ?array $antigos = null, ?array $novos = null, string $prioridade = 'media', ?string $motivo = null): int
     {
         // REGRA: as empresas não podem ver nem contabilizar ações do Super
-        // Administrador. Em contexto de empresa (sessão com empresa_id), os
-        // eventos causados por contas super_admin são gravados SEM autor —
-        // ficam como registo anónimo "Sistema" e nunca como "Super Admin".
-        if ($usuarioId !== null && $usuarioId > 0 && !empty($_SESSION['empresa_id'])) {
-            static $cacheSA = [];
-            if (!isset($cacheSA[$usuarioId])) {
-                $stmtSA = $this->bd->prepare("SELECT COUNT(*) FROM usuarios WHERE id = :id AND perfil = 'super_admin'");
-                $stmtSA->execute(['id' => $usuarioId]);
-                $cacheSA[$usuarioId] = (bool) (int) $stmtSA->fetchColumn();
-            }
-            if ($cacheSA[$usuarioId]) {
+        // Administrador nos seus registos. Qualquer evento causado por uma
+        // conta super_admin é gravado SEM autor — aparece apenas como
+        // registo anónimo "Sistema" e nunca como "Super Admin".
+        if ($usuarioId !== null && $usuarioId > 0) {
+            if (in_array($usuarioId, $this->idsSuperAdmin(), true)) {
                 $usuarioId = null;
             }
         }

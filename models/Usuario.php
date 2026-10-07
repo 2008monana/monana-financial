@@ -91,15 +91,29 @@ class Usuario extends Model
     {
         $usuario = parent::encontrarPorId($id);
         if ($usuario !== false && $this->deveOcultarSuperAdmin() && ($usuario['perfil'] ?? '') === 'super_admin') {
-            // Exceções legítimas: o próprio Super Admin a aceder à sua conta
-            // (perfil/configurações) e processos de sistema sem sessão ativa.
+            // Única exceção legítima: o próprio Super Admin a aceder à sua
+            // conta (perfil/configurações). Processos de sistema (sem sessão
+            // ativa) NÃO recebem contas super_admin — para as empresas, este
+            // perfil é invisível e não contabilizável em qualquer contexto.
             $sessaoId = isset($_SESSION['usuario_id']) ? (int) $_SESSION['usuario_id'] : 0;
-            if ($sessaoId === $id || $sessaoId === 0) {
+            if ($sessaoId === $id) {
                 return $usuario;
             }
             return false;
         }
         return $usuario;
+    }
+
+    /**
+     * Contagem global de utilizadores efetivos do sistema (painel do Super
+     * Admin), EXCLUINDO sempre as contas super_admin — o Super Administrador
+     * nunca é contabilizado como utilizador do sistema. Usado no lugar de
+     * `COUNT(*) FROM usuarios` em qualquer estatística exibida.
+     */
+    public function contarTodos(): int
+    {
+        $stmt = $this->bd->query("SELECT COUNT(*) FROM usuarios WHERE perfil != 'super_admin'");
+        return (int) $stmt->fetchColumn();
     }
 
     /**
