@@ -12,12 +12,15 @@ require_once CAMINHO_RAIZ . '/middleware/AuthMiddleware.php';
 require_once CAMINHO_RAIZ . '/helpers/flash.php';
 require_once CAMINHO_RAIZ . '/helpers/SegurancaHelper.php';
 require_once CAMINHO_RAIZ . '/helpers/AuditoriaHelper.php';
+require_once CAMINHO_RAIZ . '/helpers/CloudinaryHelper.php';
+require_once CAMINHO_RAIZ . '/models/PerfilUsuario.php';
 
 class PerfilController extends Controller
 {
     private Usuario $usuarioModel;
     private Empresa $empresaModel;
     private Modulo $moduloModel;
+    private PerfilUsuario $perfilModel;
 
     public function __construct()
     {
@@ -25,6 +28,7 @@ class PerfilController extends Controller
         $this->usuarioModel = new Usuario();
         $this->empresaModel = new Empresa();
         $this->moduloModel = new Modulo();
+        $this->perfilModel = new PerfilUsuario();
     }
 
     /**
@@ -51,12 +55,16 @@ class PerfilController extends Controller
         // Buscar permissões do utilizador
         $permissoes = $this->moduloModel->getPermissoesUsuario($usuarioId);
 
+        // Perfil estendido (foto Cloudinary, departamento, biografia)
+        $perfilExtra = $this->perfilModel->buscarPorUsuario($usuarioId) ?: [];
+
         $this->renderizar('perfil/index', [
             'tituloPagina' => 'Meu Perfil',
             'paginaAtiva' => 'perfil',
             'usuario' => $usuario,
             'empresaNome' => $empresaNome,
             'permissoes' => $permissoes,
+            'perfilExtra' => $perfilExtra,
             'csrf_token' => SegurancaHelper::gerarTokenCSRF(),
         ]);
     }
@@ -89,6 +97,40 @@ class PerfilController extends Controller
             'telefone' => $telefone ?: null,
             'cargo' => $cargo ?: null,
         ]);
+
+        // Campos estendidos do perfil (tabela perfis_usuarios)
+        $departamento = trim($_POST['departamento'] ?? '');
+        $biografia    = trim($_POST['biografia'] ?? '');
+        $perfilExtra  = ['departamento' => $departamento ?: null, 'biografia' => $biografia ?: null];
+
+        // Upload de foto de perfil (Cloudinary com fallback local)
+        if (!empty($_FILES['foto']['name']) && ($_FILES['foto']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $upload = CloudinaryHelper::enviarImagem($_FILES['foto'], 'monana/avatares');
+            if ($upload['sucesso']) {
+                $anterior = $this->perfilModel->buscarPorUsuario($usuarioId);
+                if (!empty($anterior['foto_public_id'])) {
+                    CloudinaryHelper::removerImagem((string) $anterior['foto_public_id']);
+                }
+                $perfilExtra['foto_url'] = $upload['url'];
+                $perfilExtra['foto_public_id'] = $upload['public_id'];
+            } else {
+                definirFlash('erro', 'Foto não enviada: ' . $upload['erro']);
+            }
+        } elseif (isset($_POST['remover_foto'])) {
+            $anterior = $this->perfilModel->buscarPorUsuario($usuarioId);
+            if (!empty($anterior['foto_public_id'])) {
+                CloudinaryHelper::removerImagem((string) $anterior['foto_public_id']);
+            }
+            $perfilExtra['foto_url'] = null;
+            $perfilExtra['foto_public_id'] = null;
+        }
+
+        try {
+            $this->perfilModel->salvar($usuarioId, $perfilExtra + ['telefone' => $telefone ?: null, 'cargo' => $cargo ?: null]);
+        } catch (Throwable $e) {
+            // perfis_usuarios pode ainda não existir na base (migração pendente)
+            error_log('perfil_extra: ' . $e->getMessage());
+        }
 
         if ($atualizado) {
             $_SESSION['usuario_nome'] = $nome;

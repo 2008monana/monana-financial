@@ -51,18 +51,27 @@ class Mailer {
     /** Lê a configuração de email do array retornado por config/config.php */
     public static function configuracao(): array {
         $cfg = require CAMINHO_RAIZ . '/config/config.php';
-        // config.php pode retornar o array ou defini-lo como variável local
-        if (!is_array($cfg) || !isset($cfg['email'])) {
-            return [
-                'smtp_host'      => '',
-                'smtp_porta'     => 587,
-                'smtp_usuario'   => '',
-                'smtp_senha'     => '',
-                'smtp_from'      => 'nao-responder@monanafinancial.com',
-                'smtp_from_nome' => defined('NOME_SISTEMA') ? NOME_SISTEMA : 'MonanaFinancial',
-            ];
+
+        $padrao = [
+            'smtp_host'      => '',
+            'smtp_porta'     => 587,
+            'smtp_usuario'   => '',
+            'smtp_senha'     => '',
+            'smtp_from'      => 'nao-responder@monanafinancial.com',
+            'smtp_from_nome' => defined('NOME_SISTEMA') ? NOME_SISTEMA : 'MonanaFinancial',
+        ];
+
+        // config.php retorna o array de SMTP diretamente (chaves smtp_*)
+        // ou embrulhado na chave 'email'. Suporta ambos os formatos.
+        if (is_array($cfg)) {
+            if (isset($cfg['email']) && is_array($cfg['email'])) {
+                return array_merge($padrao, $cfg['email']);
+            }
+            if (array_key_exists('smtp_host', $cfg)) {
+                return array_merge($padrao, $cfg);
+            }
         }
-        return $cfg['email'];
+        return $padrao;
     }
 
     private function configurar(array $cfg): void {

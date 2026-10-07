@@ -25,7 +25,24 @@ CARD 1: DADOS PESSOAIS
     </div>
 
     <div class="form-card-body">
-        <form method="POST" action="<?php echo URL_BASE; ?>/perfil/atualizar">
+        <!-- Avatar / Foto de perfil -->
+        <?php $fotoUrl = $perfilExtra['foto_url'] ?? null; ?>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border,#e2e8f0);">
+            <img src="<?php echo htmlspecialchars($fotoUrl ?: (URL_BASE . '/images/avatar-padrao.png')); ?>"
+                 alt="Foto de perfil"
+                 onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2296%22 height=%2296%22><rect width=%2296%22 height=%2296%22 rx=%2248%22 fill=%22%231e293b%22/><text x=%2248%22 y=%2260%22 font-size=%2236%22 fill=%22white%22 text-anchor=%22middle%22><?php echo rawurlencode(mb_strtoupper(substr($usuario['nome'], 0, 1))); ?></text></svg>';"
+                 style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--navy,#1e293b);background:#e2e8f0;">
+            <div>
+                <strong>Foto de perfil</strong>
+                <p style="color:var(--muted,#64748b);font-size:12px;margin:4px 0 8px;">JPG, PNG, GIF ou WebP até 2 MB. Enviada para Cloudinary (ou pasta local se não configurado).</p>
+                <input type="file" name="foto" accept="image/jpeg,image/png,image/gif,image/webp" style="font-size:12px;">
+                <?php if (!empty($fotoUrl)): ?>
+                    <label style="display:block;font-size:12px;margin-top:6px;"><input type="checkbox" name="remover_foto" value="1"> Remover foto atual</label>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <form method="POST" action="<?php echo URL_BASE; ?>/perfil/atualizar" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
             <div class="form-row">
