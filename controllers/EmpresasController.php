@@ -16,25 +16,26 @@ class EmpresasController extends Controller
 {
     private Empresa $empresaModel;
     private Filial $filialModel;
+    private Usuario $usuarioModel;
 
     public function __construct()
     {
+        require_once CAMINHO_RAIZ . '/models/Usuario.php';
         (new AuthMiddleware())->exigirPerfil(['super_admin']);
         $this->empresaModel = new Empresa();
         $this->filialModel  = new Filial();
+        $this->usuarioModel = new Usuario();
     }
 
     public function index(): void
     {
         require_once CAMINHO_RAIZ . '/models/Assinatura.php';
-        require_once CAMINHO_RAIZ . '/models/Usuario.php';
         require_once CAMINHO_RAIZ . '/helpers/AssinaturaHelper.php';
 
         $empresas = $this->empresaModel->todos('nome');
 
         // Conta filiais, utilizadores (sem contar o Super Admin) e calcula o estado da assinatura de cada empresa
         $assinaturas = new Assinatura();
-        $usuarioModel = new Usuario();
         $carenciaHoras = AssinaturaHelper::carenciaHoras();
         foreach ($empresas as &$empresa) {
             $empresa['total_filiais'] = count($this->filialModel->porEmpresa((int) $empresa['id']));
