@@ -19,27 +19,33 @@
 
 *{box-sizing:border-box;margin:0;padding:0;}
 
+html{height:100%;}
+
 body{
   font-family:'Inter',sans-serif;
   background:var(--bg);
   min-height:100vh;
+  height:100vh;
   display:flex;
-  align-items:center;
+  align-items:stretch;
   justify-content:center;
-  padding:32px;
+  padding:0;
+  margin:0;
   color:var(--ink);
 }
 
+/* O painel ocupa a tela inteira (largura e altura) */
 .panel{
   width:100%;
-  max-width:1180px;
-  min-height:660px;
+  max-width:none;
+  min-height:100vh;
+  height:100vh;
   display:grid;
   grid-template-columns:1fr 1fr;
   background:var(--white);
-  border-radius:20px;
+  border-radius:0;
   overflow:hidden;
-  box-shadow:0 30px 70px -25px rgba(10,25,48,0.35);
+  box-shadow:none;
 }
 
 /* ---------- Lado esquerdo: marca ---------- */
@@ -342,11 +348,10 @@ button.submit:disabled{opacity:0.75;cursor:not-allowed;transform:none;}
 }
 
 @media (max-width:860px){
-  .panel{grid-template-columns:1fr;}
+  .panel{grid-template-columns:1fr;min-height:100vh;height:auto;}
   .brand-side{display:none;}
   .form-side{padding:48px 28px;}
-  body{padding:0;}
-  .panel{border-radius:0;min-height:100vh;}
+  body{padding:0;height:auto;min-height:100vh;}
 }
 
 /* Suporte a ecrãs muito pequenos (320px) */
