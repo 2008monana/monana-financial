@@ -17,7 +17,7 @@ $__raiz    = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
 <!-- Fallback: se a folha de estilos externa falhar (MIME/404), o layout basico e aplicado aqui. -->
 <style>
   html,body{margin:0;padding:0;min-height:100vh;font-family:'Segoe UI',system-ui,sans-serif;background:#eef2f7;color:#0a1930}
-  .panel{display:grid;grid-template-columns:1.1fr 1fr;max-width:1180px;width:min(96%,1180px);margin:4vh auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(10,25,48,.15)}
+  .panel{display:grid;grid-template-columns:1.1fr 1fr;width:100%;min-height:100vh;background:#fff;border-radius:0;overflow:hidden}
   .brand-side{position:relative;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:44px;color:#fff;background:linear-gradient(150deg,#0b3d2e 0%,#14532d 55%,#166534 100%)}
   .brand-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.28;pointer-events:none}
   .brand-mark{display:flex;align-items:center;gap:12px;position:relative}
@@ -56,7 +56,7 @@ $__raiz    = defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2);
   .modal-icone{font-size:2rem;margin-bottom:12px;color:#16a34a}
   .modal-titulo{font-weight:700;margin-bottom:6px}
   .modal-mensagem{color:#5b6b7f;font-size:.9rem}
-  @media(max-width:860px){.panel{grid-template-columns:1fr}.brand-side{padding:28px}}
+  @media(max-width:860px){.panel{grid-template-columns:1fr}.brand-side{display:none}.form-side{padding:44px 28px}}
 </style>
 <?php
 // =============================================
@@ -227,7 +227,7 @@ window.addEventListener('load', function () {
                   .getPropertyValue('max-width') !== 'none';
   if (cssOk) return;
   const s = document.createElement('style');
-  s.textContent = 'body{font-family:system-ui,sans-serif;background:#f6f8fb;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}.panel{display:grid;grid-template-columns:1fr 1fr;max-width:1180px;width:100%;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(10,25,48,.15)}form input{display:block;width:100%;padding:10px 12px;margin:6px 0;border:1px solid #e2e8f0;border-radius:8px}button.submit{padding:12px 20px;background:#16a34a;color:#fff;border:0;border-radius:8px;cursor:pointer}';
+  s.textContent = 'html,body{height:100%;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:#f6f8fb;display:flex;min-height:100vh}.panel{display:grid;grid-template-columns:1fr 1fr;width:100%;min-height:100vh;background:#fff;overflow:hidden}form input{display:block;width:100%;padding:10px 12px;margin:6px 0;border:1px solid #e2e8f0;border-radius:8px}button.submit{padding:12px 20px;background:#16a34a;color:#fff;border:0;border-radius:8px;cursor:pointer}';
   document.head.appendChild(s);
 })();
 </script>
