@@ -33,9 +33,10 @@ INSERT INTO usuario_filiais (usuario_id, filial_id) VALUES
     (@admin_empresa_id, @filial_prenda),
     (@admin_empresa_id, @filial_viana);
 
+-- 'importar_excel' foi removido pela migração dos módulos administrativos
 INSERT INTO usuario_permissoes (usuario_id, ver_todas_filiais, criar_lancamentos, editar_proprios_lancamentos,
-    eliminar_proprios_lancamentos, ver_relatorios_consolidados, ver_relatorios_filial, exportar_relatorios, importar_excel)
-VALUES (@admin_empresa_id, 1, 1, 1, 1, 1, 1, 1, 1);
+    eliminar_proprios_lancamentos, ver_relatorios_consolidados, ver_relatorios_filial, exportar_relatorios)
+VALUES (@admin_empresa_id, 1, 1, 1, 1, 1, 1, 1);
 
 -- Categorias
 INSERT INTO categorias (empresa_id, nome, tipo, cor) VALUES

@@ -406,19 +406,20 @@ CREATE TABLE usuario_modulo_permissoes (
 -- ---------------------------------------------------------
 CREATE TABLE backups (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    -- NULL = backup global (apenas Super Admin); caso contrário, backup filtrado de uma empresa
+    empresa_id INT UNSIGNED NULL,
+    usuario_id INT UNSIGNED NULL,
     tipo ENUM('manual','automatico') NOT NULL DEFAULT 'manual',
-    arquivo VARCHAR(255) NOT NULL,
-    caminho VARCHAR(500) NOT NULL,
-    tamanho BIGINT UNSIGNED DEFAULT 0,
-    tabelas TEXT DEFAULT NULL,
-    empresa_id INT UNSIGNED DEFAULT NULL,
-    criado_por INT UNSIGNED DEFAULT NULL,
-    status ENUM('concluido','em_processamento','falha') NOT NULL DEFAULT 'concluido',
-    mensagem TEXT DEFAULT NULL,
+    escopo ENUM('global','empresa') NOT NULL DEFAULT 'empresa',
+    nome_arquivo VARCHAR(255) NOT NULL,
+    caminho_relativo VARCHAR(500) NOT NULL,
+    tamanho_bytes BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    status ENUM('concluido','falhou') NOT NULL DEFAULT 'concluido',
+    mensagem_erro VARCHAR(500) NULL,
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_backup_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE SET NULL,
-    CONSTRAINT fk_backup_criador FOREIGN KEY (criado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
-    INDEX idx_backup_criado_em (criado_em)
+    CONSTRAINT fk_backup_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    CONSTRAINT fk_backup_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+    INDEX idx_backups_empresa_data (empresa_id, criado_em)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------
