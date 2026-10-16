@@ -6,8 +6,15 @@
 -- as migrações, com dados-semente mínimos para o sistema arrancar.
 --
 -- COMO USAR (phpMyAdmin ou linha de comandos):
---   1. Importe ESTE ficheiro por completo. Ele APAGA a base existente
---      `monana_financial` e recria tudo do zero (estrutura + dados base).
+--   1. No phpMyAdmin, crie/seleccione a base de dados `monana_financial`
+--      (charset utf8mb4 / utf8mb4_unicode_ci) e só depois importe este
+--      ficheiro. Ele APAGA todas as tabelas do sistema dentro da base
+--      seleccionada e recria tudo do zero (estrutura + dados base),
+--      incluindo a correcção automática da tabela `backups`
+--      (coluna `usuario_id` em falta => erro 1054 no módulo de backups).
+--      Na linha de comandos:
+--        mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS monana_financial CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+--        mysql -u root -p monana_financial < database/monana_financial_completo.sql
 --   2. Faça login em:  http://localhost/monana-financial/public/auth/login
 --        Super Admin:  admin@monanafinancial.com  /  Admin@123
 --      (altere a senha imediatamente após o primeiro acesso!)
@@ -25,13 +32,21 @@
 --   notificacoes, _migracoes
 -- =====================================================================
 
+-- IMPORTANTE: seleccione/crie a base de dados (ex.: monana_financial)
+-- no phpMyAdmin ANTES de importar este ficheiro. Ele não apaga nem
+-- cria bases de dados — apenas recria as tabelas dentro da base activa.
+
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP DATABASE IF EXISTS monana_financial;
-CREATE DATABASE monana_financial
-    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE monana_financial;
+DROP TABLE IF EXISTS
+    _migracoes, tentativas_login, notificacoes, assinatura_avisos,
+    assinatura_pagamentos, assinaturas, planos, backups,
+    usuario_modulo_permissoes, modulos, perfis_usuarios, perfis_usuario,
+    redefinicoes_senha, logs_auditoria, configuracoes, importacoes,
+    resumos_mensais, metodos_pagamento, funcionarios, transacoes,
+    categorias_saida, categorias, usuario_permissoes, usuario_filiais,
+    usuarios, filiais, empresas;
 
 -- ---------------------------------------------------------
 -- EMPRESAS
@@ -403,12 +418,16 @@ CREATE TABLE usuario_modulo_permissoes (
 
 -- ---------------------------------------------------------
 -- BACKUPS (cópias de segurança manuais/automáticas)
+-- ATENÇÃO: o modelo usa CREATE TABLE IF NOT EXISTS, portanto se
+-- esta tabela já existir (mesmo com colunas antigas/diferentes),
+-- o código NÃO corrige a estrutura. Esta definição é a única
+-- fonte de verdade e deve coincidir com controllers/BackupsController.php.
 -- ---------------------------------------------------------
 CREATE TABLE backups (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     -- NULL = backup global (apenas Super Admin); caso contrário, backup filtrado de uma empresa
     empresa_id INT UNSIGNED NULL,
-    usuario_id INT UNSIGNED NULL,
+    usuario_id INT UNSIGNED NULL,          -- exigido por BackupsController::executar()
     tipo ENUM('manual','automatico') NOT NULL DEFAULT 'manual',
     escopo ENUM('global','empresa') NOT NULL DEFAULT 'empresa',
     nome_arquivo VARCHAR(255) NOT NULL,
@@ -555,6 +574,86 @@ INSERT INTO planos (codigo, nome, duracao_dias, preco, ordem, ativo) VALUES
 INSERT INTO configuracoes (empresa_id, chave, valor, tipo) VALUES
 (NULL, 'backup_automatico_ativo', '1', 'booleano'),
 (NULL, 'backup_automatico_frequencia_dias', '7', 'numero');
+
+-- ---------------------------------------------------------
+-- AUTO-CURAÇÃO DE ESTRUTURA (a partir daqui o ficheiro pode ser
+-- reimportado com segurança para reparar bases corrompidas que
+-- já tenham as tabelas antigas — o modelo Backup usa
+-- CREATE TABLE IF NOT EXISTS e nunca corrige colunas em falta).
+-- ---------------------------------------------------------
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'usuario_id');
+SET @sql := IF(@col_existe = 0,
+    'ALTER TABLE backups ADD COLUMN usuario_id INT UNSIGNED NULL AFTER empresa_id',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'escopo');
+SET @sql := IF(@col_existe = 0,
+    'ALTER TABLE backups ADD COLUMN escopo ENUM(''global'',''empresa'') NOT NULL DEFAULT ''empresa'' AFTER tipo',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'nome_arquivo');
+SET @sql := IF(@col_existe = 0,
+    'ALTER TABLE backups ADD COLUMN nome_arquivo VARCHAR(255) NOT NULL DEFAULT ''-'' AFTER escopo',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'caminho_relativo');
+SET @sql := IF(@col_existe = 0,
+    'ALTER TABLE backups ADD COLUMN caminho_relativo VARCHAR(500) NOT NULL DEFAULT ''-'' AFTER nome_arquivo',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'tamanho_bytes');
+SET @sql := IF(@col_existe = 0,
+    'ALTER TABLE backups ADD COLUMN tamanho_bytes BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER caminho_relativo',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'mensagem_erro');
+SET @sql := IF(@col_existe = 0,
+    'ALTER TABLE backups ADD COLUMN mensagem_erro VARCHAR(500) NULL AFTER status',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'criado_por');
+SET @sql := IF(@col_existe > 0,
+    'UPDATE backups SET usuario_id = criado_por WHERE usuario_id IS NULL',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'arquivo');
+SET @sql := IF(@col_existe > 0,
+    'UPDATE backups SET nome_arquivo = arquivo WHERE nome_arquivo = ''-'' OR nome_arquivo = ''''',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'caminho');
+SET @sql := IF(@col_existe > 0,
+    'UPDATE backups SET caminho_relativo = caminho WHERE caminho_relativo = ''-'' OR caminho_relativo = ''''',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @col_existe := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'backups' AND column_name = 'tamanho');
+SET @sql := IF(@col_existe > 0,
+    'UPDATE backups SET tamanho_bytes = tamanho WHERE tamanho_bytes = 0',
+    'DO 0');
+PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+
+-- Normalizar valores de `status` antigos ('em_processamento'/'falha' -> 'concluido'/'falhou').
+UPDATE backups SET status = 'falhou' WHERE status NOT IN ('concluido', 'falhou');
 
 SET FOREIGN_KEY_CHECKS = 1;
 
