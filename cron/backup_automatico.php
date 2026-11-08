@@ -18,12 +18,12 @@
 define('CAMINHO_RAIZ', dirname(__DIR__));
 require_once CAMINHO_RAIZ . '/config/config.php';
 require_once CAMINHO_RAIZ . '/config/constants.php';
-require_once CAMINHO_RAIZ . '/core/Database.php';
-require_once CAMINHO_RAIZ . '/core/Model.php';
-require_once CAMINHO_RAIZ . '/models/Backup.php';
-require_once CAMINHO_RAIZ . '/models/Empresa.php';
-require_once CAMINHO_RAIZ . '/models/Configuracao.php';
-require_once CAMINHO_RAIZ . '/helpers/BackupHelper.php';
+require_once CAMINHO_RAIZ . '/app/Core/Database.php';
+require_once CAMINHO_RAIZ . '/app/Core/Model.php';
+require_once CAMINHO_RAIZ . '/app/Models/Backup.php';
+require_once CAMINHO_RAIZ . '/app/Models/Empresa.php';
+require_once CAMINHO_RAIZ . '/app/Models/Configuracao.php';
+require_once CAMINHO_RAIZ . '/app/Helpers/BackupHelper.php';
 
 if (php_sapi_name() !== 'cli') {
     http_response_code(403);

@@ -1,0 +1,220 @@
+[07-Oct-2026 21:16:30 Africa/Luanda] PHP Warning:  Constant AMBIENTE already defined in /workspace/config/config.php on line 12
+[07-Oct-2026 21:16:30 Africa/Luanda] PHP Warning:  Constant URL_BASE already defined in /workspace/config/config.php on line 40
+[07-Oct-2026 21:16:30 Africa/Luanda] PHP Warning:  Constant NOME_SISTEMA already defined in /workspace/config/config.php on line 52
+[07-Oct-2026 23:53:14 Africa/Luanda] PHP Fatal error:  Uncaught Error: Undefined constant "SMTP_EMAIL_REMETENTE" in C:\xampp\htdocs\monana-financial\views\errors\404.php:186
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Router.php(263): require_once()
+#1 C:\xampp\htdocs\monana-financial\core\Router.php(285): Router->responder404()
+#2 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('images/avatar-p...')
+#3 {main}
+  thrown in C:\xampp\htdocs\monana-financial\views\errors\404.php on line 186
+[08-Oct-2026 00:10:02 Africa/Luanda] PHP Warning:  Undefined property: EmpresasController::$usuarioModel in C:\xampp\htdocs\monana-financial\controllers\EmpresasController.php on line 42
+[08-Oct-2026 00:10:02 Africa/Luanda] PHP Fatal error:  Uncaught Error: Call to a member function porEmpresa() on null in C:\xampp\htdocs\monana-financial\controllers\EmpresasController.php:42
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Router.php(461): EmpresasController->index()
+#1 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('empresas')
+#2 {main}
+  thrown in C:\xampp\htdocs\monana-financial\controllers\EmpresasController.php on line 42
+[08-Oct-2026 00:10:22 Africa/Luanda] PHP Warning:  Undefined property: EmpresasController::$usuarioModel in C:\xampp\htdocs\monana-financial\controllers\EmpresasController.php on line 42
+[08-Oct-2026 00:10:22 Africa/Luanda] PHP Fatal error:  Uncaught Error: Call to a member function porEmpresa() on null in C:\xampp\htdocs\monana-financial\controllers\EmpresasController.php:42
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Router.php(461): EmpresasController->index()
+#1 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('empresas')
+#2 {main}
+  thrown in C:\xampp\htdocs\monana-financial\controllers\EmpresasController.php on line 42
+[16-Oct-2026 13:03:56 Africa/Luanda] [Auditoria] SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
+[16-Oct-2026 13:04:55 Africa/Luanda] [Auditoria] SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
+[16-Oct-2026 13:05:19 Africa/Luanda] [Auditoria] SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
+[16-Oct-2026 13:08:36 Africa/Luanda] [Auditoria] SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
+[16-Oct-2026 13:09:03 Africa/Luanda] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'monana_financial.assinaturas' doesn't exist in C:\xampp\htdocs\monana-financial\models\Assinatura.php:548
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\models\Assinatura.php(548): PDO->prepare('SELECT a.*, e.n...')
+#1 C:\xampp\htdocs\monana-financial\controllers\AssinaturasController.php(45): Assinatura->listarParaAdmin(Array)
+#2 C:\xampp\htdocs\monana-financial\core\Router.php(461): AssinaturasController->index()
+#3 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('assinaturas')
+#4 {main}
+  thrown in C:\xampp\htdocs\monana-financial\models\Assinatura.php on line 548
+[16-Oct-2026 13:09:13 Africa/Luanda] [Auditoria] SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
+[16-Oct-2026 13:09:38 Africa/Luanda] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'monana_financial.assinaturas' doesn't exist in C:\xampp\htdocs\monana-financial\models\Assinatura.php:548
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\models\Assinatura.php(548): PDO->prepare('SELECT a.*, e.n...')
+#1 C:\xampp\htdocs\monana-financial\controllers\AssinaturasController.php(45): Assinatura->listarParaAdmin(Array)
+#2 C:\xampp\htdocs\monana-financial\core\Router.php(461): AssinaturasController->index()
+#3 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('assinaturas')
+#4 {main}
+  thrown in C:\xampp\htdocs\monana-financial\models\Assinatura.php on line 548
+[16-Oct-2026 13:09:47 Africa/Luanda] [Auditoria] SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
+[16-Oct-2026 13:14:40 Africa/Luanda] [Auditoria] SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
+[16-Oct-2026 13:15:42 Africa/Luanda] PHP Fatal error:  Uncaught PDOException: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY' in C:\xampp\htdocs\monana-financial\core\Model.php:59
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Model.php(59): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(201): Model->inserir(Array)
+#2 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(238): BackupsController->executar('automatico')
+#3 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(49): BackupsController->executarSeEmAtraso(NULL)
+#4 C:\xampp\htdocs\monana-financial\core\Router.php(461): BackupsController->index()
+#5 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('backups')
+#6 {main}
+  thrown in C:\xampp\htdocs\monana-financial\core\Model.php on line 59
+[16-Oct-2026 13:17:04 Africa/Luanda] PHP Fatal error:  Uncaught PDOException: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY' in C:\xampp\htdocs\monana-financial\core\Model.php:59
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Model.php(59): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(201): Model->inserir(Array)
+#2 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(238): BackupsController->executar('automatico')
+#3 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(49): BackupsController->executarSeEmAtraso(NULL)
+#4 C:\xampp\htdocs\monana-financial\core\Router.php(461): BackupsController->index()
+#5 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('backups')
+#6 {main}
+  thrown in C:\xampp\htdocs\monana-financial\core\Model.php on line 59
+[16-Oct-2026 13:17:22 Africa/Luanda] PHP Fatal error:  Uncaught PDOException: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY' in C:\xampp\htdocs\monana-financial\core\Model.php:59
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Model.php(59): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(201): Model->inserir(Array)
+#2 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(238): BackupsController->executar('automatico')
+#3 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(49): BackupsController->executarSeEmAtraso(NULL)
+#4 C:\xampp\htdocs\monana-financial\core\Router.php(461): BackupsController->index()
+#5 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('backups')
+#6 {main}
+  thrown in C:\xampp\htdocs\monana-financial\core\Model.php on line 59
+[16-Oct-2026 13:21:58 Africa/Luanda] [Auditoria] SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
+[16-Oct-2026 13:50:03 Africa/Luanda] PHP Fatal error:  Uncaught PDOException: SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a child row: a foreign key constraint fails (`monana_financial`.`backups`, CONSTRAINT `fk_backup_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL) in C:\xampp\htdocs\monana-financial\core\Model.php:59
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Model.php(59): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(201): Model->inserir(Array)
+#2 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(238): BackupsController->executar('automatico')
+#3 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(49): BackupsController->executarSeEmAtraso(NULL)
+#4 C:\xampp\htdocs\monana-financial\core\Router.php(461): BackupsController->index()
+#5 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('backups')
+#6 {main}
+  thrown in C:\xampp\htdocs\monana-financial\core\Model.php on line 59
+[16-Oct-2026 13:55:40 Africa/Luanda] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'usuario_id' in 'field list' in C:\xampp\htdocs\monana-financial\core\Model.php:58
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Model.php(58): PDO->prepare('INSERT INTO bac...')
+#1 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(201): Model->inserir(Array)
+#2 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(238): BackupsController->executar('automatico')
+#3 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(49): BackupsController->executarSeEmAtraso(NULL)
+#4 C:\xampp\htdocs\monana-financial\core\Router.php(461): BackupsController->index()
+#5 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('backups')
+#6 {main}
+  thrown in C:\xampp\htdocs\monana-financial\core\Model.php on line 58
+[16-Oct-2026 13:56:33 Africa/Luanda] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'usuario_id' in 'field list' in C:\xampp\htdocs\monana-financial\core\Model.php:58
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Model.php(58): PDO->prepare('INSERT INTO bac...')
+#1 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(201): Model->inserir(Array)
+#2 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(238): BackupsController->executar('automatico')
+#3 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(49): BackupsController->executarSeEmAtraso(NULL)
+#4 C:\xampp\htdocs\monana-financial\core\Router.php(461): BackupsController->index()
+#5 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('backups')
+#6 {main}
+  thrown in C:\xampp\htdocs\monana-financial\core\Model.php on line 58
+[16-Oct-2026 13:57:56 Africa/Luanda] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'usuario_id' in 'field list' in C:\xampp\htdocs\monana-financial\core\Model.php:58
+Stack trace:
+#0 C:\xampp\htdocs\monana-financial\core\Model.php(58): PDO->prepare('INSERT INTO bac...')
+#1 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(201): Model->inserir(Array)
+#2 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(238): BackupsController->executar('automatico')
+#3 C:\xampp\htdocs\monana-financial\controllers\BackupsController.php(49): BackupsController->executarSeEmAtraso(NULL)
+#4 C:\xampp\htdocs\monana-financial\core\Router.php(461): BackupsController->index()
+#5 C:\xampp\htdocs\monana-financial\public\index.php(91): Router->despachar('backups')
+#6 {main}
+  thrown in C:\xampp\htdocs\monana-financial\core\Model.php on line 58
+[16-Oct-2026 14:14:43 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:14:52 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:15:04 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:15:14 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:15:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:15:23 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:15:44 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:15:57 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:16:08 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:16:16 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:16:32 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:16:40 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:16:55 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:17:55 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:18:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:19:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:21:00 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:21:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:22:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:23:56 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:24:40 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:24:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:25:55 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:26:09 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:26:16 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:26:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:27:50 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:27:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:28:55 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:29:56 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:30:57 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:31:07 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:31:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:31:36 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:32:38 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:32:48 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:33:36 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:34:36 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:35:37 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:36:37 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:37:36 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:38:37 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:39:40 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:40:39 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:41:40 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:42:41 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:43:42 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:44:43 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:45:43 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:46:44 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:47:45 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:48:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:49:52 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:50:06 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:50:40 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:51:37 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:52:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:53:55 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:54:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:55:55 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:56:57 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:57:57 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 14:58:58 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[16-Oct-2026 15:00:54 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:54:42 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:55:17 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:55:19 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:55:22 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:56:04 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:56:22 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:56:38 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:56:40 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:56:42 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:57:02 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:57:11 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:57:16 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:57:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:57:25 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:58:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 16:59:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:00:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:01:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:02:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:03:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:04:18 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:05:19 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:06:20 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:07:21 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:08:22 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:09:23 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:10:24 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:11:25 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:12:26 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:13:27 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:14:28 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:15:29 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:16:30 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:17:31 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:18:32 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:19:33 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:20:34 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.
+[08-Nov-2026 17:21:36 Africa/Luanda] [Assinaturas] Empresa #1 sem nenhum registo de assinatura.

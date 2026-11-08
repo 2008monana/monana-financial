@@ -9,10 +9,10 @@ define('CAMINHO_RAIZ', dirname(__DIR__));
 
 // Carregar configurações
 require_once CAMINHO_RAIZ . '/config/config.php';
-require_once CAMINHO_RAIZ . '/core/Database.php';
-require_once CAMINHO_RAIZ . '/core/Model.php';
-require_once CAMINHO_RAIZ . '/models/Filial.php';
-require_once CAMINHO_RAIZ . '/models/ResumoMensal.php';
+require_once CAMINHO_RAIZ . '/app/Core/Database.php';
+require_once CAMINHO_RAIZ . '/app/Core/Model.php';
+require_once CAMINHO_RAIZ . '/app/Models/Filial.php';
+require_once CAMINHO_RAIZ . '/app/Models/ResumoMensal.php';
 
 // Verificar se está sendo executado via CLI ou browser
 $isCLI = php_sapi_name() === 'cli';

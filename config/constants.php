@@ -31,7 +31,7 @@ define('NOTIF_ERRO', 'erro');
 // Caminhos absolutos (usando CAMINHO_RAIZ já definido)
 define('CAMINHO_VIEWS', CAMINHO_RAIZ . '/views');
 define('CAMINHO_UPLOADS', CAMINHO_RAIZ . '/public/uploads');
-define('CAMINHO_LOGS', CAMINHO_RAIZ . '/logs');
+define('CAMINHO_LOGS', CAMINHO_RAIZ . '/storage/logs');
 define('CAMINHO_EXPORTS', CAMINHO_RAIZ . '/exports');
 // Pasta de armazenamento dos backups (fora de /public para não ser acedida diretamente)
 define('CAMINHO_BACKUPS', CAMINHO_RAIZ . '/storage/backups');

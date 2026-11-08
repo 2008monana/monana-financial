@@ -34,6 +34,15 @@ class RelatorioPdfBuilder
     private const COR_MUTED      = '#64748b';
     private const COR_BORDER     = '#e6eaf0';
     private const COR_BG         = '#f4f6fa';
+    private const COR_AZUL       = '#3b82f6'; // "Monana" na marca (visível sobre o fundo navy)
+
+    /**
+     * Extensões raster que o Dompdf consegue embutir no PDF.
+     * NOTA: WebP NÃO é suportado pelo Dompdf (a imagem simplesmente não
+     * aparece). Quando o logotipo está em WebP/SVG, convertemos para PNG.
+     */
+    private const EXT_DOMPDF = ['png', 'jpg', 'jpeg', 'gif'];
+    private const EXT_CONVERSAO = ['svg', 'webp'];
 
     private string $titulo = 'Relatório';
     private string $subtitulo = '';
@@ -45,6 +54,19 @@ class RelatorioPdfBuilder
     private string $orientacao = 'landscape';
     private string $nomeFicheiro;
     private string $rodapeExtra = '';
+    /**
+     * Nome exibido no cabeçalho/rodapé do PDF em vez da marca "MonanaFinancial".
+     * Por omissão (string vazia) mantém-se a marca do sistema — usado pelo
+     * Super Administrador. Os relatórios gerados por utilizadores Admin de
+     * Empresa recebem o nome da respetiva empresa via definirMarca().
+     */
+    private string $marcaPersonalizada = '';
+
+    /**
+     * Colunas com mesclagem vertical no cabeçalho (relatório tipo planilha).
+     * Cada entrada: ['rotulo' => 'Dia', 'colspan' => 1, 'rowspan' => 2]
+     */
+    private array $agrupamentosCabecalho = [];
 
     public function __construct(string $titulo, string $nomeFicheiro = 'relatorio')
     {
@@ -59,7 +81,7 @@ class RelatorioPdfBuilder
     }
 
     /**
-     * Dados da empresa exibidos no cabeçalho: nome, nif, endereco, filial.
+     * Dados da empresa exibidos no cabeçalho: nome, nif, endereco, filial, logotipo.
      */
     public function definirEmpresa(array $empresa): static
     {
@@ -68,11 +90,218 @@ class RelatorioPdfBuilder
     }
 
     /**
+     * Substitui a marca "MonanaFinancial" pelo nome da empresa nos PDFs
+     * gerados por utilizadores Admin de Empresa (maior coerência documental).
+     */
+    public function definirMarca(string $nome): static
+    {
+        $this->marcaPersonalizada = trim($nome);
+        return $this;
+    }
+
+    /** Nome do titular do relatório: empresa > sessão > marca padrão. */
+    private function nomeMarca(): string
+    {
+        if ($this->marcaPersonalizada !== '') {
+            return $this->marcaPersonalizada;
+        }
+        $nomeEmpresa = trim((string) ($this->empresa['nome'] ?? ''));
+        if ($nomeEmpresa !== '') {
+            return $nomeEmpresa;
+        }
+        $sessao = trim((string) ($_SESSION['empresa_nome'] ?? ''));
+        if ($sessao !== '') {
+            return $sessao;
+        }
+        return 'MonanaFinancial';
+    }
+
+    /** Divide o nome em duas partes coloridas para a faixa de marca (ex.: "MAMABAR (SU), Lda"). */
+    private function dividirMarca(string $nome): array
+    {
+        $pos = mb_strpos($nome, ' ');
+        if ($pos === false || $pos >= mb_strlen($nome) - 1) {
+            return [$nome, ''];
+        }
+        return [mb_substr($nome, 0, $pos), mb_substr($nome, $pos + 1)];
+    }
+
+    /**
+     * Resolve o caminho absoluto do logotipo da empresa (upload feito em
+     * Configurações). Retorna null quando não existe ficheiro de imagem válido.
+     */
+    private function resolverLogotipo(): ?string
+    {
+        static $resolvido = false;
+        static $cache = null;
+        if ($resolvido) {
+            return $cache;
+        }
+        $resolvido = true;
+        $candidatos = $this->candidatosLogotipo();
+        return $cache = $candidatos[0] ?? null;
+    }
+
+    /**
+     * @return array<int, string|null> Lista (no máximo um elemento útil) com o caminho resolvido.
+     */
+    private function candidatosLogotipo(): array
+    {
+        $valores = [];
+        $principal = trim((string) ($this->empresa['logotipo'] ?? ''));
+        if ($principal !== '') {
+            // tolera valores gravados como URL completa (http(s)://host/uploads/...)
+            if (preg_match('#^https?://#i', $principal)) {
+                $principal = '/' . ltrim((string) parse_url($principal, PHP_URL_PATH), '/');
+            }
+            $valores[] = $principal;
+        }
+        // Chaves extras: logotipo_123 etc.
+        foreach ($this->empresa as $chave => $valor) {
+            if (is_string($valor) && preg_match('/^logotipo(_\d+)?$/', (string) $chave) && trim($valor) !== '') {
+                $valores[] = trim($valor);
+            }
+        }
+
+        $raiz = rtrim(str_replace('\\', '/', defined('CAMINHO_RAIZ') ? CAMINHO_RAIZ : dirname(__DIR__, 2)), '/');
+
+        foreach ($valores as $logo) {
+            // normaliza separadores (o upload é gravado com "/" mesmo no Windows)
+            $logo = str_replace('\\', '/', $logo);
+
+            // URLs de base absolutas do tipo "/monana-financial/uploads/logos/x.png"
+            // (XAMPP): remover o prefixo do projecto para ficar "uploads/logos/x.png".
+            $relativo = ltrim($logo, '/');
+            if (preg_match('#^([A-Za-z]:[\\\\/])#', $logo)) {
+                $caminhos = [$logo]; // caminho absoluto Windows (C:\...\x.png)
+            } else {
+                $partes = explode('/', $relativo);
+                $variantes = [$relativo];
+                if (count($partes) > 1) {
+                    // remove primeiro segmento (ex.: "monana-financial/uploads/..." -> "uploads/...")
+                    $variantes[] = implode('/', array_slice($partes, 1));
+                }
+                $caminhos = [];
+                foreach ($variantes as $v) {
+                    $semPublic = preg_replace('#^public/#', '', $v);
+                    $comPublic = 'public/' . $semPublic;
+                    foreach (array_unique([$comPublic, $semPublic]) as $rel) {
+                        $caminhos[] = $raiz . '/' . $rel;
+                    }
+                }
+            }
+
+            foreach (array_unique($caminhos) as $cand) {
+                if (!is_file($cand)) {
+                    continue;
+                }
+
+                $extensao = strtolower(pathinfo($cand, PATHINFO_EXTENSION));
+                if (in_array($extensao, self::EXT_DOMPDF, true)) {
+                    return [realpath($cand) ?: $cand];
+                }
+                if (in_array($extensao, self::EXT_CONVERSAO, true)) {
+                    // Dompdf não suporta SVG nem WebP: converter para PNG temporário.
+                    $png = $this->converterParaPng($cand, $extensao);
+                    if ($png !== null) {
+                        return [$png];
+                    }
+                }
+            }
+        }
+        return [];
+    }
+
+    /**
+     * Converte SVG/WebP para PNG temporário (via Imagick/Gmagick c/ fallback GD).
+     * Devolve null quando não for possível — nesse caso o relatório usa a marca textual.
+     */
+    private function converterParaPng(string $caminho, string $extensao): ?string
+    {
+        $destino = sys_get_temp_dir() . '/monana_logo_' . md5($caminho . filemtime($caminho)) . '.png';
+        if (is_file($destino)) {
+            return $destino;
+        }
+
+        try {
+            if ($extensao === 'webp' && function_exists('imagecreatefromwebp')) {
+                $img = @imagecreatefromwebp($caminho);
+                if ($img) {
+                    imagealphablending($img, false);
+                    imagesavealpha($img, true);
+                    $ok = imagepng($img, $destino);
+                    imagedestroy($img);
+                    if ($ok && is_file($destino)) {
+                        return $destino;
+                    }
+                }
+            }
+            if ($extensao === 'svg' && extension_loaded('imagick')) {
+                $imagick = new \Imagick();
+                $imagick->setResolution(150, 150);
+                $imagick->readImage($caminho);
+                $imagick->setImageBackgroundColor('white');
+                if (method_exists($imagick, 'flattenImages')) {
+                    $imagick = $imagick->flattenImages();
+                }
+                $imagick->setImageFormat('png');
+                $imagick->writeImage($destino);
+                $imagick->destroy();
+                return is_file($destino) ? $destino : null;
+            }
+        } catch (\Throwable $e) {
+            // conversão falhou: seguir sem logotipo (marca textual assume o destaque)
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Data URI base64 para embutir a imagem directamente no HTML. Garante que
+     * o Dompdf encontra a imagem independentemente de chroot, caminhos
+     * relativos ou restrições de leitura de ficheiros locais.
+     */
+    private function logoDataUri(?string $caminho): ?string
+    {
+        if ($caminho === null || !is_file($caminho)) {
+            return null;
+        }
+        $binario = @file_get_contents($caminho);
+        if ($binario === false || $binario === '') {
+            return null;
+        }
+        $mime = match (strtolower(pathinfo($caminho, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif'         => 'image/gif',
+            default       => 'image/png',
+        };
+        return 'data:' . $mime . ';base64,' . base64_encode($binario);
+    }
+
+    /**
      * @param array $colunas Lista de cabeçalhos das colunas, ex: ['Data', 'Descrição', 'Valor (Kz)']
      */
     public function definirColunas(array $colunas): static
     {
         $this->colunas = $colunas;
+        return $this;
+    }
+
+    /**
+     * Cabeçalho em dois níveis com mesclagem (estilo planilha).
+     * Ex.: definirCabecalhoAgrupado([
+     *        ['rotulo' => 'Dia', 'colspan' => 1, 'rowspan' => 2],
+     *        ['rotulo' => 'Entradas', 'colspan' => 3, 'classe' => 'grupo-entrada'],
+     *        ['rotulo' => 'Saídas',   'colspan' => 2, 'classe' => 'grupo-saida'],
+     *        ['rotulo' => 'Saldo', 'colspan' => 1, 'rowspan' => 2],
+     *      ], $subColunas)
+     * $subColunas: rótulos da segunda linha do cabeçalho (uma por coluna real).
+     */
+    public function definirCabecalhoAgrupado(array $agrupamentos, array $subColunas): static
+    {
+        $this->agrupamentosCabecalho = $agrupamentos;
+        $this->colunas = $subColunas;
         return $this;
     }
 
@@ -203,17 +432,21 @@ class RelatorioPdfBuilder
             .cabecalho {
                 background: linear-gradient(90deg, ' . self::COR_NAVY_DEEP . ' 0%, ' . self::COR_NAVY . ' 100%);
                 color: #ffffff;
-                padding: 18px 22px;
+                padding: 18px 22px 0 22px;
                 border-radius: 10px;
                 margin-bottom: 18px;
             }
             .cabecalho .linha-topo { width: 100%; }
-            .cabecalho .marca { font-family: "DejaVu Sans", sans-serif; font-weight: bold; font-size: 15pt; letter-spacing: 0.3px; }
+            .cabecalho .logotipo { max-height: 55px; max-width: 110px; background: #ffffff; border-radius: 8px; padding: 4px; }
+            .cabecalho .marca { font-family: "DejaVu Sans", sans-serif; font-weight: bold; font-size: 15pt; letter-spacing: 0.3px; color: #ffffff; }
+            .cabecalho .marca .monana { color: ' . self::COR_AZUL . '; }
             .cabecalho .marca .destaque { color: ' . self::COR_GREEN . '; }
             .cabecalho .empresa-nome { font-size: 11pt; font-weight: bold; margin-top: 6px; }
             .cabecalho .empresa-info { font-size: 8pt; color: #cbd5e1; margin-top: 2px; }
             .cabecalho .titulo-relatorio { font-size: 14pt; font-weight: bold; text-align: right; }
             .cabecalho .subtitulo-relatorio { font-size: 8.5pt; color: #cbd5e1; text-align: right; margin-top: 4px; }
+            .cabecalho .meta-relatorio { font-size: 7.5pt; color: #94a3b8; text-align: right; margin-top: 4px; font-style: italic; }
+            .faixa-verde { height: 4px; background: linear-gradient(90deg, ' . self::COR_GREEN . ' 0%, ' . self::COR_GREEN_DEEP . ' 100%); border-radius: 0 0 10px 10px; margin: 14px -22px 0 -22px; }
 
             .conteudo { padding: 0 2px; }
 
@@ -226,9 +459,12 @@ class RelatorioPdfBuilder
                 font-size: 8.5pt;
                 text-transform: uppercase;
                 letter-spacing: 0.3px;
+                border-bottom: 2px solid ' . self::COR_GREEN . ';
             }
             table.dados thead th:first-child { border-radius: 4px 0 0 0; }
             table.dados thead th:last-child { border-radius: 0 4px 0 0; }
+            table.dados thead th.grupo-entrada { background: #166534; text-align: center; }
+            table.dados thead th.grupo-saida { background: #991b1b; text-align: center; }
             table.dados tbody td {
                 padding: 6px 8px;
                 font-size: 9pt;
@@ -294,28 +530,61 @@ class RelatorioPdfBuilder
         }
         $infoLinha = implode(' &nbsp;•&nbsp; ', $infoPartes);
 
+        // Logotipo da empresa (upload em Configurações). Embutido como data URI
+        // base64: é a forma mais fiável de o Dompdf renderizar a imagem, pois
+        // não depende de caminhos absolutos, chroot nem permissões de leitura.
+        $logoCaminho = $this->resolverLogotipo();
+        $logoSrc = $this->logoDataUri($logoCaminho);
+        if ($logoSrc === null && $logoCaminho !== null) {
+            $logoSrc = str_replace('\\', '/', $logoCaminho); // fallback: caminho absoluto
+        }
+        $blocoLogo = '';
+        if ($logoSrc !== null) {
+            $blocoLogo = '<img src="' . htmlspecialchars($logoSrc, ENT_QUOTES) . '" alt="Logotipo" class="logotipo" />';
+        }
+        $temLogo = $logoSrc !== null;
+
         $blocoEmpresa = '';
         if ($empresaNome !== '') {
-            $blocoEmpresa = '<div class="empresa-nome">' . $empresaNome . '</div>';
+            // Quando a marca já mostra o nome da empresa, evita repeti-lo:
+            // exibe apenas NIF/endereço logo abaixo.
+            if ($this->nomeMarca() !== $empresaNome) {
+                $blocoEmpresa = '<div class="empresa-nome">' . $empresaNome . '</div>';
+            }
             if ($infoLinha !== '') {
                 $blocoEmpresa .= '<div class="empresa-info">' . $infoLinha . '</div>';
             }
         }
 
+        $marca = $this->nomeMarca();
+        if ($marca === 'MonanaFinancial') {
+            $blocoMarca = '<div class="marca"><span class="monana">Monana</span><span class="destaque">Financial</span></div>';
+        } else {
+            [$parte1, $parte2] = $this->dividirMarca($marca);
+            $blocoMarca = '<div class="marca"><span class="monana">' . htmlspecialchars($parte1) . '</span>'
+                        . ($parte2 !== '' ? '<span class="destaque">' . htmlspecialchars(' ' . $parte2) . '</span>' : '')
+                        . '</div>';
+        }
+
+        $geradoEm = date('d/m/Y \à\s H:i');
+
         return '
             <div class="cabecalho">
                 <table class="linha-topo" style="border-collapse:collapse;">
                     <tr>
-                        <td style="width:60%; vertical-align:top;">
-                            <div class="marca">Monana<span class="destaque">Financial</span></div>
+                        <td style="width:' . ($temLogo ? '18' : '0') . '%; vertical-align:middle;">' . $blocoLogo . '</td>
+                        <td style="width:' . ($temLogo ? '42' : '60') . '%; vertical-align:middle;">
+                            ' . $blocoMarca . '
                             ' . $blocoEmpresa . '
                         </td>
-                        <td style="width:40%; vertical-align:top;">
+                        <td style="width:40%; vertical-align:middle;">
                             <div class="titulo-relatorio">' . htmlspecialchars($this->titulo) . '</div>
                             <div class="subtitulo-relatorio">' . htmlspecialchars($this->subtitulo) . '</div>
+                            <div class="meta-relatorio">Gerado em ' . $geradoEm . '</div>
                         </td>
                     </tr>
                 </table>
+                <div class="faixa-verde"></div>
             </div>';
     }
 
@@ -329,11 +598,37 @@ class RelatorioPdfBuilder
             return '<div class="sem-dados">Nenhum registo encontrado para os filtros selecionados.</div>';
         }
 
-        $html = '<table class="dados"><thead><tr>';
-        foreach ($this->colunas as $col) {
-            $html .= '<th>' . htmlspecialchars($col) . '</th>';
+        $html = '<table class="dados"><thead>';
+
+        if (!empty($this->agrupamentosCabecalho)) {
+            // Linha 1: grupos com colspan/rowspan (estilo planilha)
+            $html .= '<tr>';
+            foreach ($this->agrupamentosCabecalho as $grupo) {
+                $attrs = '';
+                if (($grupo['colspan'] ?? 1) > 1) {
+                    $attrs .= ' colspan="' . (int) $grupo['colspan'] . '"';
+                }
+                if (($grupo['rowspan'] ?? 1) > 1) {
+                    $attrs .= ' rowspan="' . (int) $grupo['rowspan'] . '"';
+                }
+                $classe = !empty($grupo['classe']) ? ' class="' . htmlspecialchars($grupo['classe']) . '"' : '';
+                $html .= '<th' . $attrs . $classe . '>' . htmlspecialchars($grupo['rotulo'] ?? '') . '</th>';
+            }
+            $html .= '</tr><tr>';
+            // Linha 2: sub-colunas (apenas as colunas individuais, sem as de rowspan=2)
+            foreach ($this->colunas as $col) {
+                $html .= '<th>' . htmlspecialchars($col) . '</th>';
+            }
+            $html .= '</tr>';
+        } else {
+            $html .= '<tr>';
+            foreach ($this->colunas as $col) {
+                $html .= '<th>' . htmlspecialchars($col) . '</th>';
+            }
+            $html .= '</tr>';
         }
-        $html .= '</tr></thead><tbody>';
+
+        $html .= '</thead><tbody>';
 
         foreach ($this->linhas as $linha) {
             $html .= '<tr>';
@@ -419,6 +714,6 @@ class RelatorioPdfBuilder
     private function gerarRodape(): string
     {
         $extra = $this->rodapeExtra ? ' &nbsp;•&nbsp; ' . htmlspecialchars($this->rodapeExtra) : '';
-        return '<div class="rodape">Gerado em ' . date('d/m/Y H:i') . ' &nbsp;•&nbsp; MonanaFinancial' . $extra . '</div>';
+        return '<div class="rodape">Gerado em ' . date('d/m/Y H:i') . ' &nbsp;•&nbsp; ' . htmlspecialchars($this->nomeMarca()) . $extra . '</div>';
     }
 }

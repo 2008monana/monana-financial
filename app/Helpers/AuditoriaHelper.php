@@ -1,0 +1,443 @@
+<?php
+/** Registo imutável, normalizado e centralizado de eventos auditáveis. */
+class AuditoriaHelper
+{
+    private const CAMPOS_SENSIVEIS = ['senha', 'senha_hash', 'smtp_senha', 'token', 'csrf_token'];
+    private const PRIORIDADES = ['baixa', 'media', 'alta'];
+
+    /** Catálogo central de acções auditáveis: chave => [rótulo legível, tipo para estilo do selo]. */
+    private const CATALOGO_ACOES = [
+        'transacao_criada'             => ['Transação criada', 'sucesso'],
+        'transacao_editada'            => ['Transação editada', 'info'],
+        'transacao_eliminada'          => ['Transação eliminada', 'perigo'],
+        'transacao_valor_alterado'     => ['Valor da transação alterado', 'aviso'],
+        'transacao_tipo_alterado'      => ['Tipo da transação alterado', 'aviso'],
+        'categoria_criada'             => ['Categoria criada', 'sucesso'],
+        'categoria_editada'            => ['Categoria editada', 'info'],
+        'categoria_ativada'            => ['Categoria ativada', 'sucesso'],
+        'categoria_desativada'         => ['Categoria desativada', 'aviso'],
+        'categoria_eliminada'          => ['Categoria eliminada', 'perigo'],
+        'categoria_saida_criada'       => ['Categoria de saída criada', 'sucesso'],
+        'categoria_saida_ativada'      => ['Categoria de saída ativada', 'sucesso'],
+        'categoria_saida_desativada'   => ['Categoria de saída desativada', 'aviso'],
+        'categoria_saida_eliminada'    => ['Categoria de saída eliminada', 'perigo'],
+        'metodo_criado'                => ['Método de pagamento criado', 'sucesso'],
+        'metodo_editado'               => ['Método de pagamento editado', 'info'],
+        'metodo_estado_alterado'       => ['Estado do método alterado', 'aviso'],
+        'metodo_eliminado'             => ['Método de pagamento eliminado', 'perigo'],
+        'filial_criada'                => ['Filial criada', 'sucesso'],
+        'filial_editada'               => ['Filial editada', 'info'],
+        'filial_ativada'               => ['Filial ativada', 'sucesso'],
+        'filial_desativada'            => ['Filial desativada', 'aviso'],
+        'empresa_criada'               => ['Empresa criada', 'sucesso'],
+        'empresa_editada'              => ['Empresa editada', 'info'],
+        'empresa_ativada'              => ['Empresa ativada', 'sucesso'],
+        'empresa_desativada'           => ['Empresa desativada', 'aviso'],
+        'usuario_criado'               => ['Utilizador criado', 'sucesso'],
+        'usuario_editado'              => ['Utilizador editado', 'info'],
+        'usuario_ativado'              => ['Utilizador ativado', 'sucesso'],
+        'usuario_desativado'           => ['Utilizador desativado', 'aviso'],
+        'usuario_senha_redefinida'     => ['Senha redefinida por administrador', 'perigo'],
+        'perfil_atualizado'            => ['Perfil atualizado', 'info'],
+        'senha_alterada'               => ['Senha alterada', 'aviso'],
+        'senha_recuperacao_solicitada' => ['Recuperação de senha solicitada', 'aviso'],
+        'login_sucesso'                => ['Início de sessão', 'sucesso'],
+        'login_falhado'                => ['Tentativa de início de sessão falhada', 'perigo'],
+        'login_bloqueado'              => ['Dispositivo bloqueado por excesso de tentativas', 'perigo'],
+        'logout'                       => ['Fim de sessão', 'info'],
+        'permissao_negada'             => ['Acesso negado por permissões', 'perigo'],
+        'importacao_concluida'         => ['Importação de Excel concluída', 'sucesso'],
+        'importacao_revertida'         => ['Importação revertida', 'aviso'],
+        'configuracao_alterada'        => ['Configurações alteradas', 'info'],
+        'logs_exportados'              => ['Logs exportados', 'info'],
+        'logs_visualizados'            => ['Logs visualizados', 'info'],
+        'empresa_selecionada'          => ['Contexto de gestão de empresa ativado', 'info'],
+        'notificacao_lida'             => ['Notificação marcada como lida', 'info'],
+        'backup_gerado'                => ['Backup gerado', 'sucesso'],
+        'backup_falhou'                => ['Backup falhou', 'perigo'],
+        'backup_eliminado'             => ['Backup eliminado', 'perigo'],
+        'backup_descarregado'          => ['Backup descarregado', 'info'],
+        'backup_agendamento_alterado'  => ['Agendamento de backup alterado', 'info'],
+        'assinatura_criada'            => ['Assinatura criada', 'sucesso'],
+        'assinatura_plano_alterado'    => ['Plano da assinatura alterado', 'aviso'],
+        'assinatura_pagamento_registado' => ['Pagamento de assinatura registado', 'sucesso'],
+        'assinatura_bloqueio_manual'   => ['Empresa bloqueada manualmente', 'perigo'],
+        'assinatura_bloqueio_removido' => ['Bloqueio manual removido', 'aviso'],
+        'plano_editado'                => ['Plano de assinatura editado', 'info'],
+    ];
+
+    /** Catálogo central das tabelas afetadas: chave na base de dados => rótulo legível. */
+    private const CATALOGO_TABELAS = [
+        'transacoes'        => 'Transações',
+        'categorias'        => 'Categorias',
+        'categorias_saida'  => 'Categorias de saída',
+        'metodos_pagamento' => 'Métodos de pagamento',
+        'filiais'           => 'Filiais',
+        'empresas'          => 'Empresas',
+        'usuarios'          => 'Utilizadores',
+        'permissoes'        => 'Permissões',
+        'configuracoes'     => 'Configurações',
+        'logs_auditoria'    => 'Logs de auditoria',
+        'notificacoes'      => 'Notificações',
+        'backups'           => 'Backups',
+        'tentativas_login'  => 'Autenticação',
+        'planos'            => 'Planos de assinatura',
+        'assinaturas'       => 'Assinaturas',
+        'assinatura_pagamentos' => 'Pagamentos de assinatura',
+    ];
+
+    public static function registar(
+        string $acao,
+        ?string $tabelaAfetada = null,
+        ?int $registoId = null,
+        ?array $dadosAntigos = null,
+        ?array $dadosNovos = null,
+        string $prioridade = 'media',
+        ?string $motivo = null,
+        ?int $usuarioId = null
+    ): void {
+        // As empresas não podem ver — nem ser contabilizadas por — acções do
+        // Super Administrador. Em contexto de empresa, eventos causados pelo
+        // super_admin são registados sem autor; o Super Admin continua a ver
+        // tudo (incluindo os seus próprios registos com autor).
+        $idSessao = isset($_SESSION['usuario_id']) ? (int) $_SESSION['usuario_id'] : null;
+        if ($usuarioId === null && $idSessao !== null) {
+            $perfilSessao = (string) ($_SESSION['usuario_perfil'] ?? '');
+            if ($perfilSessao === 'super_admin' && !empty($_SESSION['empresa_id'])) {
+                $usuarioId = 0; // sentinela: não associar a nenhum utilizador
+            }
+        }
+
+        try {
+            require_once CAMINHO_RAIZ . '/app/Models/LogAuditoria.php';
+            (new LogAuditoria())->registar(
+                self::resolverUsuarioAuditoria($usuarioId, $idSessao),
+                $acao,
+                $tabelaAfetada,
+                $registoId,
+                self::ocultarSensivel($dadosAntigos),
+                self::ocultarSensivel($dadosNovos),
+                in_array($prioridade, self::PRIORIDADES, true) ? $prioridade : 'media',
+                $motivo
+            );
+        } catch (Throwable $e) {
+            // 1ª falha: tenta auto-criar as colunas em falta e repete uma única vez.
+            try {
+                self::garantirEsquema();
+                (new LogAuditoria())->registar(
+                    self::resolverUsuarioAuditoria($usuarioId, $idSessao),
+                    $acao,
+                    $tabelaAfetada,
+                    $registoId,
+                    self::ocultarSensivel($dadosAntigos),
+                    self::ocultarSensivel($dadosNovos),
+                    in_array($prioridade, self::PRIORIDADES, true) ? $prioridade : 'media',
+                    $motivo
+                );
+            } catch (Throwable $e2) {
+                // A auditoria nunca deve interromper o fluxo principal da aplicação.
+                error_log('[Auditoria] ' . $e2->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Decide o `usuario_id` a gravar no log de auditoria.
+     *  - null  -> autor da sessão (Super Admin em contexto global mantém-se identificado);
+     *  - 0     -> sentinela: evento ocorrido em contexto de empresa causado pelo
+     *             Super Administrador, que nunca deve aparecer associado a ele
+     *             nas listagens/estatísticas visíveis às empresas;
+     *  - >0    -> utilizador explícito fornecido pelo chamador.
+     */
+    private static function resolverUsuarioAuditoria(?int $usuarioIdParam, ?int $idSessao): ?int
+    {
+        if ($usuarioIdParam === null) return $idSessao;
+        if ($usuarioIdParam === 0)     return null;
+        return $usuarioIdParam;
+    }
+
+    /**
+     * Garante que a tabela logs_auditoria possui todas as colunas necessárias
+     * (compatível com bases de dados antigas que ainda não têm ip_origem, etc.).
+     */
+    private static function garantirEsquema(): void
+    {
+        $pdo = Database::obterLigacao();
+        $colunas = [
+            'tabela_afetada' => "ALTER TABLE logs_auditoria ADD COLUMN tabela_afetada VARCHAR(100) NULL",
+            'registo_id'     => "ALTER TABLE logs_auditoria ADD COLUMN registo_id INT NULL",
+            'dados_antigos'  => "ALTER TABLE logs_auditoria ADD COLUMN dados_antigos LONGTEXT NULL",
+            'dados_novos'    => "ALTER TABLE logs_auditoria ADD COLUMN dados_novos LONGTEXT NULL",
+            'ip_origem'      => "ALTER TABLE logs_auditoria ADD COLUMN ip_origem VARCHAR(45) NULL",
+            'user_agent'     => "ALTER TABLE logs_auditoria ADD COLUMN user_agent VARCHAR(500) NULL",
+            'motivo'         => "ALTER TABLE logs_auditoria ADD COLUMN motivo VARCHAR(255) NULL",
+        ];
+        foreach ($colunas as $nome => $sql) {
+            $st = $pdo->prepare(
+                'SELECT COUNT(*) FROM information_schema.columns
+                 WHERE table_schema = DATABASE() AND table_name = :t AND column_name = :c'
+            );
+            $st->execute([':t' => 'logs_auditoria', ':c' => $nome]);
+            if ((int) $st->fetchColumn() === 0) {
+                $pdo->exec($sql);
+            }
+        }
+    }
+
+    /** Rótulo legível de uma acção; devolve algo razoável mesmo para acções fora do catálogo. */
+    public static function rotuloAcao(string $acao): string
+    {
+        return self::CATALOGO_ACOES[$acao][0] ?? ucfirst(str_replace('_', ' ', $acao));
+    }
+
+    /** Tipo visual da acção (sucesso, info, aviso, perigo), usado para colorir o selo nos logs. */
+    public static function tipoAcao(string $acao): string
+    {
+        return self::CATALOGO_ACOES[$acao][1] ?? 'info';
+    }
+
+    /** Rótulo legível da tabela afetada. */
+    public static function rotuloTabela(?string $tabela): string
+    {
+        if (!$tabela) return '—';
+        return self::CATALOGO_TABELAS[$tabela] ?? ucfirst(str_replace('_', ' ', $tabela));
+    }
+
+    /** Nome do módulo a que uma acção pertence (ex.: 'Transações', 'Autenticação'). */
+    public static function moduloDeAcao(string $acao, ?string $tabelaAfetada = null): string
+    {
+        // 1) Tentar pelo prefixo da acção no catálogo de tabelas (ex.: transacao_*, empresa_*).
+        $prefixos = [
+            'transacao' => 'Transações', 'categoria_saida' => 'Categorias de saída', 'categoria' => 'Categorias',
+            'metodo' => 'Métodos de pagamento', 'filial' => 'Filiais', 'empresa' => 'Empresas',
+            'usuario' => 'Utilizadores', 'perfil' => 'Perfil', 'senha' => 'Autenticação',
+            'login' => 'Autenticação', 'logout' => 'Autenticação', 'permissao' => 'Permissões',
+            'importacao' => 'Importação', 'configuracao' => 'Configurações', 'logs' => 'Logs de auditoria',
+            'notificacao' => 'Notificações', 'backup' => 'Backups',
+        ];
+        foreach ($prefixos as $prefixo => $modulo) {
+            if (str_starts_with($acao, $prefixo . '_')) return $modulo;
+        }
+        // 2) Fallback: deduzir pela tabela afetada.
+        if ($tabelaAfetada && isset(self::CATALOGO_TABELAS[$tabelaAfetada])) {
+            return self::CATALOGO_TABELAS[$tabelaAfetada];
+        }
+        return 'Sistema';
+    }
+
+    /** Rótulos legíveis para campos comuns (usados nas descrições dos logs). */
+    private const ROTULOS_CAMPOS = [
+        'nome' => 'nome', 'designacao' => 'designação', 'descricao' => 'descrição',
+        'email' => 'e-mail', 'telefone' => 'telefone', 'cargo' => 'cargo',
+        'valor' => 'valor', 'tipo' => 'tipo', 'estado' => 'estado', 'ativo' => 'estado',
+        'categoria_id' => 'categoria', 'filial_id' => 'filial', 'empresa_id' => 'empresa',
+        'usuario_id' => 'utilizador', 'data_transacao' => 'data', 'metodo_pagamento' => 'método de pagamento',
+        'departamento' => 'departamento', 'biografia' => 'biografia', 'foto_url' => 'foto',
+        'limite_utilizadores' => 'limite de utilizadores', 'limite_filiais' => 'limite de filiais',
+        'preco' => 'preço', 'duracao_dias' => 'duração (dias)', 'montante' => 'montante',
+    ];
+
+    /** Descrição legível do evento: rótulo da acção + detalhe contextual quando disponível. */
+    public static function descricaoEvento(array $log): string
+    {
+        $rotulo  = self::rotuloAcao($log['acao'] ?? '');
+        $entidade = self::nomeDaEntidadeAfetada($log);
+
+        // 1) Frase completa e natural, ex.: "Transação criada — \"Almoço de equipa\" (lançamento n.º 2)"
+        if ($entidade !== null && $entidade !== '') {
+            $frase = $rotulo . ' — "' . $entidade . '"';
+            if (!empty($log['registo_id'])) {
+                $frase .= ' (' . self::nomeColetivoRegisto((string) ($log['tabela_afetada'] ?? ''))
+                       . ' n.º ' . (int) $log['registo_id'] . ')';
+            }
+            $contexto = self::contextoDosDados($log);
+            if ($contexto !== '') $frase .= '; ' . $contexto;
+            return $frase;
+        }
+
+        // 2) Sem nome identificável: motivo explícito (se for significativo) ou campos alterados
+        $descricao = $rotulo;
+        $extra = [];
+
+        $motivo = trim((string) ($log['motivo'] ?? ''));
+        if (self::detalheSignificativo($motivo)) {
+            $extra[] = $motivo;
+        }
+
+        $contexto = self::contextoDosDados($log);
+        if ($contexto !== '') $extra[] = $contexto;
+
+        if ($extra) $descricao .= ' — ' . implode('; ', $extra);
+        return $descricao;
+    }
+
+    /** Diz se um texto de detalhe acrescenta realmente informação (evita "registo #2"). */
+    private static function detalheSignificativo(string $texto): bool
+    {
+        $normalizado = mb_strtolower(trim($texto));
+        if ($normalizado === '') return false;
+        // Padrões genéricos e inúteis como "registo #2", "registro #10", "#3"
+        if (preg_match('/^(?:reg[io]st(?:o|ro)?\s*)?#\s*\d+$/', $normalizado)) return false;
+        return true;
+    }
+
+    /** Nome da entidade afetada, extraído dos dados guardados no log. */
+    private static function nomeDaEntidadeAfetada(array $log): ?string
+    {
+        foreach (['dados_novos', 'dados_antigos'] as $campo) {
+            if (empty($log[$campo])) continue;
+            $dados = json_decode((string) $log[$campo], true);
+            if (!is_array($dados)) continue;
+            foreach (['nome', 'designacao', 'titulo', 'descricao', 'email'] as $chave) {
+                // email só identifica a entidade em operações sobre utilizadores
+                if ($chave === 'email' && (string) ($log['tabela_afetada'] ?? '') !== 'usuarios') continue;
+                if (!empty($dados[$chave]) && is_string($dados[$chave]) && trim($dados[$chave]) !== '') {
+                    return mb_substr(trim($dados[$chave]), 0, 60);
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Nome coletivo (gênero neutro) da entidade de uma tabela, p.ex. 'lançamentos'. */
+    private static function nomeColetivoRegisto(string $tabela): string
+    {
+        return match ($tabela) {
+            'transacoes'          => 'lançamentos',
+            'categorias'          => 'categorias',
+            'categorias_saida'    => 'categorias de saída',
+            'metodos_pagamento'   => 'métodos de pagamento',
+            'filiais'             => 'filiais',
+            'empresas'            => 'empresas',
+            'usuarios'            => 'utilizadores',
+            'configuracoes'       => 'definições',
+            'notificacoes'        => 'notificações',
+            'backups'             => 'backups',
+            'planos'              => 'planos',
+            'assinaturas'         => 'assinaturas',
+            'assinatura_pagamentos' => 'pagamentos de assinatura',
+            'importacoes'         => 'importações',
+            default               => $tabela !== '' ? str_replace('_', ' ', $tabela) : 'registos',
+        };
+    }
+
+    /** Identificação amigável de um registo pelo número, com o nome da entidade. */
+    private static function identificarRegisto(string $tabela, int $registoId, array $log): string
+    {
+        $entidade = match ($tabela) {
+            'transacoes'          => 'lançamento',
+            'categorias'          => 'categoria',
+            'categorias_saida'    => 'categoria de saída',
+            'metodos_pagamento'   => 'método de pagamento',
+            'filiais'             => 'filial',
+            'empresas'            => 'empresa',
+            'usuarios'            => 'utilizador',
+            'configuracoes'       => 'definição',
+            'notificacoes'        => 'notificação',
+            'backups'             => 'backup',
+            'planos'              => 'plano',
+            'assinaturas'         => 'assinatura',
+            'assinatura_pagamentos' => 'pagamento de assinatura',
+            default               => $tabela !== '' ? str_replace('_', ' ', $tabela) : 'registo',
+        };
+
+        // Se os dados guardados tiverem um nome identificável, usa-o em vez do número
+        $nome = self::nomeDaEntidadeAfetada($log);
+        if ($nome !== null && $nome !== '') {
+            return $entidade . ' "' . $nome . '"';
+        }
+
+        return $entidade . ' n.º ' . $registoId;
+    }
+
+    /** Resumo curto das alterações registadas (ex.: "alterado: telefone"). */
+    private static function contextoDosDados(array $log): string
+    {
+        if (empty($log['dados_novos'])) return '';
+        $novos = json_decode((string) $log['dados_novos'], true);
+        if (!is_array($novos) || $novos === []) return '';
+
+        $sensiveis = ['senha', 'senha_hash', 'smtp_senha', 'token', 'csrf_token'];
+        $antigos = !empty($log['dados_antigos']) ? json_decode((string) $log['dados_antigos'], true) : [];
+        $camposAlterados = [];
+        foreach ($novos as $campo => $valor) {
+            if (in_array($campo, $sensiveis, true)) continue;
+            if (is_array($valor) || is_object($valor)) continue;
+            if (is_array($antigos) && array_key_exists($campo, $antigos) && (string) $antigos[$campo] === (string) $valor) {
+                continue; // sem mudança efetiva
+            }
+            $rotulo = self::ROTULOS_CAMPOS[$campo] ?? str_replace('_', ' ', $campo);
+            $camposAlterados[] = $rotulo;
+        }
+        if ($camposAlterados === []) return '';
+
+        $lista = implode(', ', array_slice($camposAlterados, 0, 4));
+        if (count($camposAlterados) > 4) $lista .= '…';
+        return 'campos: ' . $lista;
+    }
+
+    /** Lista de prefixos de acção => módulo (ex.: 'transacao' => 'Transações'). */
+    public static function prefixosModulos(): array
+    {
+        return [
+            'transacao' => 'Transações', 'categoria_saida' => 'Categorias de saída', 'categoria' => 'Categorias',
+            'metodo' => 'Métodos de pagamento', 'filial' => 'Filiais', 'empresa' => 'Empresas',
+            'usuario' => 'Utilizadores', 'perfil' => 'Perfil', 'senha' => 'Autenticação',
+            'login' => 'Autenticação', 'logout' => 'Autenticação', 'permissao' => 'Permissões',
+            'importacao' => 'Importação', 'configuracao' => 'Configurações', 'logs' => 'Logs de auditoria',
+            'notificacao' => 'Notificações', 'backup' => 'Backups',
+        ];
+    }
+
+    /** Opções [chave => rótulo] para o filtro de módulo, derivadas do catálogo de acções. */
+    public static function opcoesModulos(): array
+    {
+        $prefixos = self::prefixosModulos();
+        $modulos = [];
+        foreach (array_keys(self::CATALOGO_ACOES) as $acao) {
+            foreach ($prefixos as $prefixo => $rotulo) {
+                if (str_starts_with($acao, $prefixo . '_')) { $modulos[$prefixo] = $rotulo; break; }
+            }
+        }
+        asort($modulos);
+        return $modulos;
+    }
+
+    /** Opções [chave => rótulo] para o filtro de acção, ordenadas alfabeticamente pelo rótulo. */
+    public static function opcoesAcoes(): array
+    {
+        $opcoes = [];
+        foreach (self::CATALOGO_ACOES as $chave => [$rotulo, ]) $opcoes[$chave] = $rotulo;
+        asort($opcoes);
+        return $opcoes;
+    }
+
+    /** Tabela afetada => nome do módulo (ex.: 'transacoes' => 'Transações'). */
+    public static function catalogoTabelas(): array
+    {
+        return self::CATALOGO_TABELAS;
+    }
+
+    /** Tabelas cujo rótulo pertence a um dado módulo (ex.: 'Transações'). */
+    public static function tabelasPorModulo(string $modulo): array
+    {
+        return array_filter(self::CATALOGO_TABELAS, fn($rotulo) => $rotulo === $modulo);
+    }
+
+    /** Opções [chave => rótulo] para o filtro de tabela, ordenadas alfabeticamente pelo rótulo. */
+    public static function opcoesTabelas(): array
+    {
+        $opcoes = self::CATALOGO_TABELAS;
+        asort($opcoes);
+        return $opcoes;
+    }
+
+    private static function ocultarSensivel(?array $dados): ?array
+    {
+        if ($dados === null) return null;
+        foreach (self::CAMPOS_SENSIVEIS as $campo) {
+            if (array_key_exists($campo, $dados)) $dados[$campo] = '[OCULTO]';
+        }
+        return $dados;
+    }
+}

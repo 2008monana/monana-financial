@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="pt-AO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonanaFinancial - Gestão Financeira Inteligente</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-dark: #0a1628;
+            --primary-blue: #1e3a5f;
+            --secondary-blue: #2d5a87;
+            --accent-green: #00d4aa;
+            --light-green: #00f5a8;
+            --gold: #ffd700;
+            --white: #ffffff;
+            --gray-light: #f5f7fa;
+            --gray: #6b7280;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--primary-dark);
+            overflow-x: hidden;
+        }
+
+        /* Animações */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .animate-on-scroll.animated {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Navegação */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 22, 40, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 1rem 5%;
+            transition: var(--transition);
+        }
+
+        nav.scrolled {
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+            padding: 0.5rem 5%;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--white);
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo i {
+            color: var(--accent-green);
+            font-size: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            position: relative;
+            transition: var(--transition);
+            opacity: 0.9;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-green);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            opacity: 1;
+            color: var(--accent-green);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .mobile-menu {
+            display: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 70px;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            padding: 4rem 5%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(0, 212, 170, 0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .hero-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content h1 {
+            color: var(--white);
+            font-size: 3.5rem;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            animation: fadeInLeft 1s ease-out;
+        }
+
+        .hero-content h1 span {
+            color: var(--accent-green);
+            position: relative;
+        }
+
+        .hero-content p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            animation: fadeInLeft 1s ease-out 0.2s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInLeft 1s ease-out 0.4s both;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            color: var(--primary-dark);
+            box-shadow: 0 4px 15px rgba(0, 212, 170, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(0, 212, 170, 0.6);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid var(--white);
+        }
+
+        .btn-secondary:hover {
+            background: var(--white);
+            color: var(--primary-dark);
+            transform: translateY(-3px);
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 3rem;
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            display: block;
+        }
+
+        .stat-label {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+        }
+
+        .hero-image {
+            position: relative;
+            animation: fadeInRight 1s ease-out 0.5s both;
+        }
+
+        .dashboard-mockup {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transform: perspective(1000px) rotateY(-5deg);
+            transition: var(--transition);
+        }
+
+        .dashboard-mockup:hover {
+            transform: perspective(1000px) rotateY(0deg);
+        }
+
+        .chart-placeholder {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+            border-radius: 10px;
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            padding: 2rem;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, var(--accent-green), var(--light-green));
+            border-radius: 5px 5px 0 0;
+            animation: growUp 1.5s ease-out forwards;
+            transform-origin: bottom;
+        }
+
+        @keyframes growUp {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
+        }
+
+        .chart-bar:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+        .chart-bar:nth-child(2) { height: 65%; animation-delay: 0.2s; }
+        .chart-bar:nth-child(3) { height: 50%; animation-delay: 0.3s; }
+        .chart-bar:nth-child(4) { height: 80%; animation-delay: 0.4s; }
+        .chart-bar:nth-child(5) { height: 60%; animation-delay: 0.5s; }
+        .chart-bar:nth-child(6) { height: 90%; animation-delay: 0.6s; }
+
+        /* Seções Gerais */
+        section {
+            padding: 6rem 5%;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--gray);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Plataforma Section */
+        .plataforma {
+            background: var(--gray-light);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: var(--transition);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .feature-card.animated {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent-green), var(--light-green));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: rotate(5deg) scale(1.1);
+        }
+
+        .feature-icon i {
+            font-size: 1.5rem;
+            color: var(--primary-dark);
+        }
+
+        .feature-card h3 {
+            color: var(--primary-dark);
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .feature-card p {
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* Soluções Section */
+        .solucoes {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+            color: var(--white);
+        }
+
+        .solucoes .section-header h2,
+        .solucoes .section-header p {
+            color: var(--white);
+        }
+
+        .solucoes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .solucao-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .solucao-card:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-5px);
+            border-color: var(--accent-green);
+        }
+
+        .solucao-card i {
+            font-size: 2.5rem;
+            color: var(--accent-green);
+            margin-bottom: 1rem;
+        }
+
+        .solucao-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .solucao-card p {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.95rem;
+        }
+
+        /* Benefícios Section */
+        .beneficios {
+            background: var(--white);
+        }
+
+        .beneficios-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .beneficios-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .beneficio-item {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+            padding: 1.5rem;
+            border-radius: 10px;
+            transition: var(--transition);
+        }
+
+        .beneficio-item:hover {
+            background: var(--gray-light);
+            transform: translateX(10px);
+        }
+
+        .beneficio-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-green), var(--light-green));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .beneficio-icon i {
+            color: var(--primary-dark);
+            font-size: 1.2rem;
+        }
+
+        .beneficio-content h3 {
+            color: var(--primary-dark);
+            margin-bottom: 0.3rem;
+        }
+
+        .beneficio-content p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        .beneficios-image {
+            position: relative;
+        }
+
+        .beneficios-image img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+
+        /* Planos Section */
+        .planos {
+            background: var(--gray-light);
+        }
+
+        .pricing-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .toggle-btn {
+            padding: 0.5rem 1.5rem;
+            border: 2px solid var(--primary-blue);
+            background: transparent;
+            color: var(--primary-blue);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+
+        .toggle-btn.active,
+        .toggle-btn:hover {
+            background: var(--primary-blue);
+            color: var(--white);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: var(--transition);
+            position: relative;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .pricing-card.animated {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .pricing-card.featured {
+            border: 2px solid var(--accent-green);
+            transform: scale(1.05);
+        }
+
+        .pricing-card.featured::before {
+            content: 'Mais Popular';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-green);
+            color: var(--primary-dark);
+            padding: 0.3rem 1.5rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-10px);
+        }
+
+        .pricing-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .pricing-header h3 {
+            color: var(--primary-dark);
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-header .price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .pricing-header .price span {
+            font-size: 1rem;
+            color: var(--gray);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .pricing-features li {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: var(--gray);
+        }
+
+        .pricing-features li i {
+            color: var(--accent-green);
+        }
+
+        .pricing-card .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Sobre Nós Section */
+        .sobre {
+            background: var(--white);
+        }
+
+        .sobre-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .sobre-image {
+            position: relative;
+        }
+
+        .sobre-image img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+
+        .sobre-content h2 {
+            font-size: 2.5rem;
+            color: var(--primary-dark);
+            margin-bottom: 1.5rem;
+        }
+
+        .sobre-content p {
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .valores-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .valor-item {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .valor-item i {
+            font-size: 2.5rem;
+            color: var(--accent-green);
+            margin-bottom: 1rem;
+        }
+
+        .valor-item h3 {
+            color: var(--primary-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .valor-item p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* FAQ Section */
+        .faq {
+            background: var(--gray-light);
+        }
+
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: var(--white);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: var(--transition);
+        }
+
+        .faq-item:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .faq-question {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .faq-question:hover {
+            background: rgba(0, 212, 170, 0.05);
+        }
+
+        .faq-question h3 {
+            color: var(--primary-dark);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .faq-question i {
+            color: var(--accent-green);
+            transition: transform 0.3s ease;
+        }
+
+        .faq-item.active .faq-question i {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+            padding: 0 1.5rem 1.5rem;
+        }
+
+        .faq-answer p {
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* Contacto Section */
+        .contacto {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+            color: var(--white);
+        }
+
+        .contacto .section-header h2,
+        .contacto .section-header p {
+            color: var(--white);
+        }
+
+        .contacto-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+        }
+
+        .contacto-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .contacto-item {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            transition: var(--transition);
+        }
+
+        .contacto-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(10px);
+        }
+
+        .contacto-item i {
+            font-size: 1.5rem;
+            color: var(--accent-green);
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .contacto-item div h3 {
+            margin-bottom: 0.3rem;
+        }
+
+        .contacto-item div p {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.95rem;
+        }
+
+        .contacto-form {
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 20px;
+            color: var(--primary-dark);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .contacto-form .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--primary-dark);
+            color: var(--white);
+            padding: 4rem 5% 2rem;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand .logo {
+            margin-bottom: 1rem;
+        }
+
+        .footer-brand p {
+            color: rgba(255,255,255,0.8);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            transition: var(--transition);
+        }
+
+        .social-links a:hover {
+            background: var(--accent-green);
+            color: var(--primary-dark);
+            transform: translateY(-3px);
+        }
+
+        .footer-links h3 {
+            margin-bottom: 1.5rem;
+            color: var(--accent-green);
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-green);
+            padding-left: 5px;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 2rem;
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* WhatsApp Float Button */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: #25d366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 2rem;
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+            cursor: pointer;
+            z-index: 999;
+            transition: var(--transition);
+            animation: pulse 2s infinite;
+        }
+
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(37, 211, 102, 0.6);
+        }
+
+        /* Responsividade */
+        @media (max-width: 968px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu {
+                display: block;
+            }
+
+            .hero-container,
+            .beneficios-container,
+            .sobre-container,
+            .contacto-container {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .pricing-card.featured:hover {
+                transform: scale(1) translateY(-10px);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .valores-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading Animation */
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .page-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 212, 170, 0.1);
+            border-top-color: var(--accent-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Smooth Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--gray-light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-blue);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-green);
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Loader -->
+    <div class="page-loader" id="pageLoader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <i class="fas fa-chart-line"></i>
+                <span>MonanaFinancial</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#home">Início</a></li>
+                <li><a href="#plataforma">Plataforma</a></li>
+                <li><a href="#solucoes">Soluções</a></li>
+                <li><a href="#beneficios">Benefícios</a></li>
+                <li><a href="#planos">Planos</a></li>
+                <li><a href="#sobre">Sobre Nós</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ul>
+            <div class="mobile-menu" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1>Gestão financeira inteligente para empresas que querem <span>crescer</span></h1>
+                <p>Mais controlo, mais visão, mais resultados. A Monana Financial transforma dados financeiros em decisões estratégicas.</p>
+                <div class="hero-buttons">
+                    <a href="#planos" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i>
+                        Conheça a plataforma
+                    </a>
+                    <a href="#planos" class="btn btn-secondary">
+                        <i class="fas fa-tag"></i>
+                        Ver planos
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" data-target="24">0</span>
+                        <span class="stat-label">Funcionalidades</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-target="10">0</span>
+                        <span class="stat-label">Módulos</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-target="99">0</span>
+                        <span class="stat-label">% Disponibilidade</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" data-target="24">0</span>
+                        <span class="stat-label">/7 Suporte</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="dashboard-mockup">
+                    <div class="chart-placeholder">
+                        <div class="chart-bar"></div>
+                        <div class="chart-bar"></div>
+                        <div class="chart-bar"></div>
+                        <div class="chart-bar"></div>
+                        <div class="chart-bar"></div>
+                        <div class="chart-bar"></div>
+                    </div>
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f5f7fa; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="color: #6b7280; font-size: 0.9rem;">Receita Total</div>
+                                <div style="font-size: 1.8rem; font-weight: 700; color: #1e3a5f;">12.450.000 Kz</div>
+                            </div>
+                            <div style="color: #00d4aa; font-weight: 600;">
+                                <i class="fas fa-arrow-up"></i> +18,4%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Plataforma Section -->
+    <section class="plataforma" id="plataforma">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <h2>Plataforma completa para gestão financeira</h2>
+                <p>Tudo o que a sua empresa precisa em um só lugar. Uma plataforma moderna, segura e fácil de usar, para o controlo total das suas finanças.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <h3>Gestão Financeira</h3>
+                    <p>Receitas, despesas e saldos em tempo real. Controle completo do fluxo de caixa da sua empresa.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>Relatórios</h3>
+                    <p>Análises e gráficos completos. Tome decisões baseadas em dados concretos e atualizados.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3>Filiais</h3>
+                    <p>Gestão de múltiplas filiais. Centralize o controlo de todas as suas unidades de negócio.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Utilizadores e Permissões</h3>
+                    <p>Controle de acessos granular. Defina permissões específicas para cada membro da equipa.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Auditoria</h3>
+                    <p>Registo de todas as ações. Rastreabilidade completa para compliance e segurança.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3>Segurança</h3>
+                    <p>Dados protegidos e backups automáticos. Sua informação segura 24/7.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Soluções Section -->
+    <section class="solucoes" id="solucoes">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <h2>Soluções para cada tipo de empresa</h2>
+                <p>A Monana Financial se adapta às necessidades de cada negócio, independentemente do seu porte.</p>
+            </div>
+            <div class="solucoes-grid">
+                <div class="solucao-card animate-on-scroll">
+                    <i class="fas fa-store"></i>
+                    <h3>Pequenas Empresas</h3>
+                    <p>Simplicidade e controlo. Soluções essenciais para gerir seu negócio com eficiência.</p>
+                </div>
+                <div class="solucao-card animate-on-scroll">
+                    <i class="fas fa-building"></i>
+                    <h3>Médias Empresas</h3>
+                    <p>Mais recursos e produtividade. Ferramentas avançadas para crescimento sustentável.</p>
+                </div>
+                <div class="solucao-card animate-on-scroll">
+                    <i class="fas fa-network-wired"></i>
+                    <h3>Empresas com Várias Filiais</h3>
+                    <p>Gestão centralizada. Controle todas as unidades de forma integrada.</p>
+                </div>
+                <div class="solucao-card animate-on-scroll">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Gestão Financeira Empresarial</h3>
+                    <p>Para grandes estruturas. Soluções robustas e escaláveis para sua empresa.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefícios Section -->
+    <section class="beneficios" id="beneficios">
+        <div class="container">
+            <div class="beneficios-container">
+                <div class="beneficios-list">
+                    <div class="section-header" style="text-align: left; margin-bottom: 2rem;">
+                        <h2>Por que escolher a Monana Financial?</h2>
+                        <p>Mais do que um sistema, é um parceiro para o crescimento do seu negócio.</p>
+                    </div>
+                    <div class="beneficio-item animate-on-scroll">
+                        <div class="beneficio-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="beneficio-content">
+                            <h3>Mais controlo financeiro</h3>
+                            <p>Tenha tudo em um só lugar. Centralize todas as operações financeiras da sua empresa.</p>
+                        </div>
+                    </div>
+                    <div class="beneficio-item animate-on-scroll">
+                        <div class="beneficio-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="beneficio-content">
+                            <h3>Decisões mais rápidas</h3>
+                            <p>Com dados em tempo real, tome decisões ágeis e precisas para seu negócio.</p>
+                        </div>
+                    </div>
+                    <div class="beneficio-item animate-on-scroll">
+                        <div class="beneficio-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="beneficio-content">
+                            <h3>Segurança de dados</h3>
+                            <p>Proteção e backup automático. Seus dados sempre seguros e disponíveis.</p>
+                        </div>
+                    </div>
+                    <div class="beneficio-item animate-on-scroll">
+                        <div class="beneficio-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="beneficio-content">
+                            <h3>Escalabilidade</h3>
+                            <p>Cresça com a sua empresa. Soluções que se adaptam ao seu crescimento.</p>
+                        </div>
+                    </div>
+                    <div class="beneficio-item animate-on-scroll">
+                        <div class="beneficio-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div class="beneficio-content">
+                            <h3>Suporte especializado</h3>
+                            <p>Sempre ao seu lado. Equipe pronta para ajudar quando precisar.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="beneficios-image animate-on-scroll">
+                    <div style="background: linear-gradient(135deg, #1e3a5f, #00d4aa); border-radius: 20px; padding: 3rem; text-align: center; color: white;">
+                        <i class="fas fa-chart-pie" style="font-size: 8rem; opacity: 0.3;"></i>
+                        <div style="margin-top: 2rem;">
+                            <h3 style="font-size: 2rem; margin-bottom: 1rem;">+500</h3>
+                            <p style="font-size: 1.2rem;">Empresas já confiam na Monana Financial</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Planos Section -->
+    <section class="planos" id="planos">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <h2>Planos para cada estágio da sua empresa</h2>
+                <p>Escolha o plano ideal e comece hoje mesmo a transformar a gestão financeira da sua empresa.</p>
+            </div>
+            <div class="pricing-toggle">
+                <button class="toggle-btn active" onclick="togglePricing('mensal')">Mensal</button>
+                <button class="toggle-btn" onclick="togglePricing('anual')">Anual (10% desconto)</button>
+            </div>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Essencial</h3>
+                        <p style="color: var(--gray); margin-bottom: 1rem;">Para pequenas empresas</p>
+                        <div class="price">12.500 <span>Kz/mês</span></div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Gestão financeira</li>
+                        <li><i class="fas fa-check"></i> Dashboard</li>
+                        <li><i class="fas fa-check"></i> Categorias</li>
+                        <li><i class="fas fa-check"></i> Relatórios básicos</li>
+                    </ul>
+                    <button class="btn btn-primary">Começar agora</button>
+                </div>
+                <div class="pricing-card featured">
+                    <div class="pricing-header">
+                        <h3>Profissional</h3>
+                        <p style="color: var(--gray); margin-bottom: 1rem;">Para empresas em crescimento</p>
+                        <div class="price">25.000 <span>Kz/mês</span></div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Tudo do Essencial</li>
+                        <li><i class="fas fa-check"></i> Filiais</li>
+                        <li><i class="fas fa-check"></i> Utilizadores</li>
+                        <li><i class="fas fa-check"></i> Permissões</li>
+                        <li><i class="fas fa-check"></i> Relatórios avançados</li>
+                        <li><i class="fas fa-check"></i> Exportação (PDF/Excel)</li>
+                    </ul>
+                    <button class="btn btn-primary">Começar agora</button>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Empresarial</h3>
+                        <p style="color: var(--gray); margin-bottom: 1rem;">Para grandes empresas</p>
+                        <div class="price">Personalizado</div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Multiempresa</li>
+                        <li><i class="fas fa-check"></i> Multi-filial</li>
+                        <li><i class="fas fa-check"></i> Auditoria</li>
+                        <li><i class="fas fa-check"></i> Permissões avançadas</li>
+                        <li><i class="fas fa-check"></i> Backup</li>
+                        <li><i class="fas fa-check"></i> Suporte prioritário</li>
+                    </ul>
+                    <button class="btn btn-secondary">Falar com um consultor</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sobre Nós Section -->
+    <section class="sobre" id="sobre">
+        <div class="container">
+            <div class="sobre-container">
+                <div class="sobre-image animate-on-scroll">
+                    <div style="background: linear-gradient(135deg, #1e3a5f, #00d4aa); border-radius: 20px; height: 500px; display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fas fa-building" style="font-size: 10rem; opacity: 0.2;"></i>
+                    </div>
+                </div>
+                <div class="sobre-content">
+                    <h2>Sobre a Monana Financial</h2>
+                    <p>Somos uma empresa de tecnologia financeira dedicada a desenvolver soluções inovadoras para a gestão financeira empresarial. A nossa missão é ajudar empresas a controlar melhor os seus recursos, através de tecnologia, segurança e suporte de qualidade.</p>
+                    <p>A Monana Financial nasceu da visão de transformar a forma como as empresas gerem as suas finanças, com soluções tecnológicas simples, seguras e eficientes.</p>
+                    <div class="valores-grid">
+                        <div class="valor-item">
+                            <i class="fas fa-lightbulb"></i>
+                            <h3>Inovação</h3>
+                            <p>Tecnologia de ponta</p>
+                        </div>
+                        <div class="valor-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Confiança</h3>
+                            <p>O seu sucesso é a nossa prioridade</p>
+                        </div>
+                        <div class="valor-item">
+                            <i class="fas fa-handshake"></i>
+                            <h3>Compromisso</h3>
+                            <p>Com o crescimento do seu negócio</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq" id="faq">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <h2>Perguntas Frequentes</h2>
+                <p>Tire as suas dúvidas sobre a Monana Financial.</p>
+            </div>
+            <div class="faq-container">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>O que é a Monana Financial?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>A Monana Financial é uma plataforma completa de gestão financeira empresarial que ajuda empresas de todos os tamanhos a controlar suas finanças de forma simples, segura e eficiente.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Como funciona o sistema?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>O sistema funciona na nuvem, acessível de qualquer dispositivo com internet. Você pode gerenciar receitas, despesas, gerar relatórios e tomar decisões baseadas em dados em tempo real.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Posso ter mais de uma filial?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Sim! Nos planos Profissional e Empresarial, você pode gerenciar múltiplas filiais de forma centralizada, com controle individual e consolidado.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>O sistema é seguro?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Sim! Utilizamos criptografia de ponta a ponta, backups automáticos diários e seguimos as melhores práticas de segurança da informação para proteger seus dados.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Existe suporte técnico?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Sim! Oferecemos suporte técnico especializado 24/7 via chat, email e telefone. No plano Empresarial, o suporte é prioritário.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Como é feita a cobrança?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>A cobrança é mensal ou anual (com 10% de desconto). Aceitamos transferência bancária e outros meios de pagamento. Você pode cancelar a qualquer momento.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Posso cancelar o plano?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Sim! Você pode cancelar seu plano a qualquer momento, sem taxas ou multas. Seus dados permanecem disponíveis para exportação por 30 dias após o cancelamento.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Vocês oferecem treinamento?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Sim! Oferecemos treinamento online gratuito para todos os novos clientes. No plano Empresarial, oferecemos treinamento presencial personalizado.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contacto Section -->
+    <section class="contacto" id="contacto">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <h2>Contacto</h2>
+                <p>Fale connosco. Estamos aqui para ajudar.</p>
+            </div>
+            <div class="contacto-container">
+                <div class="contacto-info">
+                    <div class="contacto-item animate-on-scroll">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h3>Email</h3>
+                            <p>info@monanafinancial.com</p>
+                        </div>
+                    </div>
+                    <div class="contacto-item animate-on-scroll">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <h3>Telefone</h3>
+                            <p>+244 923 456 789</p>
+                        </div>
+                    </div>
+                    <div class="contacto-item animate-on-scroll">
+                        <i class="fab fa-whatsapp"></i>
+                        <div>
+                            <h3>WhatsApp</h3>
+                            <p>+244 923 456 789</p>
+                        </div>
+                    </div>
+                    <div class="contacto-item animate-on-scroll">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <h3>Localização</h3>
+                            <p>Luanda, Angola</p>
+                        </div>
+                    </div>
+                    <div class="contacto-item animate-on-scroll">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <h3>Horário de atendimento</h3>
+                            <p>Seg - Sex: 08h - 18h<br>Sáb: 09h - 13h</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="contacto-form animate-on-scroll">
+                    <form onsubmit="handleSubmit(event)">
+                        <div class="form-group">
+                            <label>Nome *</label>
+                            <input type="text" required placeholder="Seu nome completo">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Email *</label>
+                                <input type="email" required placeholder="seu@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Telefone *</label>
+                                <input type="tel" required placeholder="+244 9XX XXX XXX">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Assunto *</label>
+                            <select required>
+                                <option value="">Selecione...</option>
+                                <option value="informacoes">Mais informações</option>
+                                <option value="demonstracao">Solicitar demonstração</option>
+                                <option value="suporte">Suporte técnico</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Mensagem *</label>
+                            <textarea required placeholder="Escreva a sua mensagem..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                            Enviar mensagem
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-brand">
+                <a href="#" class="logo">
+                    <i class="fas fa-chart-line"></i>
+                    <span>MonanaFinancial</span>
+                </a>
+                <p>Tecnologia Financeira para um futuro melhor. Transformando a gestão financeira das empresas angolanas.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h3>Links</h3>
+                <ul>
+                    <li><a href="#home">Início</a></li>
+                    <li><a href="#plataforma">Plataforma</a></li>
+                    <li><a href="#solucoes">Soluções</a></li>
+                    <li><a href="#planos">Planos</a></li>
+                    <li><a href="#sobre">Sobre nós</a></li>
+                    <li><a href="#faq">FAQ</a></li>
+                    <li><a href="#contacto">Contacto</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h3>Redes sociais</h3>
+                <ul>
+                    <li><a href="#">Facebook</a></li>
+                    <li><a href="#">LinkedIn</a></li>
+                    <li><a href="#">Instagram</a></li>
+                    <li><a href="#">YouTube</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h3>Receba nossas novidades</h3>
+                <form style="margin-top: 1rem;">
+                    <div class="form-group">
+                        <input type="email" placeholder="Digite seu email" style="margin-bottom: 0.5rem;">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Subscrever</button>
+                </form>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Monana Financial. Todos os direitos reservados. | Tecnologia que impulsiona o seu negócio.</p>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Float Button -->
+    <div class="whatsapp-float" onclick="openWhatsApp()">
+        <i class="fab fa-whatsapp"></i>
+    </div>
+
+    <script>
+        // Page Loader
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('pageLoader').classList.add('hidden');
+            }, 500);
+        });
+
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Animate on Scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animated');
+                    
+                    // Animate numbers if it's a stat number
+                    if (entry.target.querySelector('.stat-number')) {
+                        animateNumbers();
+                    }
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-on-scroll, .feature-card, .pricing-card, .beneficio-item, .contacto-item, .sobre-image, .sobre-content').forEach((el) => {
+            observer.observe(el);
+        });
+
+        // Animate Numbers
+        function animateNumbers() {
+            const statNumbers = document.querySelectorAll('.stat-number');
+            statNumbers.forEach(stat => {
+                const target = parseInt(stat.getAttribute('data-target'));
+                const duration = 2000;
+                const step = target / (duration / 16);
+                let current = 0;
+
+                const timer = setInterval(() => {
+                    current += step;
+                    if (current >= target) {
+                        stat.textContent = target + (target === 99 ? '%' : '+');
+                        clearInterval(timer);
+                    } else {
+                        stat.textContent = Math.floor(current);
+                    }
+                }, 16);
+            });
+        }
+
+        // FAQ Toggle
+        function toggleFaq(element) {
+            const faqItem = element.parentElement;
+            const isActive = faqItem.classList.contains('active');
+            
+            // Close all FAQ items
+            document.querySelectorAll('.faq-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Open clicked item if it wasn't active
+            if (!isActive) {
+                faqItem.classList.add('active');
+            }
+        }
+
+        // Pricing Toggle
+        function togglePricing(type) {
+            const buttons = document.querySelectorAll('.toggle-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const prices = document.querySelectorAll('.price');
+            if (type === 'anual') {
+                prices[0].innerHTML = '11.250 <span>Kz/mês</span>';
+                prices[1].innerHTML = '22.500 <span>Kz/mês</span>';
+            } else {
+                prices[0].innerHTML = '12.500 <span>Kz/mês</span>';
+                prices[1].innerHTML = '25.000 <span>Kz/mês</span>';
+            }
+        }
+
+        // Form Submit
+        function handleSubmit(e) {
+            e.preventDefault();
+            
+            // Create success message
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Mensagem enviada!';
+            btn.style.background = '#10b981';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalContent;
+                btn.style.background = '';
+                e.target.reset();
+            }, 3000);
+        }
+
+        // WhatsApp Click
+        function openWhatsApp() {
+            window.open('https://wa.me/244923456789', '_blank');
+        }
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Parallax effect for hero section
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const hero = document.querySelector('.hero');
+            if (hero) {
+                hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+        });
+
+        // Add delay to feature cards for staggered animation
+        document.querySelectorAll('.feature-card').forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+        });
+
+        document.querySelectorAll('.pricing-card').forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.15}s`;
+        });
+
+        document.querySelectorAll('.beneficio-item').forEach((item, index) => {
+            item.style.animationDelay = `${index * 0.1}s`;
+        });
+    </script>
+</body>
+</html>
